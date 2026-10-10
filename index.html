@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChordStudio — Ultimate Guitar chord sheets</title>
+<meta name="description" content="Turn your Ultimate Guitar chord pages into editable, printable chord and song sheets.">
+<style>
+:root{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#16233b;background:#f1f4f9;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0}a{color:#235bc4}button,input,textarea,select{font:inherit}
+button{cursor:pointer;background:#fff;color:#223758;border:1px solid #cbd5e4;border-radius:9px;padding:10px 13px;font-size:13px;font-weight:700}button:hover{background:#edf2f9}button.primary{background:#1e56ba;color:#fff;border-color:#1e56ba}button.primary:hover{background:#19489d}
+button:disabled{opacity:.45;cursor:default}input[type=url],textarea,select{background:#fff;border:1px solid #bfcde1;border-radius:8px;color:#152b4c;padding:10px;width:100%}input:focus,textarea:focus{outline:2px solid #a7c4fa}textarea{font:12px/1.5 ui-monospace,Consolas,monospace;resize:vertical}
+header{background:#172941;color:white;padding:20px max(20px,calc((100vw - 1150px)/2));display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{font-size:22px;letter-spacing:-.65px;font-weight:800}.brand span{color:#8eb8ff}.tag{font-size:12px;color:#c7d5e8}
+header a{margin-left:auto;color:#cbdfff;font-size:12px}
+main{max-width:1190px;margin:auto;padding:30px 20px 55px}.intro{margin-bottom:22px}.intro h1{font-size:clamp(24px,3.5vw,36px);line-height:1.14;letter-spacing:-1px;margin:0 0 8px}.intro p{color:#5d6c81;line-height:1.6;max-width:780px;margin:0}
+.card{background:#fff;border:1px solid #d9e2f0;box-shadow:0 2px 11px #1c34520c;border-radius:14px;padding:20px;margin:0 0 20px}
+.card h2{margin:0 0 14px;font-size:18px}.eyebrow{color:#235bc4;text-transform:uppercase;letter-spacing:1.4px;font-weight:800;font-size:11px;margin:0 0 7px}
+.muted{color:#69778a;font-size:13px;line-height:1.55}.hint{font-size:12px;color:#6a7b92}.import-row{display:flex;gap:9px;margin:8px 0 15px}.import-row input{flex:1;min-width:0}.how{display:flex;flex-wrap:wrap;gap:15px;align-items:center;padding:13px;border:1px solid #d9e4f3;border-radius:9px;background:#f6f9fd}
+.step{background:#d8e8ff;color:#234d91;border-radius:50%;height:25px;width:25px;display:inline-grid;place-items:center;font-size:12px;font-weight:800;flex:none}
+.how strong{font-size:13px}.bookmarklet{display:inline-block;background:#fce495;border:1px solid #e9bd34;border-radius:8px;color:#40300f;font-size:13px;text-decoration:none;font-weight:800;padding:10px 14px;cursor:grab}
+label{font-size:12px;font-weight:750;color:#334967;display:block;margin-bottom:6px}
+details{border-top:1px solid #e0e7ef;margin-top:16px;padding-top:12px}details summary{cursor:pointer;font-size:13px;font-weight:700}
+.fileinput{padding:12px 0}.fileinput input{font-size:12px}.alt textarea{min-height:95px;margin:12px 0 8px}
+.topline{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}.topline h2{margin-bottom:5px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.options{border-top:1px solid #e3e9f3;border-bottom:1px solid #e3e9f3;margin:18px 0;padding:13px 0;display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px}
+.options label{display:flex;gap:7px;align-items:center;margin:0;font-weight:600;white-space:nowrap}.options select{padding:5px;width:auto;min-width:65px}
+#status{margin:0}.error{color:#ab2727!important}.good{color:#226242!important}
+#printPage{max-width:100%;background:#fff;color:#111;padding:20px 12px 30px}
+.sheet-title{border-bottom:1px solid #ddd;padding-bottom:10px;margin-bottom:18px}.sheet-title h1{margin:0 0 3px;font-size:25px;line-height:1.2}.sheet-title p{color:#555;font-size:13px;margin:0}
+.print-heading{font:bold 17px/1.3 Arial,sans-serif;margin:0 0 14px}.sheet-section{margin-bottom:18px}
+.chord-grid{display:grid;grid-template-columns:repeat(var(--cols,6),minmax(0,1fr));gap:13px 6px}
+.chord-card{display:flex;align-items:center;flex-direction:column;break-inside:avoid;min-width:0}.chord-name{font:700 14px/19px Arial,sans-serif;text-align:center;white-space:nowrap;min-height:24px}.chord-card canvas{width:76px;height:72px}
+.chord-code{font:10px Arial,sans-serif;color:#555;text-align:center}
+.song-lines{font:var(--song-font,10px)/1.38 "Roboto Mono","Courier New",monospace;white-space:pre;max-width:100%}
+.song-line{min-height:1.38em;white-space:pre}.song-line.heading{font-weight:700;margin-top:9px}.song-chord{font-weight:800;color:#111}
+#songSection{border-top:1px solid #ddd;padding-top:18px}.credit{font:10px Arial,sans-serif;color:#666;margin-top:16px;overflow-wrap:anywhere}
+#chordEditor{min-height:120px;margin:10px 0 8px}.message{min-height:22px;font-size:12px}
+footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 20px 24px}
+@media(max-width:700px){main{padding:20px 12px}.card{padding:14px}.import-row{flex-direction:column}.chord-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}#printPage{padding:14px 0}.sheet-title h1{font-size:20px}.song-lines{overflow-x:auto}.tag{width:100%}}
+@media print{
+ @page{margin:13mm 12mm;size:auto}
+ :root,body{background:white!important;color:#000}
+ .no-print,header,footer,.card>.topline,.options,.editor,.message{display:none!important}
+ main{max-width:none;margin:0;padding:0}.card{border:0;border-radius:0;box-shadow:none;padding:0;margin:0}
+ #printPage{padding:0}#chordGrid{gap:8px 3px}.chord-grid{grid-template-columns:repeat(var(--cols,6),minmax(0,1fr))!important}
+ .sheet-section{break-inside:auto}.chord-card{break-inside:avoid}.song-line{break-inside:avoid}
+ .song-lines{font-size:var(--song-font,10px)!important;overflow:visible}.sheet-title{break-after:avoid}
+}
+</style>
+</head>
+<body>
+<header class="no-print"><div class="brand">Chord<span>Studio</span></div><div class="tag">Printable songs & accurate fretboard diagrams</div><a href="https://github.com/Olsens11/ChordStudio" target="_blank" rel="noopener noreferrer">Source on GitHub ↗</a></header>
+<main>
+<section class="intro no-print"><p class="eyebrow">From Ultimate Guitar to your own sheet</p><h1>Import a song. Get the chords and the whole song, ready to print.</h1><p>Preserve chord placement and the original fingering diagrams. Export the diagrams as one image for Google Docs or print an entire formatted song sheet.</p></section>
+<section class="card no-print">
+ <h2>1. Import an Ultimate Guitar song</h2>
+ <label for="songUrl">Ultimate Guitar song URL</label>
+ <div class="import-row"><input type="url" id="songUrl" spellcheck="false" placeholder="https://tabs.ultimate-guitar.com/tab/..." value="https://tabs.ultimate-guitar.com/tab/bruce-springsteen/born-to-run-chords-320030"><button class="primary" id="openUg">Open song ↗</button></div>
+ <div class="how"><span class="step">2</span><div><strong>Drag this yellow link onto your Chrome bookmarks bar</strong><div class="hint">Press Ctrl+Shift+B to show it. On any Ultimate Guitar song page, click the bookmark to import.</div></div><a href="#" id="bookmarklet" class="bookmarklet" title="Drag to your bookmarks bar">↗ Send to ChordStudio</a></div>
+ <p class="muted">Import happens in your browser. The bookmarklet reads the page you're already viewing; GitHub Pages cannot directly fetch Ultimate Guitar's HTML from a URL because of cross-origin browser restrictions. You can also import saved HTML or JSON below.</p>
+ <details class="alt"><summary>Import saved page source or paste JSON / HTML</summary><div class="fileinput"><input id="sourceFile" type="file" accept=".html,.htm,.json,.txt,text/html,text/plain,application/json"></div><textarea id="sourcePaste" placeholder="Paste the page source (containing js-store), or JSON with store.page.data"></textarea><button id="importPaste">Import pasted source</button></details>
+</section>
+<section class="card" id="workspace">
+ <div class="topline no-print"><div><p class="eyebrow">Output preview</p><h2 id="previewTitle">Chord and song sheet</h2><p class="muted" id="status">Example chord diagrams are loaded. Import a song to generate the complete sheet.</p></div>
+ <div class="actions"><button class="primary" id="printBtn">Print / Save PDF</button><button id="copyBtn">Copy diagrams for Docs</button><button id="downloadBtn">Download PNG</button></div></div>
+ <div class="options no-print"><label><input id="includeChords" type="checkbox" checked> Diagrams</label><label><input id="includeSong" type="checkbox" checked> Song text</label><label><input id="showCodes" type="checkbox"> Fret codes</label>
+ <label>Columns <select id="columns"><option>4</option><option>5</option><option selected>6</option><option>8</option><option>10</option></select></label>
+ <label>Song font <select id="fontSize"><option value="9">Compact</option><option value="10" selected>Normal</option><option value="12">Large</option></select></label></div>
+ <article id="printPage" aria-label="Printable chord and song sheet">
+  <div class="sheet-title"><h1 id="songName">Chord diagram preview</h1><p id="artistName">Import an Ultimate Guitar song to populate this page</p></div>
+  <section id="chordSection" class="sheet-section"><h2 class="print-heading">CHORDS</h2><div id="chordGrid" class="chord-grid"></div></section>
+  <section id="songSection" class="sheet-section" hidden><h2 class="print-heading">SONG</h2><div id="songLines" class="song-lines"></div></section>
+  <div class="credit" id="sourceCredit"></div>
+ </article>
+ <details class="editor no-print"><summary>Edit chord codes or select voicings</summary><p class="muted">Syntax: one chord per line, for example <code>E: 022100</code> or <code>F#m: 244222</code>. Imported fingerings and barre indicators are preserved for matching shapes.</p><textarea id="chordEditor" spellcheck="false" aria-label="Chord definitions"></textarea><button id="resetVoicings">Restore imported chord shapes</button></details>
+ <p id="message" class="message no-print" aria-live="polite"></p>
+ </section>
+</main>
+<footer class="no-print">Independent, open-source chord-sheet formatter. Not affiliated with Ultimate Guitar. No song lyrics are bundled with this site; import only material you are authorized to use.</footer>
+<script src="app.js" defer></script>
+</body></html>
