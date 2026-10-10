@@ -1,9 +1,9 @@
 
 /* What you see is what prints: pages use physical dimensions at 96 CSS px/in. */
-.paper-stack{display:flex;flex-direction:column;align-items:center;gap:28px;background:#e5ebf3;padding:22px 10px 38px;border-radius:10px;overflow-x:auto}
+.paper-stack,#printPage.paper-stack{display:flex;flex-direction:column;align-items:center;gap:28px;background:#e5ebf3;padding:22px 10px 38px;border-radius:10px;overflow-x:auto}
 .paper-wrapper{width:max-content;max-width:none}
 .paper-label{font:700 12px/20px system-ui,sans-serif;color:#536784;margin:0 0 7px;letter-spacing:.03em}
-.paper-page{position:relative;box-sizing:border-box;width:816px;height:1056px;padding:32px;background:#fff;color:#111;box-shadow:0 3px 18px #18314c35;overflow:hidden;flex:none}
+.paper-page{position:relative;box-sizing:border-box;width:816px;height:1056px;padding:24px;background:#fff;color:#111;box-shadow:0 3px 18px #18314c35;overflow:hidden;flex:none}
 .paper-stack.paper-a4 .paper-page{width:794px;height:1123px}
 .paper-inside{position:relative;width:100%;height:100%}
 .paper-main{width:100%;height:100%;overflow:hidden}
