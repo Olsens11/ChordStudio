@@ -16,7 +16,7 @@ An independent, browser-based **chord-diagram and song-sheet formatter**.
 
 ## Hosting
 
-This static site uses **index.html** and **app.js**. No build step or application server is required.
+This static site uses **index.html**, **app.js**, **layout.js**, and **layout.css**. No build step or application server is required.
 
 To enable GitHub Pages: **Settings → Pages → Build and deployment → Deploy from a branch**, using `main` and `/(root)`.
 
@@ -50,14 +50,18 @@ Printing via Ctrl+P while the editor is open also applies the current edits. Cha
 - **Copy diagrams to clipboard**: copy a high-resolution PNG containing chord names and diagrams, then paste into Google Docs with `Ctrl+V`.
 - **Download PNG**: save the diagrams if clipboard image access is unavailable.
 
-## Page layout and chord selection
+## Paper-sized preview and chord stickers
 
-- Open **Edit song text** to adjust your song in a large editor. Dashed blue lines mark **estimated** starts of new printed pages.
-- Choose **US Letter** or **A4** paper and toggle page-break guides on or off. Estimates account for the title, currently selected diagrams, font size and line spacing; your browser's actual print preview is the final authority.
-- Hover over a chord diagram to reveal a small **×** at its upper-right corner. The × removes that diagram from the print sheet and PNG exports, while song-text chord annotations stay unchanged.
-- **Drag any chord diagram** to rearrange the order. The move cursor and drop indicator show where it will land; you can also focus a diagram and use **Alt + arrow keys** to move it. The new order applies to both printing and PNG exports.
-- Use **Undo**, **Redo**, and **Restore all chords** above the diagrams. Undo/Redo covers both removal and reordering; Restore all returns removed diagrams without losing your preferred order.
-- Removing/restoring diagrams refreshes the page-break estimate so you can revise the song layout accordingly.
+The main preview is a stack of **actual paper-sized page boxes**, not a continuous document with estimated page-break lines. Pages are laid out automatically using the selected song font, line spacing, chord bank, and paper size. The same page boxes are used in Chrome's printed PDF output.
+
+1. Choose **US Letter** or **A4** from the layout toolbar. The preview repaginates immediately.
+2. The **chord bank** above the page boxes is a palette. You can reorder its diagrams by dragging or hide unwanted ones using the red ×, with Undo/Redo and Restore all. The **Print chord bank** checkbox controls whether the full selected bank appears at the beginning of the printed sheet; the palette itself remains available.
+3. **Drag a diagram from the bank onto any page** to create a separate, movable sticker. Drop it in available whitespace rather than on top of lyrics. You may create multiple stickers from the same chord.
+4. **Drag a placed sticker** to move it within its page or onto another page. Its small × removes just that sticker. Alt+arrow keys move a focused sticker 5 pixels (Shift+Alt+arrow moves 20). The **Undo placement**, **Redo placement**, and **Clear placed diagrams** controls manage these changes separately from chord-bank changes.
+5. The printable page content is intentionally **not editable**. Use **Edit song text** to edit words, chords, font, and spacing, then **Apply changes** to repaginate these same page boxes.
+6. Choose **Print / Save PDF** when satisfied. The editor/palette controls are hidden, but sticker images and their page positions are retained.
+
+The browser's print setting must use the same paper size as the layout selector; leave scaling at 100% and disable browser headers/footers if offered. An ordinary physical printer may have unprintable edges that differ from PDF output. Placed stickers float above the song text instead of reflowing words around them, so avoid covering lyrics. Changes live in the current browser tab until refreshed or reimported.
 
 ## Notes
 
