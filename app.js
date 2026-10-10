@@ -10,6 +10,8 @@ let catalog = structuredClone(DEMO);
 let original = structuredClone(DEMO);
 let page = null;
 let rendered = [];
+let importedSongNodes = [];
+let editorOriginalStyle = null;
 const message = (s,err=false)=>{$("message").textContent=s;$("message").classList.toggle("error",err);};
 function parseCode(code){
   const s=String(code).trim(),compact=/^[0-9xX]{6}$/.test(s);
@@ -104,7 +106,8 @@ function renderDiagrams(){
   grid.style.setProperty("--cols",cols);
   $("chordSection").hidden=!$("includeChords").checked||items.length===0;
   $("songSection").hidden=!$("includeSong").checked||!page?.content;
-  $("songLines").style.setProperty("--song-font",$("fontSize").value+"px");
+  syncSongTypography();
+  $("editSongBtn").disabled=!page?.content;
   if(errors.length)message(errors.join(" | "),true);
   return rendered;
 }
@@ -129,6 +132,81 @@ function renderSong(content){
     host.append(div);
   }
 }
+
+function syncSongTypography(){
+  const size=$("fontSize").value+"px";
+  const font=$("songEditFont").value;
+  const leading=$("songEditLeading").value;
+  $("songEditSize").value=$("fontSize").value;
+  for(const id of ["songLines","songEditor"]){
+    const el=$(id);
+    el.style.setProperty("--song-font",size);
+    el.style.setProperty("--song-family",font);
+    el.style.setProperty("--song-leading",leading);
+  }
+}
+function resetImportedSongNodes(){
+  importedSongNodes=Array.from($("songLines").childNodes,node=>node.cloneNode(true));
+}
+function openSongEditor(){
+  if(!page?.content){message("Import a song before editing its text.",true);return;}
+  const panel=$("songEditorPanel");
+  if(!panel.hidden){$("songEditor").focus();return;}
+  editorOriginalStyle={
+    font:$("songEditFont").value,
+    size:$("fontSize").value,
+    leading:$("songEditLeading").value
+  };
+  $("songEditor").replaceChildren(...Array.from($("songLines").childNodes,node=>node.cloneNode(true)));
+  panel.hidden=false;
+  syncSongTypography();
+  panel.scrollIntoView({behavior:"smooth",block:"start"});
+  $("songEditor").focus({preventScroll:true});
+}
+function closeSongEditor(){
+  $("songEditorPanel").hidden=true;
+  $("songEditor").replaceChildren();
+}
+function cancelSongEditor(){
+  if(editorOriginalStyle){
+    $("fontSize").value=editorOriginalStyle.size;
+    $("songEditFont").value=editorOriginalStyle.font;
+    $("songEditLeading").value=editorOriginalStyle.leading;
+    syncSongTypography();
+  }
+  closeSongEditor();
+  message("Song edit canceled; the print sheet is unchanged.");
+}
+function applySongEdit(quiet=false){
+  if($("songEditorPanel").hidden)return false;
+  const editor=$("songEditor");
+  $("songLines").replaceChildren(...Array.from(editor.childNodes,node=>node.cloneNode(true)));
+  closeSongEditor();
+  syncSongTypography();
+  if(!quiet)message("Song changes applied. The print preview now includes your edits.");
+  return true;
+}
+function restoreImportedSong(){
+  $("songEditor").replaceChildren(...importedSongNodes.map(node=>node.cloneNode(true)));
+  message("Original imported text restored in the editor. Choose Apply changes to update the print sheet.");
+}
+function pasteSongText(event){
+  const pasted=event.clipboardData?.getData("text/plain");
+  if(pasted==null)return;
+  event.preventDefault();
+  // Keep pasted text literal: rich HTML from external pages could damage chord alignment.
+  if(document.execCommand("insertText",false,pasted))return;
+  const selection=window.getSelection();
+  if(!selection?.rangeCount)return;
+  const range=selection.getRangeAt(0);
+  if(!$("songEditor").contains(range.commonAncestorContainer))return;
+  range.deleteContents();
+  const node=document.createTextNode(pasted);
+  range.insertNode(node);
+  range.setStartAfter(node);range.collapse(true);
+  selection.removeAllRanges();selection.addRange(range);
+}
+
 function normalizeSource(text){
   const value=text.trim();let root;
   if(value.startsWith("<")){
@@ -173,6 +251,8 @@ function loadPage(data){
   $("sourceCredit").textContent="Chord tab imported for personal formatting";
   $("chordEditor").value=Object.entries(next).map(([name,v])=>name+": "+codeFrom(v[0])).join("\n");
   renderSong(page.content);
+  resetImportedSongNodes();
+  closeSongEditor();
   $("status").textContent=Object.keys(next).length+" chord names loaded"+(page.content?" with song text.":".");
   $("status").classList.add("good");
   renderDiagrams();message("Imported "+Object.keys(next).length+" chord names. Ready to print or export.");
@@ -216,6 +296,8 @@ async function downloadPng(){
 function setDemo(){
   catalog=structuredClone(DEMO);original=structuredClone(DEMO);page=null;
   $("chordEditor").value=Object.entries(DEMO).map(([k,v])=>k+": "+v[0].id).join("\n");
+  importedSongNodes=[];
+  closeSongEditor();
   $("songSection").hidden=true;renderDiagrams();
 }
 function makeBookmarklet(){
@@ -247,7 +329,32 @@ function init(){
     catch(e){message("File import failed: "+e.message,true);}
     e.target.value="";
   });
-  $("printBtn").addEventListener("click",()=>window.print());
+  $("editSongBtn").addEventListener("click",openSongEditor);
+  $("applySongEdit").addEventListener("click",()=>applySongEdit());
+  $("applyPrintSong").addEventListener("click",()=>{applySongEdit(true);window.print();});
+  $("cancelSongEdit").addEventListener("click",cancelSongEditor);
+  $("restoreSongEdit").addEventListener("click",restoreImportedSong);
+  $("songEditor").addEventListener("paste",pasteSongText);
+  $("songEditor").addEventListener("keydown",event=>{
+    if(event.key==="Escape"){event.preventDefault();cancelSongEditor();}
+    if((event.ctrlKey||event.metaKey)&&event.key==="Enter"){event.preventDefault();applySongEdit();}
+  });
+  for(const button of document.querySelectorAll("[data-song-format]")){
+    button.addEventListener("mousedown",event=>event.preventDefault());
+    button.addEventListener("click",()=>{
+      $("songEditor").focus();
+      document.execCommand(button.dataset.songFormat,false,null);
+    });
+  }
+  $("songEditSize").addEventListener("change",()=>{
+    $("fontSize").value=$("songEditSize").value;
+    renderDiagrams();
+  });
+  for(const id of ["songEditFont","songEditLeading"]){
+    $(id).addEventListener("change",syncSongTypography);
+  }
+  window.addEventListener("beforeprint",()=>applySongEdit(true));
+  $("printBtn").addEventListener("click",()=>{applySongEdit(true);window.print();});
   $("copyBtn").addEventListener("click",copyPng);
   $("downloadBtn").addEventListener("click",downloadPng);
   $("resetVoicings").addEventListener("click",()=>{
