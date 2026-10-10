@@ -390,10 +390,23 @@ function normalizeSource(text){
     artist_name:data?.artist_name||tab.artist_name||data?.artistName||"",
     content:data?.content||view.wiki_tab?.content||"",
     applicature:data?.applicature||view.applicature,
-    source:data?.source||root?.source||$("songUrl").value
+    source:data?.source||root?.source||""
   };
   if(!result.applicature||typeof result.applicature!=="object")throw Error("No guitar chord definitions found. Open a guitar Chords tab.");
   return result;
+}
+function validSourceUrl(candidate){
+  if(typeof candidate!=="string")return "";
+  try{
+    const url=new URL(candidate);
+    return ["https:","http:"].includes(url.protocol)?url.href:"";
+  }catch{return "";}
+}
+function updateOriginalSourceLink(){
+  const url=validSourceUrl(page?.source);
+  $("songUrl").value=url;
+  $("originalSourceRow").hidden=!url;
+  $("openSource").disabled=!url;
 }
 function loadPage(data){
   if(!data||typeof data!=="object"||!data.applicature)throw Error("Missing chord data");
@@ -411,7 +424,8 @@ function loadPage(data){
   page={title:decodeEntities(data.song_name||data.songName||"Untitled song"),
     artist:decodeEntities(data.artist_name||data.artistName||""),
     content:typeof data.content==="string"?data.content:"",
-    source:data.source||$("songUrl").value};
+    source:validSourceUrl(data.source)};
+  updateOriginalSourceLink();
   $("songName").textContent=page.title;
   $("artistName").textContent=page.artist;
   $("sourceCredit").textContent="Chord tab imported for personal formatting";
@@ -468,7 +482,9 @@ function setDemo(){
   $("chordEditor").value=Object.entries(DEMO).map(([k,v])=>k+": "+v[0].id).join("\n");
   importedSongNodes=[];
   closeSongEditor();
-  $("songSection").hidden=true;renderDiagrams();
+  $("songSection").hidden=true;
+  updateOriginalSourceLink();
+  renderDiagrams();
 }
 function makeBookmarklet(){
   const target=new URL("./",location.href).href;
@@ -484,11 +500,9 @@ function init(){
     catch(e){setDemo();message("Import failed: "+e.message,true);}
   }else setDemo();
   $("openSource").addEventListener("click",()=>{
-    try{const url=new URL($("songUrl").value);
-      if(url.protocol!=="https:")throw Error("Enter an HTTPS song-page URL.");
-      window.open(url.href,"_blank","noopener");
-      message("On the opened chord page, click the Send to ChordStudio bookmark.");
-    }catch(e){message(e.message,true);}
+    const url=validSourceUrl(page?.source);
+    if(!url){message("This song doesn't have a saved source URL.",true);return;}
+    window.open(url,"_blank","noopener,noreferrer");
   });
   $("importPaste").addEventListener("click",()=>{
     try{loadPage(normalizeSource($("sourcePaste").value));}
