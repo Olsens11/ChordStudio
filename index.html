@@ -98,7 +98,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <h2>1. Import a chord-tab song</h2>
  <label for="songUrl">Song page URL</label>
  <div class="import-row"><input type="url" id="songUrl" spellcheck="false" placeholder="https://example.com/song-page"><button class="primary" id="openSource">Open song ↗</button></div>
- <div class="how"><span class="step">2</span><div><strong>Drag this yellow link onto your Chrome bookmarks bar</strong><div class="hint">Press Ctrl+Shift+B to show it. On a compatible chord-tab page, click the bookmark to import.</div></div><a href="#" id="bookmarklet" class="bookmarklet" title="Drag to your bookmarks bar to import a song">🎸 Import</a></div>
+ <div class="how"><span class="step">2</span><div><strong>Drag this yellow link onto your Chrome bookmarks bar</strong><div class="hint">Press Ctrl+Shift+B to show it. On a compatible chord-tab page, click the bookmark to import.</div></div><a href="#" id="bookmarklet" class="bookmarklet" title="Drag to your bookmarks bar to import a song">↗ ChordStudio</a></div>
  <p class="muted">Import happens in your browser. The bookmarklet reads the page you're already viewing; GitHub Pages cannot directly fetch pages that restrict cross-origin browser requests. You can also import saved HTML or JSON below.</p>
  <details class="alt"><summary>Import saved page source or paste JSON / HTML</summary><div class="fileinput"><input id="sourceFile" type="file" accept=".html,.htm,.json,.txt,text/html,text/plain,application/json"></div><textarea id="sourcePaste" placeholder="Paste the page source (containing js-store), or JSON with store.page.data"></textarea><button id="importPaste">Import pasted source</button></details>
 </section>
@@ -123,7 +123,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
     </div>
     <div class="song-editor-actions"><button class="primary" id="applySongEdit" type="button">Apply changes</button><button id="applyPrintSong" type="button">Apply &amp; print</button><button id="cancelSongEdit" type="button">Cancel</button><button id="restoreSongEdit" type="button">Restore imported text</button></div>
  </section>
- <p class="paper-help no-print">Drag from either the chord bank above or the CHORDS section on a page. A ghost follows your cursor; release on any white page to place a new copy. Both source diagrams remain available for unlimited copies. Shift+click a placed sticker to duplicate it; Ctrl+Shift while dragging snaps to a 5px grid. The paper boxes below are what will be printed.</p>
+ <p class="paper-help no-print">Drag from either the chord bank above or the CHORDS section on a page. A ghost follows your cursor; release on any white page to place a new copy. Both source diagrams remain available for unlimited copies. Shift+click a placed sticker to duplicate it; Ctrl+Shift while dragging snaps invisibly to a 5px grid. The paper boxes below are what will be printed.</p>
   <section id="chordSection" class="sheet-section"><h2 class="print-heading">CHORDS</h2>
     <div class="chord-manager no-print">
       <span id="chordCount" class="count" aria-live="polite">Select the diagrams you want to print</span>
@@ -150,15 +150,33 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <div id="printPage" class="paper-stack" aria-label="Printable song pages"></div>
   <aside id="stickerBoard" class="sticker-board no-print" hidden aria-label="Floating chord sticker tray">
     <div class="sticker-board-head"><strong>🎸 Sticker tray</strong><button type="button" id="closeStickerBoard" aria-label="Close sticker tray" title="Close tray">×</button></div>
-    <p>Drag onto any page · sources stay here</p>
+    <button id="addTextNote" type="button" aria-pressed="false">✎ Add text note</button>
+    <p id="trayHint">Drag onto any page · sources stay here</p>
     <div id="stickerBoardGrid" class="sticker-board-grid"></div>
   </aside>
+  <section id="noteEditor" class="note-editor no-print" hidden aria-label="Text note editing controls">
+    <div class="note-editor-heading"><strong>✎ Text note</strong><button id="closeNoteEditor" type="button" aria-label="Close note editor">×</button></div>
+    <label for="noteText">Note text</label>
+    <textarea id="noteText" rows="3" placeholder="Type your note here…" spellcheck="true"></textarea>
+    <div class="note-format-row">
+      <label>Size <select id="noteFontSize"><option value="12">12</option><option value="14">14</option><option value="16" selected>16</option><option value="18">18</option><option value="22">22</option><option value="28">28</option><option value="36">36</option></select></label>
+      <button id="noteBold" type="button" aria-pressed="false" title="Bold"><strong>B</strong></button>
+      <button id="noteItalic" type="button" aria-pressed="false" title="Italic"><em>I</em></button>
+      <label>Align <select id="noteAlign"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></label>
+    </div>
+    <div class="note-format-row">
+      <label>Paper <select id="noteBackground"><option value="#fff0ae">Yellow</option><option value="#d8edff">Blue</option><option value="#fce0eb">Pink</option><option value="#ddf5e2">Green</option><option value="#ffffff">White</option><option value="transparent">None</option></select></label>
+      <label>Ink <input id="noteColor" type="color" value="#18365f"></label>
+      <button id="doneNote" type="button">Done</button>
+    </div>
+    <p>Drag note to move · corner to resize · Shift+click to copy</p>
+  </section>
  <details class="editor no-print"><summary>Edit chord codes or select voicings</summary><p class="muted">Syntax: one chord per line, for example <code>E: 022100</code> or <code>F#m: 244222</code>. Imported fingerings and barre indicators are preserved for matching shapes.</p><textarea id="chordEditor" spellcheck="false" aria-label="Chord definitions"></textarea><button id="resetVoicings">Restore imported chord shapes</button></details>
  <p id="message" class="message no-print" aria-live="polite"></p>
  </section>
 </main>
 <footer class="no-print">Independent, open-source chord-sheet formatter. Not affiliated with the sites you import from. No song lyrics are bundled; import only material you are authorized to use.</footer>
-<link rel="stylesheet" href="layout.css?v=20261010-workflow-1">
+<link rel="stylesheet" href="layout.css?v=20261010-notes-1">
 <script src="app.js?v=20261010-workflow-1" defer></script>
-<script src="layout.js?v=20261010-workflow-1" defer></script>
+<script src="layout.js?v=20261010-notes-1" defer></script>
 </body></html>
