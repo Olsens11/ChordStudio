@@ -115,8 +115,15 @@
 /* Floating note creator, style panel and printable text stickers. */
 .sticker-board #addTextNote{width:100%;font:700 13px/1.4 system-ui,sans-serif;padding:9px 10px;margin:3px 0 9px;background:#e9f3ff;border:1px solid #86ace6;color:#174778;border-radius:7px;cursor:pointer}
 .sticker-board #addTextNote[aria-pressed="true"]{background:#173d77;color:white}
-.placing-note .paper-page,.placing-note .paper-page .paper-inside,
-.placing-note .paper-page .paper-main,.placing-note .paper-song{cursor:text!important}
+/* Custom T-in-a-dashed-box cursor: hotspot at the crosshair near (3,3). */
+.placing-note .paper-page,
+.placing-note .paper-page .paper-inside,
+.placing-note .paper-page .paper-main,
+.placing-note .paper-page .paper-main *,
+.placing-note .paper-page .paper-stickers{
+  cursor:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2236%22%20height%3D%2236%22%20viewBox%3D%220%200%2036%2036%22%3E%3Cpath%20d%3D%22M3%200v12M0%203h12%22%20stroke%3D%22%23174c9a%22%20stroke-width%3D%222%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%2210%22%20width%3D%2222%22%20height%3D%2222%22%20rx%3D%223%22%20fill%3D%22%23fff%22%20stroke%3D%22%23245eb7%22%20stroke-width%3D%222%22%20stroke-dasharray%3D%223%202%22%2F%3E%3Cpath%20d%3D%22M18%2016h11M23.5%2016v11%22%20stroke%3D%22%23174c9a%22%20stroke-width%3D%222.5%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E") 3 3, crosshair!important;
+}
+.placing-note .paper-sticker,.placing-note .paper-sticker *{cursor:default!important}
 .placing-note .paper-page{outline:2px dashed #467cc0;outline-offset:-3px}
 .paper-sticker.text-sticker{box-sizing:border-box;background:transparent;border-radius:3px;overflow:visible}
 .text-sticker .note-content,.note-ghost .note-content{position:absolute;inset:0;box-sizing:border-box;padding:6px 8px;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.2;font-family:Arial,Helvetica,sans-serif;user-select:none;pointer-events:none;border-radius:3px}
