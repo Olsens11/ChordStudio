@@ -1,47 +1,45 @@
 # ChordStudio
 
-A free, browser-based chord-diagram and print-sheet formatter for **Ultimate Guitar** chord tabs.
+An independent, browser-based **chord-diagram and song-sheet formatter**.
 
 **Repository:** https://github.com/Olsens11/ChordStudio  
-**Site after enabling GitHub Pages:** https://olsens11.github.io/ChordStudio/
+**Live site:** https://olsens11.github.io/ChordStudio/
 
-## What it does
+## Features
 
-- Imports chord tab metadata, chord changes, and song text from a page you have open on Ultimate Guitar.
-- Reads the page's `store.page.data.applicature` chord shapes; preserves stored finger numbers, fret positions, barre definitions, and original chord names.
-- Renders labeled guitar diagrams using a compact HTML Canvas renderer inspired by the print page's dimensions.
-- Prints the entire formatted song including the chord diagrams and aligned chord/lyric lines.
-- Exports the group of labeled diagrams as a PNG or copies them as a PNG for Google Docs.
-- Lets you change shapes manually with `Name: x24442`-style codes (also supports multi-digit fret numbers separated by spaces).
+- Import chord shapes, chord changes, and song text from compatible chord-tab pages.
+- Preserve fret positions, finger numbers, barre indicators, and chord names when that data is available.
+- Render labeled guitar chord diagrams using an independent HTML Canvas implementation.
+- Print a song with its chord diagrams and chord-and-lyric lines, or save to PDF.
+- Copy a PNG of the diagram collection into Google Docs, or download the PNG.
+- Edit individual shapes using `E: 022100`, `B: x24442`, or space-separated codes for higher frets.
 
-## Run it
+## Hosting
 
-This is a static site: **index.html** and **app.js**. There is no build step and no server required.
+This static site uses **index.html** and **app.js**. No build step or application server is required.
 
-### Host on GitHub Pages
+To enable GitHub Pages: **Settings → Pages → Build and deployment → Deploy from a branch**, using `main` and `/(root)`.
 
-Open **Settings → Pages → Build and deployment**, select **Deploy from a branch**, choose `main` and `/(root)`, then save. The site should appear at https://olsens11.github.io/ChordStudio/ once GitHub publishes it.
+## Importing a song
 
-### Import songs
+1. Enter a compatible chord-tab page URL and select **Open song**.
+2. Drag **Send to ChordStudio** to your Chrome bookmarks bar (show it with `Ctrl+Shift+B`). Delete and replace any earlier bookmarklet, because a saved bookmarklet doesn't automatically update.
+3. Visit the chord-tab song page or its print view, and click the bookmarklet.
+4. ChordStudio opens in a new tab with the song's available diagrams and text.
 
-1. Paste a Ultimate Guitar chord-tab URL and choose **Open song**.
-2. Drag **Send to ChordStudio** to the Chrome bookmarks bar (toggle it with `Ctrl+Shift+B`). If you bookmarked an earlier version, delete the old bookmark and drag the current one again; bookmarklets store their code when you save them.
-3. Open **either** the regular Ultimate Guitar Chords tab **or** its Print page, and click the bookmarklet. Both page layouts are supported when they contain the chord data.
-4. ChordStudio opens in another tab with the chord data and complete text.
+Some other websites restrict cross-origin browser requests, so a GitHub Pages site cannot automatically fetch their HTML from a pasted URL. The bookmarklet reads embedded data from a page you have opened. It sends title, artist, text and up to three fingerings per chord to the editor using a URL fragment, not a network API. The fragment is cleared after importing, though it may briefly appear in browser history. Browser or source-site policies may block the bookmarklet.
 
-**Why a bookmarklet?** A GitHub Pages site cannot directly read HTML at `tabs.ultimate-guitar.com` from its URL because the browser enforces cross-origin restrictions (CORS). The bookmarklet executes in the tab you already opened and transfers the page's own embedded data to ChordStudio through a URL fragment. It includes only the first three available shapes per chord, plus song text and metadata. The fragment is not sent to the GitHub Pages server and is cleared by ChordStudio after loading, though it may briefly be in browser history. Browser or site policy may block bookmarklets on some pages.
+For manual importing, use saved HTML or JSON. The current importer recognizes `.js-store[data-content]` with `applicature` objects in the song data or a nested `tab_view`. Not every tab site or page format is supported.
 
-If needed, choose **Import saved page source or paste JSON / HTML**, then import a saved Ultimate Guitar source page containing `.js-store[data-content]`.
+## Printing and Google Docs
 
-### Export
+- **Print / Save PDF**: print the sheet with chord diagrams and song text.
+- **Copy diagrams for Docs**: copy a high-resolution PNG containing chord names and diagrams, then paste into Google Docs with `Ctrl+V`.
+- **Download PNG**: save the diagrams if clipboard image access is unavailable.
 
-- **Print / Save PDF**: printable chord diagrams plus song text.
-- **Copy diagrams for Docs**: copy a single high-resolution PNG containing chord names and shapes; paste it into Google Docs with `Ctrl+V`.
-- **Download PNG**: fallback if image clipboard access is unavailable.
+## Notes
 
-## Notes and limitations
-
-- The Canvas drawing code is an independent reconstruction of the small print-diagram style; it isn't Ultimate Guitar's copyrighted JavaScript.
-- The six-character code alone does not specify exact barre placement or finger numbers. Imported `applicature` data provides those extra details. Custom shapes without matching data render fret dots, but may not show complete finger numbers or barres.
-- The first three voicings from each chord are transferred by the bookmarklet, but the editor initially chooses the first. Importing saved page JSON can load more voicings.
-- The project is not affiliated with Ultimate Guitar. No copyrighted song text is stored in this repository; song content remains on the user's device during import.
+- The drawing code is original and does not bundle external site scripts or copyrighted songs.
+- Six-character fret codes contain no finger numbers or barre markers. Imported rich chord data can supply those details; manually created shapes may omit annotations.
+- The first voicing is shown by default. Additional imported shapes are retained when available.
+- Content is formatted locally in the browser. This project is not affiliated with source websites. Respect applicable terms and only import or reproduce material you have permission to use.
