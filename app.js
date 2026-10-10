@@ -259,7 +259,7 @@ function renderDiagrams(){
   }
   $("songSection").hidden=!$("includeSong").checked||!$("songLines").textContent.trim();
   syncSongTypography();
-  schedulePageGuides();
+  window.ChordLayout?.refresh();
   if(errors.length)message(errors.join(" | "),true);
   return rendered;
 }
@@ -298,110 +298,11 @@ function syncSongTypography(){
   }
 }
 
-function paperGeometry(){
-  if($("paperSize").value==="a4"){
-    return {width:(210-24)*96/25.4,height:(297-26)*96/25.4,label:"A4"};
-  }
-  return {width:(215.9-24)*96/25.4,height:(279.4-26)*96/25.4,label:"US Letter"};
-}
-function syncPaperSize(){
-  let style=$("dynamicPaperStyles");
-  if(!style){
-    style=document.createElement("style");style.id="dynamicPaperStyles";
-    document.head.append(style);
-  }
-  style.textContent="@media print{@page{size:"+($("paperSize").value==="a4"?"A4":"letter")+";margin:13mm 12mm;}}";
-  schedulePageGuides();
-}
-function schedulePageGuides(){
-  if($("songEditorPanel").hidden||pageGuidePending)return;
-  pageGuidePending=true;
-  requestAnimationFrame(()=>{
-    pageGuidePending=false;
-    if(!$("songEditorPanel").hidden)updatePageGuides();
-  });
-}
-function updatePageGuides(){
-  const host=$("pageGuides");host.replaceChildren();
-  host.hidden=!$("showPageGuides").checked;
-  estimatedPageBreakLines=[];
-  if(host.hidden && !$("enforcePageGuides").checked){$("pageGuideSummary").textContent="Page guides hidden";return;}
-  const editor=$("songEditor"),stage=$("songEditorStage");
-  const paper=paperGeometry();
-  // Measure a print-width, off-screen copy. The title and the currently
-  // selected diagrams take space away from the first page.
-  const mirror=$("printPage").cloneNode(true);
-  mirror.removeAttribute("id");
-  mirror.classList.add("print-measure");
-  // Chrome lays out print content on an 800px canvas and scales it to the
-  // printable paper width. Match that layout before estimating page breaks.
-  const printLayoutWidth=800;
-  mirror.style.width=printLayoutWidth+"px";
-  const copy=mirror.querySelector("#songLines");
-  if(!copy)return;
-  copy.replaceChildren(...Array.from(editor.childNodes,node=>node.cloneNode(true)));
-  copy.removeAttribute("id");
-  const manager=mirror.querySelector(".chord-manager");
-  if(manager)manager.remove();
-  const section=mirror.querySelector("#chordSection");
-  const songSection=mirror.querySelector("#songSection");
-  if(section)section.hidden=$("chordSection").hidden||!rendered.length;
-  if(songSection)songSection.hidden=false;
-  document.body.append(mirror);
-  try{
-    const mr=mirror.getBoundingClientRect(),cr=copy.getBoundingClientRect();
-    const songStart=cr.top-mr.top;
-    const lines=Array.from(copy.children).map(node=>({
-      top:node.getBoundingClientRect().top-cr.top,
-      height:node.getBoundingClientRect().height
-    }));
-    const pad=parseFloat(getComputedStyle(editor).paddingTop)||0;
-    const contentHeight=Math.max(0,copy.scrollHeight,editor.scrollHeight-pad*2);
-    const printScale=Math.min(1,paper.width/printLayoutWidth);
-    const usablePrintHeight=paper.height/printScale;
-    let boundary=Math.max(0,usablePrintHeight-songStart),pageNo=2;
-    while(boundary<contentHeight && pageNo<=100){
-      // A line crossing the page boundary moves as a unit to the next page.
-      const nextIndex=lines.findIndex(line=>line.top+line.height>boundary+0.1);
-      if(nextIndex<0)break;
-      const aligned=lines[nextIndex].top;
-      if(!estimatedPageBreakLines.includes(nextIndex))estimatedPageBreakLines.push(nextIndex);
-      const guide=document.createElement("div");guide.className="page-guide";
-      guide.style.top=(pad+aligned)+"px";
-      const label=document.createElement("span");label.textContent="PAGE "+pageNo+" STARTS HERE";
-      guide.append(label);host.append(guide);
-      boundary=aligned+usablePrintHeight;
-      pageNo++;
-    }
-    const count=Math.max(1,pageNo-1);
-    $("pageGuideSummary").textContent=
-      "Est. "+count+" "+(count===1?"page":"pages")+" · "+paper.label+
-      " · "+rendered.length+" selected diagram"+(rendered.length===1?"":"s");
-    editor.style.width=paper.width+"px";
-    host.style.width=paper.width+"px";
-  }finally{mirror.remove();}
-}
+function syncPaperSize(){window.ChordLayout?.refresh();}
+function schedulePageGuides(){window.ChordLayout?.refresh();}
+function updatePageGuides(){window.ChordLayout?.refresh();}
+function matchPrintToGuides(){window.ChordLayout?.refresh();}
 
-function matchPrintToGuides(){
-  const output=$("songLines");
-  for(const line of output.children)line.classList.remove("print-page-start");
-  if(!$("enforcePageGuides").checked||!$("includeSong").checked||!output.textContent.trim())return;
-  const editor=$("songEditor");
-  const temporary=$("songEditorPanel").hidden;
-  if(temporary){
-    editor.replaceChildren(...Array.from(output.childNodes,node=>node.cloneNode(true)));
-  }
-  try{
-    // Calculate against the latest font, chosen diagrams, and paper size.
-    updatePageGuides();
-    const breaks=new Set(estimatedPageBreakLines);
-    [...output.children].forEach((line,index)=>{
-      if(breaks.has(index))line.classList.add("print-page-start");
-    });
-  }finally{
-    if(temporary)editor.replaceChildren();
-  }
-}
 function resetImportedSongNodes(){
   importedSongNodes=Array.from($("songLines").childNodes,node=>node.cloneNode(true));
 }
@@ -423,7 +324,6 @@ function openSongEditor(){
 function closeSongEditor(){
   $("songEditorPanel").hidden=true;
   $("songEditor").replaceChildren();
-  $("pageGuides").replaceChildren();
 }
 function cancelSongEditor(){
   if(editorOriginalStyle){
@@ -446,6 +346,7 @@ function applySongEdit(quiet=false){
   closeSongEditor();
   syncSongTypography();
   $("songSection").hidden=!$("includeSong").checked||!$("songLines").textContent.trim();
+  window.ChordLayout?.refresh();
   if(!quiet)message("Song changes applied. The print preview now includes your edits.");
   return true;
 }
@@ -514,6 +415,7 @@ function loadPage(data){
   $("sourceCredit").textContent="Chord tab imported for personal formatting";
   $("chordEditor").value=Object.entries(next).map(([name,v])=>name+": "+codeFrom(v[0])).join("\n");
   renderSong(page.content);
+  window.ChordLayout?.reset();
   resetDiagramHistory();
   resetImportedSongNodes();
   closeSongEditor();
@@ -560,6 +462,7 @@ async function downloadPng(){
 function setDemo(){
   catalog=structuredClone(DEMO);original=structuredClone(DEMO);page=null;
   resetDiagramHistory();
+  window.ChordLayout?.reset();
   $("chordEditor").value=Object.entries(DEMO).map(([k,v])=>k+": "+v[0].id).join("\n");
   importedSongNodes=[];
   closeSongEditor();
@@ -597,9 +500,6 @@ function init(){
   $("undoChordBtn").addEventListener("click",undoDiagramChange);
   $("redoChordBtn").addEventListener("click",redoDiagramChange);
   $("restoreAllChordsBtn").addEventListener("click",restoreAllDiagrams);
-  $("paperSize").addEventListener("change",syncPaperSize);
-  $("showPageGuides").addEventListener("change",schedulePageGuides);
-  $("enforcePageGuides").addEventListener("change",schedulePageGuides);
   $("songEditor").addEventListener("input",schedulePageGuides);
   window.addEventListener("resize",schedulePageGuides);
   $("editSongBtn").addEventListener("click",openSongEditor);
@@ -626,7 +526,7 @@ function init(){
   for(const id of ["songEditFont","songEditLeading"]){
     $(id).addEventListener("change",()=>{syncSongTypography();schedulePageGuides();});
   }
-  window.addEventListener("beforeprint",()=>{applySongEdit(true);matchPrintToGuides();});
+  window.addEventListener("beforeprint",()=>{applySongEdit(true);window.ChordLayout?.refresh();});
   $("printBtn").addEventListener("click",()=>{applySongEdit(true);window.print();});
   $("copyBtn").addEventListener("click",copyPng);
   $("downloadBtn").addEventListener("click",downloadPng);
@@ -638,6 +538,5 @@ function init(){
     $(id).addEventListener("change",renderDiagrams);
   }
   $("chordEditor").addEventListener("input",renderDiagrams);
-  syncPaperSize();
 }
 init();
