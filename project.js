@@ -170,6 +170,7 @@
   function init(){
     $("saveProjectBtn").addEventListener("click",save);
     $("openProjectBtn").addEventListener("click",()=>$("projectFile").click());
+    $("welcomeOpenProject").addEventListener("click",()=>$("projectFile").click());
     $("projectFile").addEventListener("change",async event=>{
       const file=event.target.files?.[0];event.target.value="";
       await openFile(file);
