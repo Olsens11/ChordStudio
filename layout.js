@@ -4,6 +4,8 @@
   const STICKER_W=104,STICKER_H=107;
   let stickers=[], history=[], redo=[], nextId=1, drag=null;
   let building=false;
+  let pointerDrag=null;
+  let scrollFrame=0;
   const save=()=>{history.push(stickers.map(s=>({...s,shape:structuredClone(s.shape)})));if(history.length>60)history.shift();redo=[];};
   const restore=data=>{stickers=data.map(s=>({...s,shape:structuredClone(s.shape)}));refresh();};
   const findItem=key=>(typeof rendered!=="undefined"?rendered:[]).find(item=>diagramKey(item)===key);
@@ -65,7 +67,7 @@
       const source=$("chordGrid").querySelectorAll(".chord-card");
       let copy=[...source].find(node=>node.dataset.diagramKey===key)?.cloneNode(true);
       if(!copy)continue;
-      copy.draggable=false;copy.removeAttribute("tabindex");copy.removeAttribute("title");
+      copy.draggable=false;copy.removeAttribute("tabindex");copy.title="Drag to place another copy of this chord on any page";
       copy.querySelectorAll(".diagram-remove").forEach(node=>node.remove());
       // Cloning a canvas copies its element but NOT its drawn bitmap.
       // Recreate the chord graphic so paper previews and PDFs show actual dots.
@@ -110,7 +112,7 @@
   }
   function stickerElement(record){
     const el=document.createElement("div");el.className="paper-sticker";
-    el.dataset.stickerId=record.id;el.draggable=true;el.tabIndex=0;
+    el.dataset.stickerId=record.id;el.draggable=false;el.tabIndex=0;
     el.setAttribute("aria-label","Placed "+record.name+" diagram. Drag to move; Delete to remove.");
     el.title="Drag to move · Delete to remove";
     el.style.left=record.x+"px";el.style.top=record.y+"px";
@@ -201,15 +203,172 @@
       updateUndoButtons();
     }finally{building=false;}
   }
-  function onSourceDragStart(ev){
-    const card=ev.target.closest?.("#chordGrid .chord-card");
-    if(!card)return;
-    drag={type:"library",key:card.dataset.diagramKey};
+  // Unified pointer drag: works when dragging into scrolled pages. Native
+  // HTML drag/drop is not reliable here and does not reach the drop target.
+  // Palette items are COPIED; existing placed stickers are MOVED.
+  function makeGhost(name,shape){
+    const el=document.createElement("div");
+    el.className="chord-drag-ghost";
+    el.setAttribute("aria-hidden","true");
+    const title=document.createElement("div");title.className="chord-name";
+    title.textContent=name;
+    const art=document.createElement("div");art.className="diagram-art";
+    art.append(makeDiagramCanvas(shape));
+    el.append(title,art);
+    document.body.append(el);
+    return el;
   }
-  function onDragEnd(){drag=null;clearDrops();}
+  function clearPointerFeedback(){
+    for(const el of document.querySelectorAll(".page-drop-active,.chord-drag-target")){
+      el.classList.remove("page-drop-active","chord-drag-target");
+    }
+  }
+  function itemAtPointer(x,y){
+    const target=document.elementFromPoint(x,y);
+    if(!target)return {page:null,card:null};
+    return {
+      page:target.closest(".paper-page"),
+      card:target.closest("#chordGrid .chord-card")
+    };
+  }
+  function pointToPaper(ev,inside,record){
+    const rect=inside.getBoundingClientRect(),size=pageSize();
+    const offsetX=record.type==="sticker"?record.offsetX:STICKER_W/2;
+    const offsetY=record.type==="sticker"?record.offsetY:20;
+    return {
+      x:Math.max(0,Math.min(size.innerWidth-STICKER_W,Math.round(ev.clientX-rect.left-offsetX))),
+      y:Math.max(0,Math.min(size.innerHeight-STICKER_H,Math.round(ev.clientY-rect.top-offsetY)))
+    };
+  }
+  function showPointerFeedback(){
+    clearPointerFeedback();
+    if(!pointerDrag?.started)return;
+    const target=itemAtPointer(pointerDrag.x,pointerDrag.y);
+    if(target.page){
+      target.page.classList.add("page-drop-active");
+      pointerDrag.ghost.dataset.tip="Release to "+(pointerDrag.type==="sticker"?"move":"place")+" diagram";
+    }else if(target.card && pointerDrag.type==="bank"){
+      target.card.classList.add("chord-drag-target");
+      pointerDrag.ghost.dataset.tip="Release to reorder chord bank";
+    }else{
+      pointerDrag.ghost.dataset.tip="Drag onto a white page";
+    }
+  }
+  function moveGhost(){
+    if(!pointerDrag?.ghost)return;
+    const ghost=pointerDrag.ghost;
+    ghost.style.left=pointerDrag.x+"px";
+    ghost.style.top=pointerDrag.y+"px";
+  }
+  function scrollDuringDrag(){
+    scrollFrame=0;
+    if(!pointerDrag?.started)return;
+    const margin=85,edge=window.innerHeight;
+    const y=pointerDrag.y;
+    let speed=0;
+    if(y>edge-margin)speed=Math.min(26,Math.max(3,(y-(edge-margin))*.34));
+    else if(y<margin)speed=-Math.min(26,Math.max(3,(margin-y)*.34));
+    if(speed){
+      const oldY=window.scrollY;
+      window.scrollBy(0,speed);
+      if(window.scrollY!==oldY)showPointerFeedback();
+    }
+    scrollFrame=requestAnimationFrame(scrollDuringDrag);
+  }
+  function startPointerDrag(ev){
+    if(pointerDrag||!ev.isPrimary||ev.button!==0)return;
+    if(ev.target.closest("button,input,select,textarea,a"))return;
+    const sticker=ev.target.closest(".paper-sticker");
+    const source=sticker?null:ev.target.closest("#chordGrid .chord-card,.paper-bank .chord-card");
+    if(!sticker&&!source)return;
+    let model;
+    if(sticker){
+      const id=Number(sticker.dataset.stickerId);
+      const record=stickers.find(s=>s.id===id);
+      if(!record)return;
+      const box=sticker.getBoundingClientRect();
+      model={type:"sticker",id,name:record.name,shape:record.shape,offsetX:ev.clientX-box.left,offsetY:ev.clientY-box.top};
+    }else{
+      const key=source.dataset.diagramKey;
+      const item=findItem(key);
+      if(!item)return;
+      model={type:"bank",key,name:item.name,shape:item.source};
+    }
+    pointerDrag={...model,pointerId:ev.pointerId,x:ev.clientX,y:ev.clientY,startX:ev.clientX,startY:ev.clientY,started:false,ghost:null};
+    document.addEventListener("pointermove",movePointerDrag,{capture:true,passive:false});
+    document.addEventListener("pointerup",endPointerDrag,true);
+    document.addEventListener("pointercancel",cancelPointerDrag,true);
+  }
+  function movePointerDrag(ev){
+    const state=pointerDrag;
+    if(!state||ev.pointerId!==state.pointerId)return;
+    state.x=ev.clientX;state.y=ev.clientY;
+    if(!state.started&&Math.hypot(state.x-state.startX,state.y-state.startY)<6)return;
+    ev.preventDefault();
+    if(!state.started){
+      state.started=true;
+      state.ghost=makeGhost(state.name,state.shape);
+      document.body.classList.add("chord-pointer-dragging");
+      scrollFrame=requestAnimationFrame(scrollDuringDrag);
+    }
+    moveGhost();
+    showPointerFeedback();
+  }
+  function endPointerDrag(ev){
+    const state=pointerDrag;
+    if(!state||ev.pointerId!==state.pointerId)return;
+    if(state.started){
+      ev.preventDefault();
+      const hit=itemAtPointer(ev.clientX,ev.clientY);
+      if(hit.page){
+        const inside=hit.page.querySelector(".paper-inside");
+        const pageIndex=[...$("printPage").querySelectorAll(".paper-page")].indexOf(hit.page);
+        if(inside&&pageIndex>=0){
+          const point=pointToPaper(ev,inside,state);
+          if(state.type==="sticker"){
+            const record=stickers.find(x=>x.id===state.id);
+            if(record){
+              if(ev.altKey){
+                save();
+                stickers.push({...structuredClone(record),id:nextId++,page:pageIndex,...point});
+              }else if(record.page!==pageIndex||record.x!==point.x||record.y!==point.y){
+                save();Object.assign(record,{page:pageIndex,...point});
+              }
+            }
+          }else{
+            const item=findItem(state.key);
+            if(item){
+              save();
+              stickers.push({id:nextId++,name:item.name,key:state.key,shape:structuredClone(item.source),page:pageIndex,...point});
+            }
+          }
+          message("Diagram "+(state.type==="sticker"?"position":"copy")+" saved on page "+(pageIndex+1)+".");
+          endPointerCleanup();
+          refresh();
+          return;
+        }
+      }else if(hit.card && state.type==="bank" && hit.card.dataset.diagramKey!==state.key){
+        const r=hit.card.getBoundingClientRect();
+        reorderDiagram(state.key,hit.card.dataset.diagramKey,ev.clientX>r.left+r.width/2);
+      }
+    }
+    endPointerCleanup();
+  }
+  function cancelPointerDrag(ev){
+    if(pointerDrag&&ev.pointerId===pointerDrag.pointerId)endPointerCleanup();
+  }
+  function endPointerCleanup(){
+    document.removeEventListener("pointermove",movePointerDrag,true);
+    document.removeEventListener("pointerup",endPointerDrag,true);
+    document.removeEventListener("pointercancel",cancelPointerDrag,true);
+    if(scrollFrame){cancelAnimationFrame(scrollFrame);scrollFrame=0;}
+    pointerDrag?.ghost?.remove();
+    pointerDrag=null;
+    document.body.classList.remove("chord-pointer-dragging");
+    clearPointerFeedback();
+  }
   function init(){
-    document.addEventListener("dragstart",onSourceDragStart,true);
-    document.addEventListener("dragend",onDragEnd);
+    document.addEventListener("pointerdown",startPointerDrag,true);
     $("paperSize").addEventListener("change",refresh);
     $("undoPlacement").addEventListener("click",undo);
     $("redoPlacement").addEventListener("click",redoChange);
