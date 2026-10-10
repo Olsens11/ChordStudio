@@ -67,10 +67,9 @@
 #chordGrid .chord-card{touch-action:none;cursor:grab}
 .paper-sticker{touch-action:none;cursor:grab}
 .chord-pointer-dragging,.chord-pointer-dragging *{cursor:grabbing!important;user-select:none!important}
-.chord-drag-ghost{position:fixed;z-index:99999;width:104px;min-height:106px;background:#fff;border:2px solid #3b78ce;border-radius:9px;box-shadow:0 8px 22px #1732575c;display:flex;align-items:center;flex-direction:column;transform:translate(-50%,-24%);pointer-events:none;opacity:.9}
-.chord-drag-ghost .chord-name{margin-top:3px}
+.chord-drag-ghost{position:fixed;z-index:99999;width:104px;height:107px;min-height:0;box-sizing:border-box;background:transparent;border:0;border-radius:0;box-shadow:none;outline:1px dashed #6b9ad7;outline-offset:3px;transform:none;pointer-events:none;opacity:1}
 .chord-drag-ghost .diagram-art{pointer-events:none}
-.chord-drag-ghost::after{content:attr(data-tip);position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:7px;background:#173251;color:white;font:700 11px/1.3 system-ui,sans-serif;padding:4px 7px;border-radius:4px;white-space:nowrap}
+.chord-drag-ghost::after{display:none}
 .chord-drag-target{outline:2px solid #2d6bc1;background:#d9eafe!important}
 .paper-page.page-drop-active{outline:3px dashed #2673d4;outline-offset:-5px}
 @media print{.chord-drag-ghost{display:none!important}.paper-bank .chord-card:hover{background:transparent!important;outline:0!important}}
