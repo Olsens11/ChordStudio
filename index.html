@@ -32,6 +32,18 @@ details{border-top:1px solid #e0e7ef;margin-top:16px;padding-top:12px}details su
 .chord-grid{display:grid;grid-template-columns:repeat(var(--cols,6),minmax(0,1fr));gap:13px 6px}
 .chord-card{display:flex;align-items:center;flex-direction:column;break-inside:avoid;min-width:0}.chord-name{font:700 14px/19px Arial,sans-serif;text-align:center;white-space:nowrap;min-height:24px}.chord-card canvas{width:76px;height:72px}
 .chord-code{font:10px Arial,sans-serif;color:#555;text-align:center}
+.chord-card{position:relative}
+.diagram-remove{position:absolute;top:-7px;right:5px;border:0;border-radius:50%;width:25px;height:25px;padding:0;background:#b92c2c;color:white;box-shadow:0 2px 7px #0003;opacity:0;transform:scale(.82);transition:opacity .12s,transform .12s;z-index:2;font-size:20px;line-height:24px}
+.chord-card:hover .diagram-remove,.chord-card:focus-within .diagram-remove{opacity:1;transform:scale(1)}
+.diagram-remove:hover,.diagram-remove:focus-visible{background:#921f1f;outline:2px solid #f5b1b1}
+.chord-manager{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-2px 0 14px}
+.chord-manager .count{font-size:12px;color:#637184;margin-right:auto}
+.chord-manager button{font-size:12px;padding:7px 10px}
+.chord-manager button:disabled{opacity:.35}
+.print-measure{position:absolute!important;left:-100000px!important;top:0!important;visibility:hidden!important;width:725px;max-width:none!important;min-width:0!important;padding:0!important;margin:0!important;pointer-events:none!important}
+.print-measure .chord-grid{gap:8px 3px}
+.print-measure .diagram-remove,.print-measure .chord-manager{display:none!important}
+@media(hover:none){.diagram-remove{opacity:1;transform:none;right:0}}
 .song-lines{font:var(--song-font,14px)/var(--song-leading,1.38) var(--song-family,"Roboto Mono","Courier New",monospace);white-space:pre;max-width:100%}
 .song-line{min-height:calc(1em * var(--song-leading,1.38));white-space:pre}.song-line.heading{font-weight:700;margin-top:9px}.song-chord{font-weight:800;color:#111}
 #songSection{border-top:1px solid #ddd;padding-top:18px}.credit{font:10px Arial,sans-serif;color:#666;margin-top:16px;overflow-wrap:anywhere}
@@ -42,19 +54,26 @@ details{border-top:1px solid #e0e7ef;margin-top:16px;padding-top:12px}details su
 .song-editor-toolbar label{margin:0}.song-editor-toolbar select{width:auto;min-width:115px;padding:9px}
 .song-editor-toolbar .format-buttons{display:flex;gap:4px;align-items:center}
 .song-editor-toolbar .format-buttons button{min-width:39px;padding:9px;font-size:15px}
-.song-editor-text{height:clamp(420px,58vh,720px);overflow:auto;padding:22px;background:white;border:1px solid #abbdd5;border-radius:9px;outline:none}
-.song-editor-text:focus{border-color:#3970cd;box-shadow:0 0 0 3px #a3c8ff66}
+.song-editor-stage{height:clamp(440px,65vh,790px);overflow:auto;position:relative;border:1px solid #abbdd5;border-radius:9px;background:#fff}
+.song-editor-text{height:auto;min-height:100%;overflow:visible;padding:26px 22px;background:transparent;border:0;outline:none;position:relative;z-index:1;max-width:none}
+.page-guides{position:absolute;top:0;left:0;right:0;pointer-events:none;z-index:2}
+.page-guide{position:absolute;left:3px;right:3px;border-top:2px dashed #2873bd;pointer-events:none}
+.page-guide span{position:absolute;top:-22px;left:3px;background:#dceaff;color:#23589d;border:1px solid #9ebcea;padding:3px 7px;border-radius:4px;font:700 11px/1.2 system-ui,sans-serif}
+.page-guides[hidden]{display:none}
+.page-guide-note{display:block;font-size:12px;color:#61718a;margin:-2px 0 12px}
+.song-editor-stage:focus-within{border-color:#3970cd;box-shadow:0 0 0 3px #a3c8ff66}
+.song-editor-text:focus{outline:none}
 .song-editor-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}
 .song-editor-panel[hidden]{display:none}
 .song-editor-text .song-line{min-height:calc(1em * var(--song-leading,1.38))}
 .song-editor-text .song-line.heading{margin-top:9px}
 .song-editor-panel button:focus-visible{outline:3px solid #9ec4ff;outline-offset:2px}
 footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 20px 24px}
-@media(max-width:700px){main{padding:20px 12px}.card{padding:14px}.import-row{flex-direction:column}.chord-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}#printPage{padding:14px 0}.sheet-title h1{font-size:20px}.song-lines{overflow-x:auto}.song-editor-panel{padding:12px}.song-editor-text{padding:12px;height:60vh}.tag{width:100%}}
+@media(max-width:700px){main{padding:20px 12px}.card{padding:14px}.import-row{flex-direction:column}.chord-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}#printPage{padding:14px 0}.sheet-title h1{font-size:20px}.song-lines{overflow-x:auto}.song-editor-panel{padding:12px}.song-editor-text{padding:16px 12px}.song-editor-stage{height:65vh}.tag{width:100%}}
 @media print{
- @page{margin:13mm 12mm;size:auto}
+ @page{margin:13mm 12mm;size:letter}
  :root,body{background:white!important;color:#000}
- .no-print,header,footer,.card>.topline,.options,.editor,.message,.song-editor-panel{display:none!important}
+ .no-print,header,footer,.card>.topline,.options,.editor,.message,.song-editor-panel,.diagram-remove,.chord-manager{display:none!important}
  main{max-width:none;margin:0;padding:0}.card{border:0;border-radius:0;box-shadow:none;padding:0;margin:0}
  #printPage{padding:0}#chordGrid{gap:8px 3px}.chord-grid{grid-template-columns:repeat(var(--cols,6),minmax(0,1fr))!important}
  .sheet-section{break-inside:auto}.chord-card{break-inside:avoid}.song-line{break-inside:avoid}
@@ -89,12 +108,28 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
       <label for="songEditSize">Text size<br><select id="songEditSize"><option value="10">10 px</option><option value="12">12 px</option><option value="14" selected>14 px</option><option value="16">16 px</option><option value="18">18 px</option><option value="20">20 px</option></select></label>
       <label for="songEditLeading">Line spacing<br><select id="songEditLeading"><option value="1.15">Tight</option><option value="1.38" selected>Normal</option><option value="1.6">Relaxed</option><option value="2">Double</option></select></label>
     </div>
-    <div id="songEditor" class="song-lines song-editor-text" role="textbox" aria-label="Editable song lyrics and chords" aria-multiline="true" contenteditable="true" spellcheck="false"></div>
+    <div class="song-editor-toolbar">
+      <label for="paperSize">Paper size<br><select id="paperSize"><option value="letter" selected>US Letter</option><option value="a4">A4</option></select></label>
+      <label><input type="checkbox" id="showPageGuides" checked> Show page breaks</label>
+      <span id="pageGuideSummary" class="muted" role="status"></span>
+    </div>
+    <p class="page-guide-note">Dashed lines estimate where the next printed page begins, including the title and selected chord diagrams. Check Print Preview for final pagination.</p>
+    <div class="song-editor-stage" id="songEditorStage">
+      <div id="pageGuides" class="page-guides" aria-hidden="true"></div>
+      <div id="songEditor" class="song-lines song-editor-text" role="textbox" aria-label="Editable song lyrics and chords" aria-multiline="true" contenteditable="true" spellcheck="false"></div>
+    </div>
     <div class="song-editor-actions"><button class="primary" id="applySongEdit" type="button">Apply changes</button><button id="applyPrintSong" type="button">Apply &amp; print</button><button id="cancelSongEdit" type="button">Cancel</button><button id="restoreSongEdit" type="button">Restore imported text</button></div>
  </section>
  <article id="printPage" aria-label="Printable chord and song sheet">
   <div class="sheet-title"><h1 id="songName">Chord diagram preview</h1><p id="artistName">Import a chord-tab song to populate this page</p></div>
-  <section id="chordSection" class="sheet-section"><h2 class="print-heading">CHORDS</h2><div id="chordGrid" class="chord-grid"></div></section>
+  <section id="chordSection" class="sheet-section"><h2 class="print-heading">CHORDS</h2>
+    <div class="chord-manager no-print">
+      <span id="chordCount" class="count" aria-live="polite">Select the diagrams you want to print</span>
+      <button type="button" id="undoChordBtn" disabled title="Undo last diagram change" aria-label="Undo diagram change">↶ Undo</button>
+      <button type="button" id="redoChordBtn" disabled title="Redo diagram change" aria-label="Redo diagram change">↷ Redo</button>
+      <button type="button" id="restoreAllChordsBtn" disabled>Restore all chords</button>
+    </div>
+    <div id="chordGrid" class="chord-grid"></div></section>
   <section id="songSection" class="sheet-section" hidden><h2 class="print-heading">SONG</h2><div id="songLines" class="song-lines"></div></section>
   <div class="credit" id="sourceCredit"></div>
  </article>
@@ -103,5 +138,5 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  </section>
 </main>
 <footer class="no-print">Independent, open-source chord-sheet formatter. Not affiliated with the sites you import from. No song lyrics are bundled; import only material you are authorized to use.</footer>
-<script src="app.js?v=20261010-editor-ready-2" defer></script>
+<script src="app.js?v=20261010-page-layout-1" defer></script>
 </body></html>
