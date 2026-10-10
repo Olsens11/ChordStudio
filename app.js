@@ -18,6 +18,7 @@ let draggingChordKey = null;
 let chordUndo = [];
 let chordRedo = [];
 let pageGuidePending = false;
+let estimatedPageBreakLines = [];
 const message = (s,err=false)=>{$("message").textContent=s;$("message").classList.toggle("error",err);};
 function parseCode(code){
   const s=String(code).trim(),compact=/^[0-9xX]{6}$/.test(s);
@@ -323,7 +324,8 @@ function schedulePageGuides(){
 function updatePageGuides(){
   const host=$("pageGuides");host.replaceChildren();
   host.hidden=!$("showPageGuides").checked;
-  if(host.hidden){$("pageGuideSummary").textContent="Page guides hidden";return;}
+  estimatedPageBreakLines=[];
+  if(host.hidden && !$("enforcePageGuides").checked){$("pageGuideSummary").textContent="Page guides hidden";return;}
   const editor=$("songEditor"),stage=$("songEditorStage");
   const paper=paperGeometry();
   // Measure a print-width, off-screen copy. The title and the currently
@@ -360,8 +362,10 @@ function updatePageGuides(){
     let boundary=Math.max(0,usablePrintHeight-songStart),pageNo=2;
     while(boundary<contentHeight && pageNo<=100){
       // A line crossing the page boundary moves as a unit to the next page.
-      const next=lines.find(line=>line.top+line.height>boundary+0.1);
-      const aligned=next?next.top:boundary;
+      const nextIndex=lines.findIndex(line=>line.top+line.height>boundary+0.1);
+      if(nextIndex<0)break;
+      const aligned=lines[nextIndex].top;
+      if(!estimatedPageBreakLines.includes(nextIndex))estimatedPageBreakLines.push(nextIndex);
       const guide=document.createElement("div");guide.className="page-guide";
       guide.style.top=(pad+aligned)+"px";
       const label=document.createElement("span");label.textContent="PAGE "+pageNo+" STARTS HERE";
@@ -378,6 +382,26 @@ function updatePageGuides(){
   }finally{mirror.remove();}
 }
 
+function matchPrintToGuides(){
+  const output=$("songLines");
+  for(const line of output.children)line.classList.remove("print-page-start");
+  if(!$("enforcePageGuides").checked||!$("includeSong").checked||!output.textContent.trim())return;
+  const editor=$("songEditor");
+  const temporary=$("songEditorPanel").hidden;
+  if(temporary){
+    editor.replaceChildren(...Array.from(output.childNodes,node=>node.cloneNode(true)));
+  }
+  try{
+    // Calculate against the latest font, chosen diagrams, and paper size.
+    updatePageGuides();
+    const breaks=new Set(estimatedPageBreakLines);
+    [...output.children].forEach((line,index)=>{
+      if(breaks.has(index))line.classList.add("print-page-start");
+    });
+  }finally{
+    if(temporary)editor.replaceChildren();
+  }
+}
 function resetImportedSongNodes(){
   importedSongNodes=Array.from($("songLines").childNodes,node=>node.cloneNode(true));
 }
@@ -575,6 +599,7 @@ function init(){
   $("restoreAllChordsBtn").addEventListener("click",restoreAllDiagrams);
   $("paperSize").addEventListener("change",syncPaperSize);
   $("showPageGuides").addEventListener("change",schedulePageGuides);
+  $("enforcePageGuides").addEventListener("change",schedulePageGuides);
   $("songEditor").addEventListener("input",schedulePageGuides);
   window.addEventListener("resize",schedulePageGuides);
   $("editSongBtn").addEventListener("click",openSongEditor);
@@ -601,7 +626,7 @@ function init(){
   for(const id of ["songEditFont","songEditLeading"]){
     $(id).addEventListener("change",()=>{syncSongTypography();schedulePageGuides();});
   }
-  window.addEventListener("beforeprint",()=>applySongEdit(true));
+  window.addEventListener("beforeprint",()=>{applySongEdit(true);matchPrintToGuides();});
   $("printBtn").addEventListener("click",()=>{applySongEdit(true);window.print();});
   $("copyBtn").addEventListener("click",copyPng);
   $("downloadBtn").addEventListener("click",downloadPng);
