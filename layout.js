@@ -108,9 +108,11 @@
     const pages=[...$("printPage").querySelectorAll(".paper-page")];
     const inside=page.querySelector(".paper-inside"),rect=inside.getBoundingClientRect(),size=pageSize();
     const w=190,h=85;
-    const x=Math.max(0,Math.min(size.innerWidth-w,Math.round(ev.clientX-rect.left)));
-    const y=Math.max(0,Math.min(size.innerHeight-h,Math.round(ev.clientY-rect.top)));
-    const note={id:nextId++,type:"text",name:"Note",text:"",page:pages.indexOf(page),x,y,w,h,scale:1,
+    const pageIndex=pages.indexOf(page);
+    const point=pageGridPoint(ev.clientX-rect.left,ev.clientY-rect.top,
+      w,h,inside,pageIndex,null,ev.ctrlKey&&ev.shiftKey);
+    const {x,y}=point;
+    const note={id:nextId++,type:"text",name:"Note",text:"",page:pageIndex,x,y,w,h,scale:1,
       fontSize:16,bold:false,italic:false,align:"left",color:"#181818",background:"transparent"};
     save();stickers.push(note);
     setNotePlacementMode(false);refresh();
@@ -389,15 +391,41 @@
     if(!snap)return Math.round(Math.max(0,Math.min(max,v)));
     return Math.max(0,Math.min(Math.floor(max/SNAP)*SNAP,Math.round(v/SNAP)*SNAP));
   }
+  function pageGridPoint(x,y,w,h,inside,pageIndex,excludeId,snap){
+    const size=pageSize();
+    const maxX=Math.max(0,size.innerWidth-w),maxY=Math.max(0,size.innerHeight-h);
+    // Every page and every sticker uses the SAME (0,0) origin at .paper-inside,
+    // not an offset from whichever sticker was first grabbed.
+    const axis=(raw,max,coordinate,length)=>{
+      const basic=snapValue(raw,max,snap);
+      if(!snap)return basic;
+      const nearby=[];
+      for(const other of stickers){
+        if(other.page!==pageIndex||other.id===excludeId)continue;
+        const edge=coordinate==="x"?other.x:other.y;
+        const far=edge+(coordinate==="x"?stickerWidth(other):stickerHeight(other))-length;
+        for(const candidate of [edge,far]){
+          if(candidate<0||candidate>max)continue;
+          if(Math.abs(candidate-raw)<=9)nearby.push(candidate);
+        }
+      }
+      // Magnetic alignment takes precedence within 9px, including stickers
+      // placed before the snap feature was enabled and off the 5px grid.
+      return nearby.length
+        ?nearby.sort((a,b)=>Math.abs(a-raw)-Math.abs(b-raw))[0]
+        :basic;
+    };
+    return {x:axis(x,maxX,"x",w),y:axis(y,maxY,"y",h)};
+  }
   function pointToPaper(ev,inside,record){
-    const rect=inside.getBoundingClientRect(),size=pageSize();
+    const rect=inside.getBoundingClientRect();
+    const pageIndex=[...$("printPage").querySelectorAll(".paper-page")].indexOf(inside.closest(".paper-page"));
     const offsetX=record.type==="sticker"?record.offsetX:STICKER_W/2;
     const offsetY=record.type==="sticker"?record.offsetY:20;
-    const snap=!!(record.ctrlKey&&record.shiftKey);
-    return {
-      x:snapValue(ev.clientX-rect.left-offsetX,size.innerWidth-stickerWidth(record),snap),
-      y:snapValue(ev.clientY-rect.top-offsetY,size.innerHeight-stickerHeight(record),snap)
-    };
+    return pageGridPoint(ev.clientX-rect.left-offsetX,ev.clientY-rect.top-offsetY,
+      stickerWidth(record),stickerHeight(record),inside,pageIndex,
+      record.type==="sticker"?record.id:null,
+      !!(record.ctrlKey&&record.shiftKey));
   }
   function beginSortPreview(state){
     if(state.type!=="bank"||state.bankOrigin!=="top")return;
