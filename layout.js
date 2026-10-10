@@ -6,7 +6,7 @@
   let building=false;
   const save=()=>{history.push(stickers.map(s=>({...s,shape:structuredClone(s.shape)})));if(history.length>60)history.shift();redo=[];};
   const restore=data=>{stickers=data.map(s=>({...s,shape:structuredClone(s.shape)}));refresh();};
-  const findItem=key=>(window.rendered||[]).find(item=>diagramKey(item)===key);
+  const findItem=key=>(typeof rendered!=="undefined"?rendered:[]).find(item=>diagramKey(item)===key);
   function updateUndoButtons(){
     $("undoPlacement").disabled=!history.length;
     $("redoPlacement").disabled=!redo.length;
@@ -54,13 +54,13 @@
     el.append(name,artist);return el;
   }
   function renderBank(main,pages,current,size){
-    if(!$("includeChords").checked||!window.rendered?.length)return current;
+    if(!$("includeChords").checked||!rendered.length)return current;
     let title=sectionLabel("CHORDS");
     current.main.append(title);
     let bank=document.createElement("div");bank.className="paper-bank";
     bank.style.setProperty("--cols",Number($("columns").value));
     current.main.append(bank);
-    for(const item of window.rendered){
+    for(const item of rendered){
       const key=diagramKey(item);
       const source=$("chordGrid").querySelectorAll(".chord-card");
       let copy=[...source].find(node=>node.dataset.diagramKey===key)?.cloneNode(true);
@@ -154,7 +154,7 @@
   function clearDrops(){for(const el of $("printPage").querySelectorAll(".page-drop-active"))el.classList.remove("page-drop-active");}
   function attachDrop(page,inside,index){
     page.addEventListener("dragover",ev=>{
-      if(!drag && !window.draggingChordKey)return;
+      if(!drag && !draggingChordKey)return;
       ev.preventDefault();ev.dataTransfer.dropEffect=drag?.type==="sticker"?"move":"copy";
       clearDrops();page.classList.add("page-drop-active");
     });
@@ -171,13 +171,13 @@
         const record=stickers.find(s=>s.id===drag.id);
         if(record){save();Object.assign(record,{page:index,x,y});refresh();}
       }else{
-        const key=drag?.key||window.draggingChordKey||ev.dataTransfer?.getData("text/plain");
+        const key=drag?.key||draggingChordKey||ev.dataTransfer?.getData("text/plain");
         const item=findItem(key);
         if(item){
           save();stickers.push({id:nextId++,name:item.name,key,shape:structuredClone(item.source),page:index,x,y});refresh();
         }
       }
-      drag=null;window.draggingChordKey=null;
+      drag=null;draggingChordKey=null;
     });
   }
   function refresh(){
