@@ -157,10 +157,12 @@ function clearChordDropIndicators(){
   }
 }
 function setupChordDrag(card,key,name){
-  card.draggable=true;
+  // The page compositor handles dragging with a ghost image; native HTML
+  // drag events cannot reliably scroll down into the printable page boxes.
+  card.draggable=false;
   card.tabIndex=0;
-  card.title="Drag to reorder diagrams";
-  card.setAttribute("aria-label",name+" diagram. Drag to reorder, or Alt+arrow keys to move.");
+  card.title="Drag to reorder here or drag onto a page to place a copy";
+  card.setAttribute("aria-label",name+" diagram. Drag to a page to place a copy; reorder here or use Alt+arrow keys.");
   card.addEventListener("dragstart",event=>{
     draggingChordKey=key;
     event.dataTransfer.effectAllowed="move";
