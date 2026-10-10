@@ -12,6 +12,10 @@ let page = null;
 let rendered = [];
 let importedSongNodes = [];
 let editorOriginalStyle = null;
+let removedDiagrams = new Set();
+let chordUndo = [];
+let chordRedo = [];
+let pageGuidePending = false;
 const message = (s,err=false)=>{$("message").textContent=s;$("message").classList.toggle("error",err);};
 function parseCode(code){
   const s=String(code).trim(),compact=/^[0-9xX]{6}$/.test(s);
@@ -87,28 +91,83 @@ function makeDiagramCanvas(v){
   canvas.style.width="76px";canvas.style.height="72px";
   const ctx=canvas.getContext("2d");ctx.scale(2,2);drawDiagram(ctx,v);return canvas;
 }
+function diagramKey(item){
+  return item.name+"\u001f"+item.arr.join(",");
+}
+function resetDiagramHistory(){
+  removedDiagrams=new Set();chordUndo=[];chordRedo=[];
+}
+function captureDiagramChange(){
+  chordUndo.push([...removedDiagrams]);
+  if(chordUndo.length>80)chordUndo.shift();
+  chordRedo=[];
+}
+function removeDiagram(key,name){
+  if(removedDiagrams.has(key))return;
+  captureDiagramChange();
+  removedDiagrams.add(key);
+  renderDiagrams();
+  message(name+" diagram removed from print and PNG export. Its song chords remain.");
+}
+function undoDiagramChange(){
+  if(!chordUndo.length)return;
+  chordRedo.push([...removedDiagrams]);
+  removedDiagrams=new Set(chordUndo.pop());
+  renderDiagrams();
+  message("Diagram selection undone.");
+}
+function redoDiagramChange(){
+  if(!chordRedo.length)return;
+  chordUndo.push([...removedDiagrams]);
+  removedDiagrams=new Set(chordRedo.pop());
+  renderDiagrams();
+  message("Diagram selection redone.");
+}
+function restoreAllDiagrams(){
+  if(!removedDiagrams.size)return;
+  captureDiagramChange();
+  removedDiagrams.clear();
+  renderDiagrams();
+  message("All chord diagrams restored.");
+}
 function renderDiagrams(){
   const {items,errors}=parseEditor();
   const grid=$("chordGrid");grid.replaceChildren();rendered=[];
   for(const item of items){
+    const key=diagramKey(item);
+    if(removedDiagrams.has(key))continue;
     const source=getShape(item.name,item.arr);
     const card=document.createElement("div");card.className="chord-card";
     const heading=document.createElement("div");heading.className="chord-name";heading.textContent=item.name;
     const canvas=makeDiagramCanvas(source);
     canvas.setAttribute("role","img");canvas.setAttribute("aria-label",item.name+" guitar chord "+item.arr.join(" "));
-    card.append(heading,canvas);
+    const remove=document.createElement("button");remove.type="button";
+    remove.className="diagram-remove no-print";remove.textContent="×";
+    remove.title="Click to remove "+item.name+" diagram from printout";
+    remove.setAttribute("aria-label","Remove "+item.name+" diagram from printout");
+    remove.addEventListener("click",()=>removeDiagram(key,item.name));
+    card.append(heading,canvas,remove);
     if($("showCodes").checked){
-      const code=document.createElement("div");code.className="chord-code";code.textContent=item.arr.map(n=>n<0?"x":String(n)).join(" ");card.append(code);
+      const code=document.createElement("div");code.className="chord-code";
+      code.textContent=item.arr.map(n=>n<0?"x":String(n)).join(" ");
+      card.append(code);
     }
     grid.append(card);rendered.push({name:item.name,arr:item.arr,source,canvas});
   }
-  const cols=Number($("columns").value);
-  grid.style.setProperty("--cols",cols);
+  grid.style.setProperty("--cols",Number($("columns").value));
   $("chordSection").hidden=!$("includeChords").checked||items.length===0;
-  // Print visibility follows the actually displayed document, not the original import metadata.
-  // The editor must not depend on whether the importer supplied a nonempty content field.
+  $("chordCount").textContent=rendered.length+" of "+items.length+" diagrams included";
+  $("undoChordBtn").disabled=!chordUndo.length;
+  $("redoChordBtn").disabled=!chordRedo.length;
+  $("restoreAllChordsBtn").disabled=!removedDiagrams.size;
+  if(items.length&&!rendered.length){
+    const empty=document.createElement("p");empty.className="muted no-print";
+    empty.textContent="All diagrams removed. Use Restore all chords above to bring them back.";
+    grid.append(empty);
+  }
   $("songSection").hidden=!$("includeSong").checked||!$("songLines").textContent.trim();
   syncSongTypography();
+  schedulePageGuides();
   if(errors.length)message(errors.join(" | "),true);
   return rendered;
 }
@@ -256,6 +315,7 @@ function loadPage(data){
   $("sourceCredit").textContent="Chord tab imported for personal formatting";
   $("chordEditor").value=Object.entries(next).map(([name,v])=>name+": "+codeFrom(v[0])).join("\n");
   renderSong(page.content);
+  resetDiagramHistory();
   resetImportedSongNodes();
   closeSongEditor();
   $("status").textContent=Object.keys(next).length+" chord names loaded"+(page.content?" with song text.":".");
@@ -300,6 +360,7 @@ async function downloadPng(){
 }
 function setDemo(){
   catalog=structuredClone(DEMO);original=structuredClone(DEMO);page=null;
+  resetDiagramHistory();
   $("chordEditor").value=Object.entries(DEMO).map(([k,v])=>k+": "+v[0].id).join("\n");
   importedSongNodes=[];
   closeSongEditor();
@@ -334,6 +395,9 @@ function init(){
     catch(e){message("File import failed: "+e.message,true);}
     e.target.value="";
   });
+  $("undoChordBtn").addEventListener("click",undoDiagramChange);
+  $("redoChordBtn").addEventListener("click",redoDiagramChange);
+  $("restoreAllChordsBtn").addEventListener("click",restoreAllDiagrams);
   $("editSongBtn").addEventListener("click",openSongEditor);
   $("applySongEdit").addEventListener("click",()=>applySongEdit());
   $("applyPrintSong").addEventListener("click",()=>{applySongEdit(true);window.print();});
