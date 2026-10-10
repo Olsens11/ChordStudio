@@ -25,8 +25,8 @@ Open **Settings → Pages → Build and deployment**, select **Deploy from a bra
 ### Import songs
 
 1. Paste a Ultimate Guitar chord-tab URL and choose **Open song**.
-2. Drag **Send to ChordStudio** to the Chrome bookmarks bar (toggle it with `Ctrl+Shift+B`).
-3. Open the chosen Ultimate Guitar tab or its print view, and click the bookmarklet.
+2. Drag **Send to ChordStudio** to the Chrome bookmarks bar (toggle it with `Ctrl+Shift+B`). If you bookmarked an earlier version, delete the old bookmark and drag the current one again; bookmarklets store their code when you save them.
+3. Open **either** the regular Ultimate Guitar Chords tab **or** its Print page, and click the bookmarklet. Both page layouts are supported when they contain the chord data.
 4. ChordStudio opens in another tab with the chord data and complete text.
 
 **Why a bookmarklet?** A GitHub Pages site cannot directly read HTML at `tabs.ultimate-guitar.com` from its URL because the browser enforces cross-origin restrictions (CORS). The bookmarklet executes in the tab you already opened and transfers the page's own embedded data to ChordStudio through a URL fragment. It includes only the first three available shapes per chord, plus song text and metadata. The fragment is not sent to the GitHub Pages server and is cleared by ChordStudio after loading, though it may briefly be in browser history. Browser or site policy may block bookmarklets on some pages.
