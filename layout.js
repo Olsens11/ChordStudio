@@ -142,8 +142,8 @@
   function stickerElement(record){
     const el=document.createElement("div");el.className="paper-sticker";
     el.dataset.stickerId=record.id;el.draggable=false;el.tabIndex=0;
-    el.setAttribute("aria-label","Placed "+record.name+" diagram. Drag to move; drag the lower-right corner to resize; Delete to remove.");
-    el.title="Drag to move · resize at bottom-right corner · Delete to remove";
+    el.setAttribute("aria-label","Placed "+record.name+" diagram. Shift click to duplicate, drag to move, or drag the lower-right corner to resize.");
+    el.title="Drag to move · Shift+click copies · Ctrl+Shift snaps to 5px grid · corner resizes";
     el.style.left=record.x+"px";el.style.top=record.y+"px";
     el.style.width=stickerWidth(record)+"px";el.style.height=stickerHeight(record)+"px";
     const inner=document.createElement("div");inner.className="sticker-inner";
