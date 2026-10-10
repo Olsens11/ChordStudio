@@ -54,8 +54,9 @@ Printing via Ctrl+P while the editor is open also applies the current edits. Cha
 
 - Open **Edit song text** to adjust your song in a large editor. Dashed blue lines mark **estimated** starts of new printed pages.
 - Choose **US Letter** or **A4** paper and toggle page-break guides on or off. Estimates account for the title, currently selected diagrams, font size and line spacing; your browser's actual print preview is the final authority.
-- Hover over a chord diagram for the **× Remove** button. This removes only that diagram from the print sheet and PNG exports, not chord annotations within song lyrics.
-- Use **Undo**, **Redo**, and **Restore all chords** above the diagrams to refine your selection. Keeping just one unusual fingering is supported.
+- Hover over a chord diagram to reveal a small **×** at its upper-right corner. The × removes that diagram from the print sheet and PNG exports, while song-text chord annotations stay unchanged.
+- **Drag any chord diagram** to rearrange the order. The move cursor and drop indicator show where it will land; you can also focus a diagram and use **Alt + arrow keys** to move it. The new order applies to both printing and PNG exports.
+- Use **Undo**, **Redo**, and **Restore all chords** above the diagrams. Undo/Redo covers both removal and reordering; Restore all returns removed diagrams without losing your preferred order.
 - Removing/restoring diagrams refreshes the page-break estimate so you can revise the song layout accordingly.
 
 ## Notes
