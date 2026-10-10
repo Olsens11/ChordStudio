@@ -9,9 +9,35 @@
   let building=false;
   let pointerDrag=null;
   let scrollFrame=0;
+  const SNAP=5;
   const save=()=>{history.push(stickers.map(s=>({...s,shape:structuredClone(s.shape)})));if(history.length>60)history.shift();redo=[];};
   const restore=data=>{stickers=data.map(s=>({...s,shape:structuredClone(s.shape)}));refresh();};
   const findItem=key=>(typeof rendered!=="undefined"?rendered:[]).find(item=>diagramKey(item)===key);
+  function renderStickerTray(){
+    const grid=$("stickerBoardGrid");
+    if(!grid)return;
+    grid.replaceChildren();
+    for(const item of rendered){
+      const card=document.createElement("div");card.className="chord-card";
+      card.dataset.diagramKey=diagramKey(item);
+      card.title="Drag onto a page to place another "+item.name+" diagram";
+      card.setAttribute("aria-label","Drag "+item.name+" onto a page");
+      const name=document.createElement("div");name.className="chord-name";name.textContent=item.name;
+      const art=document.createElement("div");art.className="diagram-art";
+      art.append(makeDiagramCanvas(item.source));
+      card.append(name,art);
+      grid.append(card);
+    }
+    if(!rendered.length){
+      const note=document.createElement("p");note.textContent="No diagrams selected.";
+      grid.append(note);
+    }
+  }
+  function toggleStickerTray(open){
+    $("stickerBoard").hidden=!open;
+    $("toggleStickerBoard").setAttribute("aria-expanded",String(open));
+    $("toggleStickerBoard").textContent=open?"🎸 Hide sticker tray":"🎸 Open sticker tray";
+  }
   function updateUndoButtons(){
     $("undoPlacement").disabled=!history.length;
     $("redoPlacement").disabled=!redo.length;
@@ -212,6 +238,7 @@
       current=renderBank(current.main,pages,current,pageSize());
       renderSong(current,pages);
       decorate(pages);
+      renderStickerTray();
       $("pageCount").textContent=pages.length+" printable "+(pages.length===1?"page":"pages");
       updateUndoButtons();
     }finally{building=false;}
@@ -240,8 +267,8 @@
     return el;
   }
   function clearPointerFeedback(){
-    for(const el of document.querySelectorAll(".page-drop-active,.chord-drag-target")){
-      el.classList.remove("page-drop-active","chord-drag-target");
+    for(const el of document.querySelectorAll(".page-drop-active,.chord-drag-target,.grid-snap-active")){
+      el.classList.remove("page-drop-active","chord-drag-target","grid-snap-active");
     }
   }
   function itemAtPointer(x,y){
@@ -249,29 +276,101 @@
     if(!target)return {page:null,card:null};
     return {
       page:target.closest(".paper-page"),
-      card:target.closest("#chordGrid .chord-card")
+      card:target.closest("#chordGrid .chord-card"),
+      bankGrid:target.closest("#chordGrid"),
+      trayCard:target.closest("#stickerBoardGrid .chord-card")
     };
+  }
+  function snapValue(v,max,snap){
+    if(!snap)return Math.round(Math.max(0,Math.min(max,v)));
+    return Math.max(0,Math.min(Math.floor(max/SNAP)*SNAP,Math.round(v/SNAP)*SNAP));
   }
   function pointToPaper(ev,inside,record){
     const rect=inside.getBoundingClientRect(),size=pageSize();
     const scale=record.type==="sticker"?stickerScale(record):1;
     const offsetX=record.type==="sticker"?record.offsetX:STICKER_W/2;
     const offsetY=record.type==="sticker"?record.offsetY:20;
+    const snap=!!(record.ctrlKey&&record.shiftKey);
     return {
-      x:Math.max(0,Math.min(size.innerWidth-STICKER_W*scale,Math.round(ev.clientX-rect.left-offsetX))),
-      y:Math.max(0,Math.min(size.innerHeight-STICKER_H*scale,Math.round(ev.clientY-rect.top-offsetY)))
+      x:snapValue(ev.clientX-rect.left-offsetX,size.innerWidth-STICKER_W*scale,snap),
+      y:snapValue(ev.clientY-rect.top-offsetY,size.innerHeight-STICKER_H*scale,snap)
     };
+  }
+  function beginSortPreview(state){
+    if(state.type!=="bank"||state.bankOrigin!=="top")return;
+    const source=state.source;
+    if(!source?.isConnected)return;
+    const slot=document.createElement("div");
+    slot.className="chord-reorder-slot";
+    source.replaceWith(slot);
+    $("chordGrid").classList.add("chord-bank-sorting");
+    state.sort={source,slot};
+  }
+  function updateSortPreview(state){
+    const sort=state.sort;if(!sort)return;
+    const grid=$("chordGrid"),bounds=grid.getBoundingClientRect();
+    if(state.x<bounds.left-8||state.x>bounds.right+8||state.y<bounds.top-12||state.y>bounds.bottom+12)return;
+    const cards=[...grid.querySelectorAll(".chord-card")];
+    if(!cards.length)return;
+    let closest=null,min=Infinity;
+    for(const card of cards){
+      const r=card.getBoundingClientRect();
+      const dx=state.x-(r.left+r.width/2),dy=state.y-(r.top+r.height/2);
+      const d=dx*dx+dy*dy*2;
+      if(d<min){min=d;closest=card;}
+    }
+    if(!closest)return;
+    const r=closest.getBoundingClientRect();
+    const after=state.x>r.left+r.width/2;
+    if((after?closest.nextElementSibling===sort.slot:closest.previousElementSibling===sort.slot))return;
+    const before=new Map(cards.map(card=>[card,card.getBoundingClientRect()]));
+    if(after)closest.after(sort.slot);else closest.before(sort.slot);
+    if(window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+    for(const card of cards){
+      const a=before.get(card),b=card.getBoundingClientRect();
+      const dx=a.left-b.left,dy=a.top-b.top;
+      if(Math.abs(dx)>.5||Math.abs(dy)>.5){
+        card.getAnimations().forEach(animation=>animation.cancel());
+        card.animate([{transform:"translate("+dx+"px,"+dy+"px)"},{transform:"translate(0,0)"}],
+          {duration:170,easing:"ease-out"});
+      }
+    }
+  }
+  function sortDropDestination(state){
+    const slot=state.sort?.slot;
+    if(!slot||!slot.parentElement)return null;
+    return slot.nextElementSibling?.dataset.diagramKey
+      ?{key:slot.nextElementSibling.dataset.diagramKey,after:false}
+      :slot.previousElementSibling?.dataset.diagramKey
+      ?{key:slot.previousElementSibling.dataset.diagramKey,after:true}:null;
+  }
+  function restoreSortPreview(state){
+    if(!state?.sort)return;
+    const {slot,source}=state.sort,grid=$("chordGrid");
+    if(slot.isConnected)slot.replaceWith(source);
+    // A preview is only DOM movement; restore the committed order if canceled
+    // or if the same bank item was instead dropped onto a paper page.
+    const cards=new Map([...grid.querySelectorAll(".chord-card")].map(card=>[card.dataset.diagramKey,card]));
+    for(const item of rendered){
+      const card=cards.get(diagramKey(item));
+      if(card)grid.append(card);
+    }
+    grid.classList.remove("chord-bank-sorting");
   }
   function showPointerFeedback(){
     clearPointerFeedback();
     if(!pointerDrag?.started)return;
     const target=itemAtPointer(pointerDrag.x,pointerDrag.y);
+    pointerDrag.ghost.classList.toggle("grid-snapping",!!(pointerDrag.ctrlKey&&pointerDrag.shiftKey));
     if(target.page){
       target.page.classList.add("page-drop-active");
-      pointerDrag.ghost.dataset.tip="Release to "+(pointerDrag.type==="sticker"?"move":"place")+" diagram";
+      if(pointerDrag.ctrlKey&&pointerDrag.shiftKey)target.page.classList.add("grid-snap-active");
+      pointerDrag.ghost.dataset.tip=pointerDrag.ctrlKey&&pointerDrag.shiftKey
+        ?"5px grid":pointerDrag.type==="sticker"?"Move sticker":"Place copy";
+    }else if(target.bankGrid && pointerDrag.sort){
+      updateSortPreview(pointerDrag);
     }else if(target.card && pointerDrag.type==="bank"){
       target.card.classList.add("chord-drag-target");
-      pointerDrag.ghost.dataset.tip="Release to reorder chord bank";
     }else{
       pointerDrag.ghost.dataset.tip="Drag onto a white page";
     }
@@ -357,7 +456,7 @@
     if(handle){beginResize(ev,handle);return;}
     if(ev.target.closest("button,input,select,textarea,a"))return;
     const sticker=ev.target.closest(".paper-sticker");
-    const source=sticker?null:ev.target.closest("#chordGrid .chord-card,.paper-bank .chord-card");
+    const source=sticker?null:ev.target.closest("#chordGrid .chord-card,.paper-bank .chord-card,#stickerBoardGrid .chord-card");
     if(!sticker&&!source)return;
     let model;
     if(sticker){
@@ -371,9 +470,9 @@
       const key=source.dataset.diagramKey;
       const item=findItem(key);
       if(!item)return;
-      model={type:"bank",key,name:item.name,shape:item.source};
+      model={type:"bank",key,name:item.name,shape:item.source,bankOrigin:source.closest("#chordGrid")?"top":source.closest("#stickerBoardGrid")?"tray":"paper",source};
     }
-    pointerDrag={...model,pointerId:ev.pointerId,x:ev.clientX,y:ev.clientY,startX:ev.clientX,startY:ev.clientY,started:false,ghost:null};
+    pointerDrag={...model,pointerId:ev.pointerId,x:ev.clientX,y:ev.clientY,startX:ev.clientX,startY:ev.clientY,ctrlKey:ev.ctrlKey,shiftKey:ev.shiftKey,started:false,ghost:null};
     document.addEventListener("pointermove",movePointerDrag,{capture:true,passive:false});
     document.addEventListener("pointerup",endPointerDrag,true);
     document.addEventListener("pointercancel",cancelPointerDrag,true);
@@ -382,12 +481,13 @@
     const state=pointerDrag;
     if(!state||ev.pointerId!==state.pointerId)return;
     if(state.type==="resize"){moveResize(ev,state);return;}
-    state.x=ev.clientX;state.y=ev.clientY;
+    state.x=ev.clientX;state.y=ev.clientY;state.ctrlKey=ev.ctrlKey;state.shiftKey=ev.shiftKey;
     if(!state.started&&Math.hypot(state.x-state.startX,state.y-state.startY)<6)return;
     ev.preventDefault();
     if(!state.started){
       state.started=true;
       state.ghost=makeGhost(state);
+      beginSortPreview(state);
       document.body.classList.add("chord-pointer-dragging");
       scrollFrame=requestAnimationFrame(scrollDuringDrag);
     }
@@ -413,6 +513,7 @@
       ev.preventDefault();
       const hit=itemAtPointer(ev.clientX,ev.clientY);
       if(hit.page){
+        state.ctrlKey=ev.ctrlKey;state.shiftKey=ev.shiftKey;
         const inside=hit.page.querySelector(".paper-inside");
         const pageIndex=[...$("printPage").querySelectorAll(".paper-page")].indexOf(hit.page);
         if(inside&&pageIndex>=0){
@@ -420,7 +521,7 @@
           if(state.type==="sticker"){
             const record=stickers.find(x=>x.id===state.id);
             if(record){
-              if(ev.altKey){
+              if(ev.altKey||(ev.shiftKey&&!ev.ctrlKey)){
                 save();
                 stickers.push({...structuredClone(record),id:nextId++,page:pageIndex,...point});
               }else if(record.page!==pageIndex||record.x!==point.x||record.y!==point.y){
@@ -439,9 +540,25 @@
           refresh();
           return;
         }
+      }else if(state.sort && hit.bankGrid){
+        const destination=sortDropDestination(state);
+        endPointerCleanup();
+        if(destination)reorderDiagram(state.key,destination.key,destination.after);
+        return;
       }else if(hit.card && state.type==="bank" && hit.card.dataset.diagramKey!==state.key){
         const r=hit.card.getBoundingClientRect();
         reorderDiagram(state.key,hit.card.dataset.diagramKey,ev.clientX>r.left+r.width/2);
+      }
+    }else if(state.type==="sticker"&&ev.shiftKey){
+      const record=stickers.find(item=>item.id===state.id);
+      if(record){
+        const size=pageSize(),gap=15;
+        const x=Math.max(0,Math.min(size.innerWidth-stickerWidth(record),record.x+gap));
+        const y=Math.max(0,Math.min(size.innerHeight-stickerHeight(record),record.y+gap));
+        save();
+        stickers.push({...structuredClone(record),id:nextId++,x,y});
+        message("Duplicate "+record.name+" placed at the same size.");
+        endPointerCleanup();refresh();return;
       }
     }
     endPointerCleanup();
@@ -461,6 +578,7 @@
     document.removeEventListener("pointercancel",cancelPointerDrag,true);
     if(scrollFrame){cancelAnimationFrame(scrollFrame);scrollFrame=0;}
     pointerDrag?.ghost?.remove();
+    restoreSortPreview(pointerDrag);
     pointerDrag=null;
     document.body.classList.remove("chord-pointer-dragging","chord-resizing");
     clearPointerFeedback();
@@ -471,6 +589,18 @@
     $("undoPlacement").addEventListener("click",undo);
     $("redoPlacement").addEventListener("click",redoChange);
     $("clearPlacements").addEventListener("click",clearAll);
+    $("toggleStickerBoard").addEventListener("click",()=>toggleStickerTray($("stickerBoard").hidden));
+    $("closeStickerBoard").addEventListener("click",()=>toggleStickerTray(false));
+    document.addEventListener("keydown",ev=>{
+      if(!pointerDrag?.started||!["Control","Shift"].includes(ev.key))return;
+      pointerDrag.ctrlKey=ev.ctrlKey;pointerDrag.shiftKey=ev.shiftKey;
+      moveGhost();showPointerFeedback();
+    });
+    document.addEventListener("keyup",ev=>{
+      if(!pointerDrag?.started||!["Control","Shift"].includes(ev.key))return;
+      pointerDrag.ctrlKey=ev.ctrlKey;pointerDrag.shiftKey=ev.shiftKey;
+      moveGhost();showPointerFeedback();
+    });
     refresh();
   }
   window.ChordLayout={init,refresh,reset,undo,redo:redoChange,clearAll,stickers:()=>structuredClone(stickers)};
