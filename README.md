@@ -47,7 +47,7 @@ Printing via Ctrl+P while the editor is open also applies the current edits. Cha
 ## Printing and Google Docs
 
 - **Print / Save PDF**: print the sheet with chord diagrams and your edited song text.
-- **Copy diagrams for Docs**: copy a high-resolution PNG containing chord names and diagrams, then paste into Google Docs with `Ctrl+V`.
+- **Copy diagrams to clipboard**: copy a high-resolution PNG containing chord names and diagrams, then paste into Google Docs with `Ctrl+V`.
 - **Download PNG**: save the diagrams if clipboard image access is unavailable.
 
 ## Page layout and chord selection
