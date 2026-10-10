@@ -88,6 +88,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  .no-selected-diagrams{display:none!important}.song-line.print-page-start{break-before:page!important;page-break-before:always!important}.sheet-section{break-inside:auto}.chord-card{break-inside:avoid}.song-line{break-inside:avoid}
  .song-lines{font-size:var(--song-font,10px)!important;overflow:visible}.sheet-title{break-after:avoid}
 }
+.import-followup{margin-top:9px;background:#fff;border-style:dashed}.original-source{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#f7faff;border:1px solid #dae5f5;border-radius:10px;padding:10px 13px;margin:14px 0 2px}.original-source[hidden]{display:none!important}.original-source label{margin:0 0 2px}.original-source .hint{margin:0}.original-source .import-row{margin:0;flex:1;min-width:230px}.original-source input{font-size:12px}.original-source button{white-space:nowrap}.actions input[type=file]{display:none}
 </style>
 </head>
 <body>
@@ -95,16 +96,16 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
 <main>
 <section class="intro no-print"><p class="eyebrow">From chord data to a print-ready sheet</p><h1>Import a song. Get the chords and the whole song, ready to print.</h1><p>Preserve chord placement and the original fingering diagrams. Export the diagrams as one image for Google Docs or print an entire formatted song sheet.</p></section>
 <section class="card no-print">
- <h2>1. Import a chord-tab song</h2>
- <label for="songUrl">Song page URL</label>
- <div class="import-row"><input type="url" id="songUrl" spellcheck="false" placeholder="https://example.com/song-page"><button class="primary" id="openSource">Open song ↗</button></div>
- <div class="how"><span class="step">2</span><div><strong>Drag this yellow link onto your Chrome bookmarks bar</strong><div class="hint">Press Ctrl+Shift+B to show it. On a compatible chord-tab page, click the bookmark to import.</div></div><a href="#" id="bookmarklet" class="bookmarklet" title="Drag to your bookmarks bar to import a song">↗ ChordStudio</a></div>
- <p class="muted">Import happens in your browser. The bookmarklet reads the page you're already viewing; GitHub Pages cannot directly fetch pages that restrict cross-origin browser requests. You can also import saved HTML or JSON below.</p>
+ <h2>Bring a song into ChordStudio</h2>
+ <div class="how"><span class="step">1</span><div><strong>Add ChordStudio to your bookmarks bar</strong><div class="hint">Show bookmarks with Ctrl+Shift+B, then drag this yellow link onto the bar. This is a one-time setup.</div></div><a href="#" id="bookmarklet" class="bookmarklet" title="Drag to your bookmarks bar to import a song">↗ ChordStudio</a></div>
+ <div class="how import-followup"><span class="step">2</span><div><strong>Open a song's chord page normally</strong><div class="hint">When the page has loaded, click your ↗ ChordStudio bookmark. The song will open here, ready to customize.</div></div></div>
+ <p class="muted">Import happens in your browser. The bookmarklet reads the page you're viewing; this site cannot directly fetch pages that restrict cross-origin requests. You can also import saved HTML or JSON below, or reopen a ChordStudio project.</p>
  <details class="alt"><summary>Import saved page source or paste JSON / HTML</summary><div class="fileinput"><input id="sourceFile" type="file" accept=".html,.htm,.json,.txt,text/html,text/plain,application/json"></div><textarea id="sourcePaste" placeholder="Paste the page source (containing js-store), or JSON with store.page.data"></textarea><button id="importPaste">Import pasted source</button></details>
 </section>
 <section class="card" id="workspace">
  <div class="topline no-print"><div><p class="eyebrow">Output preview</p><h2 id="previewTitle">Chord and song sheet</h2><p class="muted" id="status">Example chord diagrams are loaded. Import a song to generate the complete sheet.</p></div>
- <div class="actions"><button id="editSongBtn">Edit song text</button><button class="primary" id="printBtn">Print / Save PDF</button><button id="copyBtn">Copy diagrams to clipboard</button><button id="downloadBtn">Download PNG</button></div></div>
+ <div class="actions"><button id="openProjectBtn" type="button" title="Open a previously saved ChordStudio project">Open Project</button><input id="projectFile" type="file" accept=".chordstudio,.json,application/json" hidden><button id="saveProjectBtn" type="button" title="Save your work to a local project file">Save Project</button><button id="editSongBtn">Edit song text</button><button class="primary" id="printBtn">Print / Save PDF</button><button id="copyBtn">Copy diagrams to clipboard</button><button id="downloadBtn">Download PNG</button></div></div>
+ <div id="originalSourceRow" class="original-source no-print" hidden><div><label for="songUrl">Original song page</label><p class="hint">Saved with your project so you can return to the source.</p></div><div class="import-row"><input type="url" id="songUrl" readonly spellcheck="false" aria-label="Original imported song URL"><button type="button" id="openSource">Open original ↗</button></div></div>
  <div class="options no-print"><label><input id="includeChords" type="checkbox" checked> Print chord bank</label><label><input id="includeSong" type="checkbox" checked> Song text</label><label><input id="showCodes" type="checkbox"> Fret codes</label>
  <label>Columns <select id="columns"><option>4</option><option>5</option><option selected>6</option><option>8</option><option>10</option></select></label>
  <label>Song font <select id="fontSize"><option value="10">Compact</option><option value="12">Medium</option><option value="14" selected>Normal (14 px)</option><option value="16">Large</option><option value="18">Extra large</option><option value="20">Poster</option></select></label></div>
@@ -177,6 +178,6 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
 </main>
 <footer class="no-print">Independent, open-source chord-sheet formatter. Not affiliated with the sites you import from. No song lyrics are bundled; import only material you are authorized to use.</footer>
 <link rel="stylesheet" href="layout.css?v=20261010-scalednotes-2">
-<script src="app.js?v=20261010-workflow-1" defer></script>
+<script src="app.js?v=20261010-projects-1" defer></script>
 <script src="layout.js?v=20261010-scalednotes-2" defer></script>
 </body></html>
