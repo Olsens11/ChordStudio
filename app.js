@@ -134,7 +134,7 @@ function normalizeSource(text){
   if(value.startsWith("<")){
     const doc=new DOMParser().parseFromString(value,"text/html");
     const el=doc.querySelector(".js-store[data-content]");
-    if(!el)throw Error("No Ultimate Guitar .js-store[data-content] element found.");
+    if(!el)throw Error("No compatible song data element found in this HTML.");
     root=JSON.parse(el.getAttribute("data-content"));
   }else root=JSON.parse(value);
   // The regular tab and print page expose the same chord data in different places.
@@ -170,7 +170,7 @@ function loadPage(data){
     source:data.source||$("songUrl").value};
   $("songName").textContent=page.title;
   $("artistName").textContent=page.artist;
-  $("sourceCredit").textContent="Imported from Ultimate Guitar"+(page.source?" · "+page.source:"");
+  $("sourceCredit").textContent="Chord tab imported for personal formatting";
   $("chordEditor").value=Object.entries(next).map(([name,v])=>name+": "+codeFrom(v[0])).join("\n");
   renderSong(page.content);
   $("status").textContent=Object.keys(next).length+" chord names loaded"+(page.content?" with song text.":".");
@@ -220,22 +220,22 @@ function setDemo(){
 }
 function makeBookmarklet(){
   const target=new URL("./",location.href).href;
-  const code='(function(){try{var e=document.querySelector(".js-store[data-content]");if(!e)throw Error("No Ultimate Guitar song data found. Open a Chords tab.");var r=JSON.parse(e.getAttribute("data-content"));var p=r&&r.store&&r.store.page&&r.store.page.data;if(!p)throw Error("Cannot find tab page data.");var v=p.tab_view||{},t=p.tab||{};var a=v.applicature||p.applicature;if(!a||!Object.keys(a).length)throw Error("No guitar chord definitions on this page.");var c=(v.wiki_tab&&v.wiki_tab.content)||p.content||"";var shapes={};Object.keys(a).forEach(function(k){shapes[k]=a[k].slice(0,3).map(function(f){return{id:f.id,frets:f.frets,fingers:f.fingers,fret:f.fret,listCapos:f.listCapos}})});var d={song_name:p.song_name||t.song_name||"Untitled song",artist_name:p.artist_name||t.artist_name||"",content:c,applicature:shapes,source:location.href};var w=window.open('+JSON.stringify(target)+'+"#ug="+encodeURIComponent(JSON.stringify(d)),"_blank");if(!w)throw Error("Popup blocked. Allow popups and try again.");}catch(x){alert("ChordStudio: "+x.message)}})();';
+  const code='(function(){try{var e=document.querySelector(".js-store[data-content]");if(!e)throw Error("No compatible chord data found. Open a chord-tab song.");var r=JSON.parse(e.getAttribute("data-content"));var p=r&&r.store&&r.store.page&&r.store.page.data;if(!p)throw Error("Cannot find tab page data.");var v=p.tab_view||{},t=p.tab||{};var a=v.applicature||p.applicature;if(!a||!Object.keys(a).length)throw Error("No guitar chord definitions on this page.");var c=(v.wiki_tab&&v.wiki_tab.content)||p.content||"";var shapes={};Object.keys(a).forEach(function(k){shapes[k]=a[k].slice(0,3).map(function(f){return{id:f.id,frets:f.frets,fingers:f.fingers,fret:f.fret,listCapos:f.listCapos}})});var d={song_name:p.song_name||t.song_name||"Untitled song",artist_name:p.artist_name||t.artist_name||"",content:c,applicature:shapes,source:location.href};var w=window.open('+JSON.stringify(target)+'+"#import="+encodeURIComponent(JSON.stringify(d)),"_blank");if(!w)throw Error("Popup blocked. Allow popups and try again.");}catch(x){alert("ChordStudio: "+x.message)}})();';
   $("bookmarklet").href="javascript:"+code;
 }
 function init(){
   makeBookmarklet();
-  const incoming=location.hash.startsWith("#ug=")?location.hash.slice(4):null;
+  const incoming=location.hash.startsWith("#import=")?location.hash.slice(8):location.hash.startsWith("#ug=")?location.hash.slice(4):null;
   if(incoming){
     history.replaceState(null,"",location.pathname+location.search);
     try{loadPage(normalizeSource(decodeURIComponent(incoming)));}
     catch(e){setDemo();message("Import failed: "+e.message,true);}
   }else setDemo();
-  $("openUg").addEventListener("click",()=>{
+  $("openSource").addEventListener("click",()=>{
     try{const url=new URL($("songUrl").value);
-      if(url.protocol!=="https:"||!/(^|\.)ultimate-guitar\.com$/i.test(url.hostname))throw Error("Enter an HTTPS Ultimate Guitar URL.");
+      if(url.protocol!=="https:")throw Error("Enter an HTTPS song-page URL.");
       window.open(url.href,"_blank","noopener");
-      message("On the opened Ultimate Guitar page, click the Send to ChordStudio bookmark.");
+      message("On the opened chord page, click the Send to ChordStudio bookmark.");
     }catch(e){message(e.message,true);}
   });
   $("importPaste").addEventListener("click",()=>{
