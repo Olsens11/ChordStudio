@@ -104,7 +104,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
 <section class="card" id="workspace">
  <div class="topline no-print"><div><p class="eyebrow">Output preview</p><h2 id="previewTitle">Chord and song sheet</h2><p class="muted" id="status">Example chord diagrams are loaded. Import a song to generate the complete sheet.</p></div>
  <div class="actions"><button id="editSongBtn">Edit song text</button><button class="primary" id="printBtn">Print / Save PDF</button><button id="copyBtn">Copy diagrams to clipboard</button><button id="downloadBtn">Download PNG</button></div></div>
- <div class="options no-print"><label><input id="includeChords" type="checkbox" checked> Diagrams</label><label><input id="includeSong" type="checkbox" checked> Song text</label><label><input id="showCodes" type="checkbox"> Fret codes</label>
+ <div class="options no-print"><label><input id="includeChords" type="checkbox" checked> Print chord bank</label><label><input id="includeSong" type="checkbox" checked> Song text</label><label><input id="showCodes" type="checkbox"> Fret codes</label>
  <label>Columns <select id="columns"><option>4</option><option>5</option><option selected>6</option><option>8</option><option>10</option></select></label>
  <label>Song font <select id="fontSize"><option value="10">Compact</option><option value="12">Medium</option><option value="14" selected>Normal (14 px)</option><option value="16">Large</option><option value="18">Extra large</option><option value="20">Poster</option></select></label></div>
  <section id="songEditorPanel" class="song-editor-panel no-print" hidden aria-label="Song text editing controls">
@@ -116,21 +116,13 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
       <label for="songEditSize">Text size<br><select id="songEditSize"><option value="10">10 px</option><option value="12">12 px</option><option value="14" selected>14 px</option><option value="16">16 px</option><option value="18">18 px</option><option value="20">20 px</option></select></label>
       <label for="songEditLeading">Line spacing<br><select id="songEditLeading"><option value="1.15">Tight</option><option value="1.38" selected>Normal</option><option value="1.6">Relaxed</option><option value="2">Double</option></select></label>
     </div>
-    <div class="song-editor-toolbar">
-      <label for="paperSize">Paper size<br><select id="paperSize"><option value="letter" selected>US Letter</option><option value="a4">A4</option></select></label>
-      <label><input type="checkbox" id="showPageGuides" checked> Show page breaks</label>
-      <label><input type="checkbox" id="enforcePageGuides" checked> Print at guide lines</label>
-      <span id="pageGuideSummary" class="muted" role="status"></span>
-    </div>
-    <p class="page-guide-note">Dashed lines show planned page boundaries, including the title and selected chord diagrams. With “Print at guide lines” enabled, the printout will use these breaks; Chrome print settings must use the same paper size.</p>
+    <p class="muted">Apply edits to refresh the printable pages below. Page boundaries now come from the actual paper boxes, so separate estimated line guides are no longer needed.</p>
     <div class="song-editor-stage" id="songEditorStage">
-      <div id="pageGuides" class="page-guides" aria-hidden="true"></div>
       <div id="songEditor" class="song-lines song-editor-text" role="textbox" aria-label="Editable song lyrics and chords" aria-multiline="true" contenteditable="true" spellcheck="false"></div>
     </div>
     <div class="song-editor-actions"><button class="primary" id="applySongEdit" type="button">Apply changes</button><button id="applyPrintSong" type="button">Apply &amp; print</button><button id="cancelSongEdit" type="button">Cancel</button><button id="restoreSongEdit" type="button">Restore imported text</button></div>
  </section>
- <article id="printPage" aria-label="Printable chord and song sheet">
-  <div class="sheet-title"><h1 id="songName">Chord diagram preview</h1><p id="artistName">Import a chord-tab song to populate this page</p></div>
+ <p class="paper-help no-print">The chord bank is your palette. Drag a diagram onto any sheet to place a movable copy. Placed diagrams float over the text, so position them in the available whitespace. The paper boxes below are exactly what will be printed.</p>
   <section id="chordSection" class="sheet-section"><h2 class="print-heading">CHORDS</h2>
     <div class="chord-manager no-print">
       <span id="chordCount" class="count" aria-live="polite">Select the diagrams you want to print</span>
@@ -139,13 +131,27 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
       <button type="button" id="restoreAllChordsBtn" disabled>Restore all chords</button>
     </div>
     <div id="chordGrid" class="chord-grid"></div></section>
+
+ <div class="layout-toolbar no-print">
+   <label for="paperSize">Paper <select id="paperSize"><option value="letter" selected>US Letter</option><option value="a4">A4</option></select></label>
+   <button id="undoPlacement" type="button" disabled>↶ Undo placement</button>
+   <button id="redoPlacement" type="button" disabled>↷ Redo placement</button>
+   <button id="clearPlacements" type="button" disabled>Clear placed diagrams</button>
+   <span id="layoutStatus" class="layout-status"></span>
+   <span id="pageCount" class="layout-status"></span>
+ </div>
+ <div id="sourceStore" aria-hidden="true">
+  <div class="sheet-title"><h1 id="songName">Chord diagram preview</h1><p id="artistName">Import a chord-tab song to populate this page</p></div>
   <section id="songSection" class="sheet-section" hidden><h2 class="print-heading">SONG</h2><div id="songLines" class="song-lines"></div></section>
-  <div class="credit" id="sourceCredit"></div>
- </article>
+  <div id="sourceCredit"></div>
+ </div>
+ <div id="printPage" class="paper-stack" aria-label="Printable song pages"></div>
  <details class="editor no-print"><summary>Edit chord codes or select voicings</summary><p class="muted">Syntax: one chord per line, for example <code>E: 022100</code> or <code>F#m: 244222</code>. Imported fingerings and barre indicators are preserved for matching shapes.</p><textarea id="chordEditor" spellcheck="false" aria-label="Chord definitions"></textarea><button id="resetVoicings">Restore imported chord shapes</button></details>
  <p id="message" class="message no-print" aria-live="polite"></p>
  </section>
 </main>
 <footer class="no-print">Independent, open-source chord-sheet formatter. Not affiliated with the sites you import from. No song lyrics are bundled; import only material you are authorized to use.</footer>
-<script src="app.js?v=20261010-guides-locked-1" defer></script>
+<link rel="stylesheet" href="layout.css?v=20261010-1">
+<script src="app.js?v=20261010-paged-preview-1" defer></script>
+<script src="layout.js?v=20261010-1" defer></script>
 </body></html>
