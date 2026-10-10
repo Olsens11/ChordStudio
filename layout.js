@@ -3,8 +3,8 @@
   const $=id=>document.getElementById(id);
   const STICKER_W=104,STICKER_H=107,MIN_SCALE=.4,MAX_SCALE=3.5;
   const stickerScale=record=>Math.max(MIN_SCALE,Number(record.scale)||1);
-  const stickerWidth=record=>(record.type==="text"||record.noteType==="text")?(record.w||190):STICKER_W*stickerScale(record);
-  const stickerHeight=record=>(record.type==="text"||record.noteType==="text")?(record.h||85):STICKER_H*stickerScale(record);
+  const stickerWidth=record=>(record.type==="text"||record.noteType==="text")?(record.w||190)*stickerScale(record):STICKER_W*stickerScale(record);
+  const stickerHeight=record=>(record.type==="text"||record.noteType==="text")?(record.h||85)*stickerScale(record):STICKER_H*stickerScale(record);
   const NOTE_MIN_W=85,NOTE_MIN_H=36;
   let placingNote=false,activeNoteId=null,noteTextHistorySaved=false;
   let stickers=[], history=[], redo=[], nextId=1, drag=null;
@@ -77,14 +77,14 @@
     $("noteBold").setAttribute("aria-pressed",String(!!record.bold));
     $("noteItalic").setAttribute("aria-pressed",String(!!record.italic));
     $("noteAlign").value=record.align||"left";
-    $("noteBackground").value=record.background||"#fff0ae";
-    $("noteColor").value=record.color||"#18365f";
+    $("noteBackground").value=record.background??"transparent";
+    $("noteColor").value=record.color||"#181818";
     positionNoteEditor();
     if(focus)$("noteText").focus({preventScroll:true});
   }
   function noteStyle(content,record){
-    content.style.color=record.color||"#18365f";
-    content.style.background=record.background||"#fff0ae";
+    content.style.color=record.color||"#181818";
+    content.style.background=record.background??"transparent";
     content.style.fontSize=(record.fontSize||16)+"px";
     content.style.fontWeight=record.bold?"700":"400";
     content.style.fontStyle=record.italic?"italic":"normal";
@@ -110,8 +110,8 @@
     const w=190,h=85;
     const x=Math.max(0,Math.min(size.innerWidth-w,Math.round(ev.clientX-rect.left)));
     const y=Math.max(0,Math.min(size.innerHeight-h,Math.round(ev.clientY-rect.top)));
-    const note={id:nextId++,type:"text",name:"Note",text:"",page:pages.indexOf(page),x,y,w,h,
-      fontSize:16,bold:false,italic:false,align:"left",color:"#18365f",background:"#fff0ae"};
+    const note={id:nextId++,type:"text",name:"Note",text:"",page:pages.indexOf(page),x,y,w,h,scale:1,
+      fontSize:16,bold:false,italic:false,align:"left",color:"#181818",background:"transparent"};
     save();stickers.push(note);
     setNotePlacementMode(false);refresh();
     openNoteEditor(note.id,{focus:true});
@@ -228,9 +228,13 @@
     el.style.left=record.x+"px";el.style.top=record.y+"px";
     el.style.width=stickerWidth(record)+"px";el.style.height=stickerHeight(record)+"px";
     if(isText){
+      const inner=document.createElement("div");inner.className="note-inner";
+      inner.style.width=(record.w||190)+"px";
+      inner.style.height=(record.h||85)+"px";
+      inner.style.transform="scale("+stickerScale(record)+")";
       const content=document.createElement("div");content.className="note-content";
       content.textContent=record.text||"";
-      noteStyle(content,record);el.append(content);
+      noteStyle(content,record);inner.append(content);el.append(inner);
       el.addEventListener("click",ev=>{
         if(!ev.shiftKey&&!ev.ctrlKey&&!ev.altKey&&ev.target.closest(".paper-sticker")===el){
           openNoteEditor(record.id);
@@ -278,8 +282,10 @@
     stickers.forEach(record=>{
       while(record.page>=pages.length)pages.push(freshPage(pages.length+1));
       if(record.type==="text"){
-        record.w=Math.max(NOTE_MIN_W,Math.min(record.w||190,size.innerWidth));
-        record.h=Math.max(NOTE_MIN_H,Math.min(record.h||85,size.innerHeight));
+        record.w=Math.max(NOTE_MIN_W,record.w||190);
+        record.h=Math.max(NOTE_MIN_H,record.h||85);
+        const maxFit=Math.min(MAX_SCALE,size.innerWidth/record.w,size.innerHeight/record.h);
+        record.scale=Math.max(.2,Math.min(stickerScale(record),maxFit));
       }else{
         const maxFit=Math.max(MIN_SCALE,Math.min(MAX_SCALE,size.innerWidth/STICKER_W,size.innerHeight/STICKER_H));
         record.scale=Math.min(stickerScale(record),maxFit);
@@ -347,9 +353,13 @@
     el.style.width=stickerWidth(state)+"px";
     el.style.height=stickerHeight(state)+"px";
     if(state.noteType==="text"){
+      const inner=document.createElement("div");inner.className="note-inner";
+      inner.style.width=(state.w||190)+"px";
+      inner.style.height=(state.h||85)+"px";
+      inner.style.transform="scale("+stickerScale(state)+")";
       const content=document.createElement("div");content.className="note-content";
       content.textContent=state.text||"";noteStyle(content,state);
-      el.append(content);
+      inner.append(content);el.append(inner);
     }else{
       const inner=document.createElement("div");inner.className="sticker-inner";
       inner.style.transform="scale("+stickerScale(state)+")";
@@ -532,12 +542,22 @@
     if(!record)return;
     ev.preventDefault();
     if(state.isText){
+      // Scale the entire fixed-size note, including all glyphs and line breaks.
+      // CSS transforms keep editable vector text sharp in the PDF.
       const size=pageSize();
-      const w=Math.max(NOTE_MIN_W,Math.min(size.innerWidth-record.x,Math.round(state.initialW+ev.clientX-state.startX)));
-      const h=Math.max(NOTE_MIN_H,Math.min(size.innerHeight-record.y,Math.round(state.initialH+ev.clientY-state.startY)));
-      if(w===record.w&&h===record.h)return;
-      state.started=true;record.w=w;record.h=h;
-      state.element.style.width=w+"px";state.element.style.height=h+"px";
+      const baseW=record.w||190,baseH=record.h||85;
+      const dx=(ev.clientX-state.startX)/baseW;
+      const dy=(ev.clientY-state.startY)/baseH;
+      const delta=Math.abs(dx)>=Math.abs(dy)?dx:dy;
+      const maxFit=Math.min(MAX_SCALE,(size.innerWidth-record.x)/baseW,
+        (size.innerHeight-record.y)/baseH);
+      const minFit=Math.min(MIN_SCALE,maxFit);
+      const next=Math.max(minFit,Math.min(maxFit,Math.round((state.initialScale+delta)*1000)/1000));
+      if(Math.abs(next-stickerScale(record))<.001)return;
+      state.started=true;record.scale=next;
+      state.element.style.width=stickerWidth(record)+"px";
+      state.element.style.height=stickerHeight(record)+"px";
+      state.element.querySelector(".note-inner").style.transform="scale("+next+")";
       state.element.classList.add("resizing");
       return;
     }
@@ -608,7 +628,7 @@
     if(state.type==="resize"){
       ev.preventDefault();
       const record=stickers.find(item=>item.id===state.id);
-      if(record&&(state.isText?(record.w!==state.initialW||record.h!==state.initialH):Math.abs(stickerScale(record)-state.initialScale)>.001)){
+      if(record&&Math.abs(stickerScale(record)-state.initialScale)>.001){
         // One history entry per completed resize gesture, NOT per pointer move.
         history.push(state.before);
         if(history.length>60)history.shift();
@@ -675,7 +695,7 @@
     if(!pointerDrag||ev.pointerId!==pointerDrag.pointerId)return;
     if(pointerDrag.type==="resize"){
       const record=stickers.find(item=>item.id===pointerDrag.id);
-      if(record){if(pointerDrag.isText){record.w=pointerDrag.initialW;record.h=pointerDrag.initialH;}else record.scale=pointerDrag.initialScale;}
+      if(record)record.scale=pointerDrag.initialScale;
       endPointerCleanup();refresh();return;
     }
     endPointerCleanup();
