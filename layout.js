@@ -103,7 +103,7 @@
   function clickToPlaceNote(ev){
     if(!placingNote||ev.button!==0)return;
     const page=ev.target.closest(".paper-page");
-    if(!page||ev.target.closest(".paper-sticker,.paper-bank"))return;
+    if(!page||ev.target.closest(".paper-sticker"))return;
     ev.preventDefault();ev.stopPropagation();
     const pages=[...$("printPage").querySelectorAll(".paper-page")];
     const inside=page.querySelector(".paper-inside"),rect=inside.getBoundingClientRect(),size=pageSize();
