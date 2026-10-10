@@ -31,8 +31,11 @@
         throw Error("Project contains invalid formatted text.");
       const div=document.createElement("div");div.className="song-line";
       if(entry.heading)div.classList.add("heading");
-      const parsed=new DOMParser().parseFromString(entry.html,"text/html");
-      for(const child of parsed.body.childNodes){
+      // Parse as an HTML fragment. Parsing a whole HTML document discards
+      // leading spaces before the first span, breaking chord alignment.
+      const template=document.createElement("template");
+      template.innerHTML=entry.html;
+      for(const child of template.content.childNodes){
         const copy=safeChild(child);if(copy)div.append(copy);
       }
       result.push(div);
