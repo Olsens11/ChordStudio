@@ -41,7 +41,7 @@
 @media(hover:none){.sticker-delete{opacity:1}}
 @media(max-width:900px){.paper-stack{align-items:flex-start;padding:14px}.paper-wrapper{margin:auto}}
 @media print{
- @page{size:letter;margin:0}
+ /* @page is set dynamically from the paper selector. */
  html,body,main,#workspace{margin:0!important;padding:0!important;width:auto!important;max-width:none!important;min-width:0!important;background:#fff!important;border:0!important;box-shadow:none!important}
  #workspace>.topline,#workspace>.options,#workspace>#chordSection,#workspace>.editor,#workspace>.message,#workspace>.song-editor-panel,.layout-toolbar,.paper-help,header,footer,.intro,.paper-label,.no-print{display:none!important}
  #printPage{display:block!important;padding:0!important;margin:0!important;background:white!important;overflow:visible!important;gap:0!important;border:0!important;border-radius:0!important}
