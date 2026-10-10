@@ -32,7 +32,7 @@ details{border-top:1px solid #e0e7ef;margin-top:16px;padding-top:12px}details su
 .chord-grid{display:grid;grid-template-columns:repeat(var(--cols,6),minmax(0,1fr));gap:13px 6px}
 .chord-card{display:flex;align-items:center;flex-direction:column;break-inside:avoid;min-width:0}.chord-name{font:700 14px/19px Arial,sans-serif;text-align:center;white-space:nowrap;min-height:24px}.chord-card canvas{width:76px;height:72px}
 .chord-code{font:10px Arial,sans-serif;color:#555;text-align:center}
-.song-lines{font:var(--song-font,10px)/var(--song-leading,1.38) var(--song-family,"Roboto Mono","Courier New",monospace);white-space:pre;max-width:100%}
+.song-lines{font:var(--song-font,14px)/var(--song-leading,1.38) var(--song-family,"Roboto Mono","Courier New",monospace);white-space:pre;max-width:100%}
 .song-line{min-height:calc(1em * var(--song-leading,1.38));white-space:pre}.song-line.heading{font-weight:700;margin-top:9px}.song-chord{font-weight:800;color:#111}
 #songSection{border-top:1px solid #ddd;padding-top:18px}.credit{font:10px Arial,sans-serif;color:#666;margin-top:16px;overflow-wrap:anywhere}
 #chordEditor{min-height:120px;margin:10px 0 8px}.message{min-height:22px;font-size:12px}
@@ -79,14 +79,14 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <div class="actions"><button id="editSongBtn">Edit song text</button><button class="primary" id="printBtn">Print / Save PDF</button><button id="copyBtn">Copy diagrams for Docs</button><button id="downloadBtn">Download PNG</button></div></div>
  <div class="options no-print"><label><input id="includeChords" type="checkbox" checked> Diagrams</label><label><input id="includeSong" type="checkbox" checked> Song text</label><label><input id="showCodes" type="checkbox"> Fret codes</label>
  <label>Columns <select id="columns"><option>4</option><option>5</option><option selected>6</option><option>8</option><option>10</option></select></label>
- <label>Song font <select id="fontSize"><option value="9">Compact</option><option value="10" selected>Normal</option><option value="12">Large</option><option value="14">Extra large</option><option value="16">Poster</option></select></label></div>
+ <label>Song font <select id="fontSize"><option value="10">Compact</option><option value="12">Medium</option><option value="14" selected>Normal (14 px)</option><option value="16">Large</option><option value="18">Extra large</option><option value="20">Poster</option></select></label></div>
  <section id="songEditorPanel" class="song-editor-panel no-print" hidden aria-label="Song text editing controls">
     <h3>Edit song text</h3>
     <p class="muted">Click anywhere in the text to make changes. Select text and use B, I, or U to format it. A monospaced font preserves the spacing between chords and lyrics.</p>
     <div class="song-editor-toolbar" role="toolbar" aria-label="Song formatting options">
       <div class="format-buttons"><button type="button" data-song-format="bold" aria-label="Bold selection" title="Bold (Ctrl+B)"><strong>B</strong></button><button type="button" data-song-format="italic" aria-label="Italic selection" title="Italic (Ctrl+I)"><em>I</em></button><button type="button" data-song-format="underline" aria-label="Underline selection" title="Underline (Ctrl+U)"><u>U</u></button></div>
       <label for="songEditFont">Font<br><select id="songEditFont"><option value='"Roboto Mono","Courier New",monospace'>Original monospace</option><option value='"Courier New",monospace'>Courier New</option><option value='Consolas,"Courier New",monospace'>Consolas</option><option value='"Lucida Console",monospace'>Lucida Console</option></select></label>
-      <label for="songEditSize">Text size<br><select id="songEditSize"><option value="9">9 px</option><option value="10" selected>10 px</option><option value="12">12 px</option><option value="14">14 px</option><option value="16">16 px</option></select></label>
+      <label for="songEditSize">Text size<br><select id="songEditSize"><option value="10">10 px</option><option value="12">12 px</option><option value="14" selected>14 px</option><option value="16">16 px</option><option value="18">18 px</option><option value="20">20 px</option></select></label>
       <label for="songEditLeading">Line spacing<br><select id="songEditLeading"><option value="1.15">Tight</option><option value="1.38" selected>Normal</option><option value="1.6">Relaxed</option><option value="2">Double</option></select></label>
     </div>
     <div id="songEditor" class="song-lines song-editor-text" role="textbox" aria-label="Editable song lyrics and chords" aria-multiline="true" contenteditable="true" spellcheck="false"></div>
@@ -103,5 +103,5 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  </section>
 </main>
 <footer class="no-print">Independent, open-source chord-sheet formatter. Not affiliated with the sites you import from. No song lyrics are bundled; import only material you are authorized to use.</footer>
-<script src="app.js?v=20261010-editor-ready-1" defer></script>
+<script src="app.js?v=20261010-editor-ready-2" defer></script>
 </body></html>
