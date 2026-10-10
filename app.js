@@ -241,7 +241,10 @@ function updatePageGuides(){
   const mirror=$("printPage").cloneNode(true);
   mirror.removeAttribute("id");
   mirror.classList.add("print-measure");
-  mirror.style.width=paper.width+"px";
+  // Chrome lays out print content on an 800px canvas and scales it to the
+  // printable paper width. Match that layout before estimating page breaks.
+  const printLayoutWidth=800;
+  mirror.style.width=printLayoutWidth+"px";
   const copy=mirror.querySelector("#songLines");
   if(!copy)return;
   copy.replaceChildren(...Array.from(editor.childNodes,node=>node.cloneNode(true)));
@@ -257,19 +260,23 @@ function updatePageGuides(){
     const mr=mirror.getBoundingClientRect(),cr=copy.getBoundingClientRect();
     const songStart=cr.top-mr.top;
     const lines=Array.from(copy.children).map(node=>({
-      top:node.getBoundingClientRect().top-cr.top
+      top:node.getBoundingClientRect().top-cr.top,
+      height:node.getBoundingClientRect().height
     }));
     const pad=parseFloat(getComputedStyle(editor).paddingTop)||0;
     const contentHeight=Math.max(0,copy.scrollHeight,editor.scrollHeight-pad*2);
-    let boundary=Math.max(0,paper.height-songStart),pageNo=2;
+    const printScale=Math.min(1,paper.width/printLayoutWidth);
+    const usablePrintHeight=paper.height/printScale;
+    let boundary=Math.max(0,usablePrintHeight-songStart),pageNo=2;
     while(boundary<contentHeight && pageNo<=100){
-      const next=lines.find(line=>line.top>=boundary-.5);
+      // A line crossing the page boundary moves as a unit to the next page.
+      const next=lines.find(line=>line.top+line.height>boundary+0.1);
       const aligned=next?next.top:boundary;
       const guide=document.createElement("div");guide.className="page-guide";
       guide.style.top=(pad+aligned)+"px";
       const label=document.createElement("span");label.textContent="PAGE "+pageNo+" STARTS HERE";
       guide.append(label);host.append(guide);
-      boundary=Math.max(boundary+paper.height,aligned+paper.height);
+      boundary=aligned+usablePrintHeight;
       pageNo++;
     }
     const count=Math.max(1,pageNo-1);
