@@ -156,6 +156,7 @@ function renderDiagrams(){
   }
   grid.style.setProperty("--cols",Number($("columns").value));
   $("chordSection").hidden=!$("includeChords").checked||items.length===0;
+  $("chordSection").classList.toggle("no-selected-diagrams",rendered.length===0);
   $("chordCount").textContent=rendered.length+" of "+items.length+" diagrams included";
   $("undoChordBtn").disabled=!chordUndo.length;
   $("redoChordBtn").disabled=!chordRedo.length;
