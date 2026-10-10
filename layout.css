@@ -21,12 +21,19 @@
 .paper-song .song-chord{color:#111}
 .paper-song .song-line.heading{margin-top:9px}
 .paper-stickers{position:absolute;inset:0;pointer-events:none;z-index:5}
-.paper-sticker{position:absolute;width:102px;min-height:100px;display:flex;align-items:center;flex-direction:column;background:white;box-shadow:0 1px 5px #0b224635;border:1px solid #aabbd3;border-radius:7px;pointer-events:auto;cursor:grab;user-select:none}
-.paper-sticker:hover{outline:2px solid #9dbef1}
+.paper-sticker{position:absolute;width:104px;height:107px;min-height:0;box-sizing:border-box;display:block;background:transparent;border:0;box-shadow:none;pointer-events:auto;cursor:grab;user-select:none}
+.paper-sticker:hover,.paper-sticker:focus-within{outline:1px dashed #7aa4e3;outline-offset:3px}
 .paper-sticker.dragging{opacity:.4}
-.paper-sticker .chord-name{margin-top:4px;min-height:21px}
+.sticker-inner{position:absolute;left:0;top:0;width:104px;height:107px;display:flex;flex-direction:column;align-items:center;background:transparent;transform-origin:top left;pointer-events:none}
+.sticker-inner .chord-name{margin-top:4px;min-height:21px}
 .paper-sticker .diagram-art{pointer-events:none}
-.sticker-delete{position:absolute;top:-9px;right:-9px;width:23px;height:23px;border-radius:50%;background:#b92c2c;color:#fff;border:0;box-shadow:0 2px 5px #0003;display:grid;place-items:center;padding:0;opacity:0;z-index:7;font:bold 18px/1 system-ui,sans-serif;cursor:pointer}
+.sticker-delete{position:absolute;top:-8px;right:-8px;width:23px;height:23px;border-radius:50%;background:#b92c2c;color:white;border:0;box-shadow:0 1px 5px #0003;display:block;padding:0;opacity:0;z-index:7;cursor:pointer}
+.sticker-delete::before,.sticker-delete::after{content:"";position:absolute;left:50%;top:50%;width:12px;height:2px;background:#fff;border-radius:1px;transform:translate(-50%,-50%) rotate(45deg)}
+.sticker-delete::after{transform:translate(-50%,-50%) rotate(-45deg)}
+.sticker-resize{position:absolute;right:-8px;bottom:-8px;width:20px;height:20px;padding:0;border:1px solid #376cc0;border-radius:5px;box-shadow:0 1px 4px #0002;background:#e8f1ff;cursor:nwse-resize;z-index:8;opacity:0;touch-action:none}
+.sticker-resize::after{content:"";position:absolute;right:4px;bottom:4px;width:8px;height:8px;border-right:2px solid #275aa8;border-bottom:2px solid #275aa8}
+.paper-sticker:hover .sticker-resize,.paper-sticker:focus-within .sticker-resize{opacity:1}
+.paper-sticker.resizing{outline:1px dashed #2f78ce!important;outline-offset:3px}
 .paper-sticker:hover .sticker-delete,.paper-sticker:focus-within .sticker-delete{opacity:1}
 .page-drop-active{outline:3px dashed #2f78dd;outline-offset:-8px;background:#f8fbff}
 #chordSection{background:#fff;border:1px solid #d9e2f0;border-radius:12px;padding:14px;margin:0 0 18px}
@@ -39,7 +46,7 @@
 .layout-toolbar select{width:auto;min-width:105px;padding:7px}
 .layout-toolbar .layout-status{font-size:12px;color:#596d86}
 #sourceStore{display:none!important}
-@media(hover:none){.sticker-delete{opacity:1}}
+@media(hover:none){.sticker-delete,.sticker-resize{opacity:1}}
 @media(max-width:900px){.paper-stack{align-items:flex-start;padding:14px}.paper-wrapper{margin:auto}}
 @media print{
  /* @page is set dynamically from the paper selector. */
@@ -50,8 +57,8 @@
  .paper-wrapper:last-child{break-after:auto;page-break-after:auto}
  .paper-page{box-shadow:none!important;border:0!important;border-radius:0!important;margin:0!important;box-sizing:border-box!important;width:816px!important;height:1056px!important;overflow:hidden!important;break-inside:avoid!important}
  .paper-a4 .paper-page{width:794px!important;height:1123px!important}
- .paper-sticker{box-shadow:none!important;border-color:transparent!important;border-radius:0!important;background:#fff!important}
- .sticker-delete{display:none!important}
+ .paper-sticker{box-shadow:none!important;border:0!important;outline:none!important;border-radius:0!important;background:transparent!important}
+ .sticker-delete,.sticker-resize{display:none!important}
  .paper-bank .chord-card{break-inside:avoid!important}
  .paper-song .song-line{break-inside:avoid!important}
 }
@@ -67,3 +74,5 @@
 .chord-drag-target{outline:2px solid #2d6bc1;background:#d9eafe!important}
 .paper-page.page-drop-active{outline:3px dashed #2673d4;outline-offset:-5px}
 @media print{.chord-drag-ghost{display:none!important}.paper-bank .chord-card:hover{background:transparent!important;outline:0!important}}
+
+.chord-resizing,.chord-resizing *{cursor:nwse-resize!important;user-select:none!important}
