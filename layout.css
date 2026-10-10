@@ -1,0 +1,56 @@
+
+/* What you see is what prints: pages use physical dimensions at 96 CSS px/in. */
+.paper-stack{display:flex;flex-direction:column;align-items:center;gap:28px;background:#e5ebf3;padding:22px 10px 38px;border-radius:10px;overflow-x:auto}
+.paper-wrapper{width:max-content;max-width:none}
+.paper-label{font:700 12px/20px system-ui,sans-serif;color:#536784;margin:0 0 7px;letter-spacing:.03em}
+.paper-page{position:relative;box-sizing:border-box;width:816px;height:1056px;padding:32px;background:#fff;color:#111;box-shadow:0 3px 18px #18314c35;overflow:hidden;flex:none}
+.paper-stack.paper-a4 .paper-page{width:794px;height:1123px}
+.paper-inside{position:relative;width:100%;height:100%}
+.paper-main{width:100%;height:100%;overflow:hidden}
+.paper-head{font:25px/1.2 Arial,sans-serif;margin:0 0 14px;border-bottom:1px solid #ddd;padding:0 0 11px}
+.paper-head h2{margin:0 0 3px;font:700 25px/1.2 Arial,sans-serif}
+.paper-head p{margin:0;color:#555;font:13px/1.4 Arial,sans-serif}
+.paper-section-label{font:700 16px/1.3 Arial,sans-serif;margin:14px 0 8px}
+.paper-bank{display:grid;grid-template-columns:repeat(var(--cols,6),minmax(0,1fr));gap:8px 2px;margin:0 0 12px}
+.paper-bank .chord-card{min-height:100px;cursor:default}
+.paper-bank .chord-card:hover{background:transparent}
+.paper-bank .diagram-remove{display:none!important}
+.paper-song{width:100%;overflow:visible}
+.paper-song .song-line{break-inside:avoid;white-space:pre}
+.paper-song .song-chord{color:#111}
+.paper-song .song-line.heading{margin-top:9px}
+.paper-stickers{position:absolute;inset:0;pointer-events:none;z-index:5}
+.paper-sticker{position:absolute;width:102px;min-height:100px;display:flex;align-items:center;flex-direction:column;background:white;box-shadow:0 1px 5px #0b224635;border:1px solid #aabbd3;border-radius:7px;pointer-events:auto;cursor:grab;user-select:none}
+.paper-sticker:hover{outline:2px solid #9dbef1}
+.paper-sticker.dragging{opacity:.4}
+.paper-sticker .chord-name{margin-top:4px;min-height:21px}
+.paper-sticker .diagram-art{pointer-events:none}
+.sticker-delete{position:absolute;top:-9px;right:-9px;width:23px;height:23px;border-radius:50%;background:#b92c2c;color:#fff;border:0;box-shadow:0 2px 5px #0003;display:grid;place-items:center;padding:0;opacity:0;z-index:7;font:bold 18px/1 system-ui,sans-serif;cursor:pointer}
+.paper-sticker:hover .sticker-delete,.paper-sticker:focus-within .sticker-delete{opacity:1}
+.page-drop-active{outline:3px dashed #2f78dd;outline-offset:-8px;background:#f8fbff}
+#chordSection{background:#fff;border:1px solid #d9e2f0;border-radius:12px;padding:14px;margin:0 0 18px}
+#chordSection .print-heading{margin-bottom:8px}
+#chordSection .chord-card{min-width:94px}
+#chordSection .chord-manager{margin:0 0 12px}
+.paper-help{font-size:12px;line-height:1.4;color:#62728c;margin:0 0 12px}
+.layout-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 14px}
+.layout-toolbar label{display:flex;gap:8px;align-items:center;font-size:12px;margin:0}
+.layout-toolbar select{width:auto;min-width:105px;padding:7px}
+.layout-toolbar .layout-status{font-size:12px;color:#596d86}
+#sourceStore{display:none!important}
+@media(hover:none){.sticker-delete{opacity:1}}
+@media(max-width:900px){.paper-stack{align-items:flex-start;padding:14px}.paper-wrapper{margin:auto}}
+@media print{
+ @page{size:letter;margin:0}
+ html,body,main,#workspace{margin:0!important;padding:0!important;width:auto!important;max-width:none!important;min-width:0!important;background:#fff!important;border:0!important;box-shadow:none!important}
+ #workspace>.topline,#workspace>.options,#workspace>#chordSection,#workspace>.editor,#workspace>.message,#workspace>.song-editor-panel,.layout-toolbar,.paper-help,header,footer,.intro,.paper-label,.no-print{display:none!important}
+ #printPage{display:block!important;padding:0!important;margin:0!important;background:white!important;overflow:visible!important;gap:0!important;border:0!important;border-radius:0!important}
+ .paper-wrapper{margin:0!important;padding:0!important;display:block!important;width:auto!important;max-width:none!important;break-after:page;page-break-after:always}
+ .paper-wrapper:last-child{break-after:auto;page-break-after:auto}
+ .paper-page{box-shadow:none!important;border:0!important;border-radius:0!important;margin:0!important;box-sizing:border-box!important;width:816px!important;height:1056px!important;overflow:hidden!important;break-inside:avoid!important}
+ .paper-a4 .paper-page{width:794px!important;height:1123px!important}
+ .paper-sticker{box-shadow:none!important;border-color:transparent!important;border-radius:0!important;background:#fff!important}
+ .sticker-delete{display:none!important}
+ .paper-bank .chord-card{break-inside:avoid!important}
+ .paper-song .song-line{break-inside:avoid!important}
+}
