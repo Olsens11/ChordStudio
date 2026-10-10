@@ -75,3 +75,49 @@
 @media print{.chord-drag-ghost{display:none!important}.paper-bank .chord-card:hover{background:transparent!important;outline:0!important}}
 
 .chord-resizing,.chord-resizing *{cursor:nwse-resize!important;user-select:none!important}
+
+/* Reordering: a moving insertion gap displaces neighbouring chord cards. */
+#chordGrid.chord-bank-sorting .chord-card{transition:background-color .16s}
+#chordGrid .chord-reorder-slot{
+  min-width:92px;min-height:104px;border:2px dashed #3278d2;
+  border-radius:8px;background:#e6f1ff;display:flex;align-items:center;
+  justify-content:center;color:#215da9;font:700 11px/1.4 system-ui,sans-serif;
+  text-align:center;padding:5px;box-sizing:border-box;pointer-events:none
+}
+#chordGrid .chord-reorder-slot::after{content:"Drop here"}
+#chordGrid.chord-bank-sorting{outline:1px solid #b9d4f8;outline-offset:6px;border-radius:8px}
+@media(prefers-reduced-motion:reduce){#chordGrid .chord-card{animation:none!important;transition:none!important}}
+
+/* Independent floating chord palette stays visible while the pages scroll. */
+#stickerBoard[hidden]{display:none!important}
+.sticker-board{
+  position:fixed;right:12px;top:83px;width:212px;max-height:76vh;z-index:65;
+  padding:10px 8px 8px;border:1px solid #b7c8e1;border-radius:12px;
+  background:#f9fbff;box-shadow:0 8px 30px #132d4b37;display:flex;flex-direction:column
+}
+.sticker-board-head{display:flex;justify-content:space-between;align-items:center;gap:5px;padding:0 2px 5px;color:#163b78;font-size:13px}
+.sticker-board-head button{border:0;border-radius:50%;font:700 19px/25px system-ui,sans-serif;width:27px;height:27px;padding:0;background:#e1e9f6;cursor:pointer}
+.sticker-board-head button:hover{background:#b7cae9}
+.sticker-board p{font:11px/1.4 system-ui,sans-serif;color:#506987;margin:0 0 9px}
+.sticker-board-grid{min-height:40px;overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:7px 2px;overscroll-behavior:contain}
+.sticker-board-grid .chord-card{min-width:0;max-width:none;min-height:96px;cursor:grab;padding:2px;border:1px solid transparent;border-radius:7px}
+.sticker-board-grid .chord-card:hover,.sticker-board-grid .chord-card:focus{background:#dfefff;border-color:#83a6da;outline:none}
+.sticker-board-grid .chord-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:95px}
+.sticker-board-grid .diagram-art{pointer-events:none}
+#toggleStickerBoard[aria-expanded="true"]{background:#dcecff;border-color:#86a9e0}
+@media(max-width:1100px){.sticker-board{right:6px;width:194px;max-height:68vh}}
+@media print{.sticker-board,.chord-reorder-slot{display:none!important}}
+
+/* Visible 5px drag grid (20px stronger divisions), only while Ctrl+Shift is held. */
+.paper-page.grid-snap-active .paper-inside::after{
+  content:"";position:absolute;inset:0;z-index:4;pointer-events:none;
+  background-image:linear-gradient(to right,#3d81cc20 1px,transparent 1px),
+    linear-gradient(to bottom,#3d81cc20 1px,transparent 1px),
+    linear-gradient(to right,#3d81cc39 1px,transparent 1px),
+    linear-gradient(to bottom,#3d81cc39 1px,transparent 1px);
+  background-size:5px 5px,5px 5px,20px 20px,20px 20px;
+  background-position:0 0;box-shadow:inset 0 0 0 2px #3484df55
+}
+.chord-drag-ghost.grid-snapping{outline-color:#0b71df;outline-width:2px}
+#stickerBoard .chord-drag-target{background:#dce9ff!important}
+@media print{.paper-page.grid-snap-active .paper-inside::after{display:none!important}}
