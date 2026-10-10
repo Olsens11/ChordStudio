@@ -67,6 +67,10 @@
       if(!copy)continue;
       copy.draggable=false;copy.removeAttribute("tabindex");copy.removeAttribute("title");
       copy.querySelectorAll(".diagram-remove").forEach(node=>node.remove());
+      // Cloning a canvas copies its element but NOT its drawn bitmap.
+      // Recreate the chord graphic so paper previews and PDFs show actual dots.
+      const oldCanvas=copy.querySelector("canvas");
+      if(oldCanvas)oldCanvas.replaceWith(makeDiagramCanvas(item.source));
       bank.append(copy);
       if(bank.getBoundingClientRect().bottom>current.inside.getBoundingClientRect().bottom-.5){
         copy.remove();
