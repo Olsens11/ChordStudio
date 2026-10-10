@@ -3,8 +3,10 @@
   const $=id=>document.getElementById(id);
   const STICKER_W=104,STICKER_H=107,MIN_SCALE=.4,MAX_SCALE=3.5;
   const stickerScale=record=>Math.max(MIN_SCALE,Number(record.scale)||1);
-  const stickerWidth=record=>STICKER_W*stickerScale(record);
-  const stickerHeight=record=>STICKER_H*stickerScale(record);
+  const stickerWidth=record=>record.type==="text"?(record.w||190):STICKER_W*stickerScale(record);
+  const stickerHeight=record=>record.type==="text"?(record.h||85):STICKER_H*stickerScale(record);
+  const NOTE_MIN_W=85,NOTE_MIN_H=36;
+  let placingNote=false,activeNoteId=null,noteTextHistorySaved=false;
   let stickers=[], history=[], redo=[], nextId=1, drag=null;
   let building=false;
   let pointerDrag=null;
@@ -38,16 +40,93 @@
     $("toggleStickerBoard").setAttribute("aria-expanded",String(open));
     $("toggleStickerBoard").textContent=open?"🎸 Hide sticker tray":"🎸 Open sticker tray";
   }
+  function noteRecord(id){
+    return stickers.find(item=>item.id===id&&item.type==="text");
+  }
+  function setNotePlacementMode(enabled){
+    placingNote=!!enabled;
+    document.body.classList.toggle("placing-note",placingNote);
+    $("addTextNote").setAttribute("aria-pressed",String(placingNote));
+    $("addTextNote").textContent=placingNote?"✕ Cancel note":"✎ Add text note";
+    $("trayHint").textContent=placingNote
+      ?"Click anywhere on a white page to add a note."
+      :"Drag onto any page · sources stay here";
+  }
+  function closeNoteEditor(){
+    activeNoteId=null;noteTextHistorySaved=false;
+    $("noteEditor").hidden=true;
+  }
+  function positionNoteEditor(){
+    if($("noteEditor").hidden||activeNoteId==null)return;
+    const sticker=$("printPage").querySelector('[data-sticker-id="'+activeNoteId+'"]');
+    if(!sticker){closeNoteEditor();return;}
+    const bounds=sticker.getBoundingClientRect();
+    const panel=$("noteEditor");
+    const width=panel.offsetWidth||285,height=panel.offsetHeight||310;
+    panel.style.left=Math.max(8,Math.min(innerWidth-width-8,bounds.left))+"px";
+    const below=bounds.bottom+14;
+    panel.style.top=Math.max(8,Math.min(innerHeight-height-8,
+      below+height<innerHeight-8?below:bounds.top-height-12))+"px";
+  }
+  function openNoteEditor(id,{focus=false}={}){
+    const record=noteRecord(id);if(!record)return;
+    activeNoteId=id;noteTextHistorySaved=false;setNotePlacementMode(false);
+    $("noteEditor").hidden=false;
+    $("noteText").value=record.text||"";
+    $("noteFontSize").value=String(record.fontSize||16);
+    $("noteBold").setAttribute("aria-pressed",String(!!record.bold));
+    $("noteItalic").setAttribute("aria-pressed",String(!!record.italic));
+    $("noteAlign").value=record.align||"left";
+    $("noteBackground").value=record.background||"#fff0ae";
+    $("noteColor").value=record.color||"#18365f";
+    positionNoteEditor();
+    if(focus)$("noteText").focus({preventScroll:true});
+  }
+  function noteStyle(content,record){
+    content.style.color=record.color||"#18365f";
+    content.style.background=record.background||"#fff0ae";
+    content.style.fontSize=(record.fontSize||16)+"px";
+    content.style.fontWeight=record.bold?"700":"400";
+    content.style.fontStyle=record.italic?"italic":"normal";
+    content.style.textAlign=record.align||"left";
+  }
+  function updateNoteView(record){
+    const el=$("printPage").querySelector('[data-sticker-id="'+record.id+'"] .note-content');
+    if(el){el.textContent=record.text||"";noteStyle(el,record);}
+  }
+  function applyNoteFormat(property,value){
+    const record=noteRecord(activeNoteId);
+    if(!record||record[property]===value)return;
+    save();record[property]=value;updateNoteView(record);
+    positionNoteEditor();
+  }
+  function clickToPlaceNote(ev){
+    if(!placingNote||ev.button!==0)return;
+    const page=ev.target.closest(".paper-page");
+    if(!page||ev.target.closest(".paper-sticker,.paper-bank"))return;
+    ev.preventDefault();ev.stopPropagation();
+    const pages=[...$("printPage").querySelectorAll(".paper-page")];
+    const inside=page.querySelector(".paper-inside"),rect=inside.getBoundingClientRect(),size=pageSize();
+    const w=190,h=85;
+    const x=Math.max(0,Math.min(size.innerWidth-w,Math.round(ev.clientX-rect.left)));
+    const y=Math.max(0,Math.min(size.innerHeight-h,Math.round(ev.clientY-rect.top)));
+    const note={id:nextId++,type:"text",name:"Note",text:"",page:pages.indexOf(page),x,y,w,h,
+      fontSize:16,bold:false,italic:false,align:"left",color:"#18365f",background:"#fff0ae"};
+    save();stickers.push(note);
+    setNotePlacementMode(false);refresh();
+    openNoteEditor(note.id,{focus:true});
+    message("Text note created. Type and format your note; then drag or resize it like a diagram.");
+  }
   function updateUndoButtons(){
     $("undoPlacement").disabled=!history.length;
     $("redoPlacement").disabled=!redo.length;
     $("clearPlacements").disabled=!stickers.length;
-    $("layoutStatus").textContent=stickers.length+" placed diagram"+(stickers.length===1?"":"s");
+    $("layoutStatus").textContent=stickers.length+" placed item"+(stickers.length===1?"":"s");
   }
-  function undo(){if(!history.length)return;redo.push(stickers.map(s=>structuredClone(s)));restore(history.pop());}
-  function redoChange(){if(!redo.length)return;history.push(stickers.map(s=>structuredClone(s)));restore(redo.pop());}
+  function undo(){if(!history.length)return;closeNoteEditor();redo.push(stickers.map(s=>structuredClone(s)));restore(history.pop());}
+  function redoChange(){if(!redo.length)return;closeNoteEditor();history.push(stickers.map(s=>structuredClone(s)));restore(redo.pop());}
   function clearAll(){if(!stickers.length)return;save();stickers=[];refresh();}
-  function reset(){stickers=[];history=[];redo=[];nextId=1;refresh();}
+  function reset(){closeNoteEditor();setNotePlacementMode(false);stickers=[];history=[];redo=[];nextId=1;refresh();}
   function pageSize(){
     const a4=$("paperSize").value==="a4";
     return {name:a4?"A4":"Letter",width:a4?794:816,height:a4?1123:1056,innerWidth:a4?746:768,innerHeight:a4?1075:1008};
@@ -140,41 +219,50 @@
     }
   }
   function stickerElement(record){
-    const el=document.createElement("div");el.className="paper-sticker";
+    const isText=record.type==="text";
+    const el=document.createElement("div");el.className="paper-sticker"+(isText?" text-sticker":"");
     el.dataset.stickerId=record.id;el.draggable=false;el.tabIndex=0;
-    el.setAttribute("aria-label","Placed "+record.name+" diagram. Shift click to duplicate, drag to move, or drag the lower-right corner to resize.");
-    el.title="Drag to move · Shift+click copies · Ctrl+Shift snaps to 5px grid · corner resizes";
+    el.setAttribute("aria-label",isText?"Text note. Click to edit, drag to move, corner to resize. Shift click to duplicate.":"Placed "+record.name+" diagram. Shift click to duplicate, drag to move, corner to resize.");
+    el.title=isText?"Click to edit note · drag to move · corner resizes · Shift+click copies":
+      "Drag to move · Shift+click copies · Ctrl+Shift snaps to 5px grid · corner resizes";
     el.style.left=record.x+"px";el.style.top=record.y+"px";
     el.style.width=stickerWidth(record)+"px";el.style.height=stickerHeight(record)+"px";
-    const inner=document.createElement("div");inner.className="sticker-inner";
-    inner.style.transform="scale("+stickerScale(record)+")";
-    const name=document.createElement("div");name.className="chord-name";name.textContent=record.name;
-    const art=document.createElement("div");art.className="diagram-art";
-    art.append(makeDiagramCanvas(record.shape));
-    inner.append(name,art);
+    if(isText){
+      const content=document.createElement("div");content.className="note-content";
+      content.textContent=record.text||"";
+      noteStyle(content,record);el.append(content);
+      el.addEventListener("click",ev=>{
+        if(!ev.shiftKey&&!ev.ctrlKey&&!ev.altKey&&ev.target.closest(".paper-sticker")===el){
+          openNoteEditor(record.id);
+        }
+      });
+    }else{
+      const inner=document.createElement("div");inner.className="sticker-inner";
+      inner.style.transform="scale("+stickerScale(record)+")";
+      const name=document.createElement("div");name.className="chord-name";name.textContent=record.name;
+      const art=document.createElement("div");art.className="diagram-art";
+      art.append(makeDiagramCanvas(record.shape));inner.append(name,art);el.append(inner);
+    }
     const remove=document.createElement("button");remove.className="sticker-delete no-print";
-    remove.type="button";remove.title="Remove placed diagram";
-    remove.setAttribute("aria-label","Remove placed "+record.name+" diagram");
+    remove.type="button";remove.title="Remove placed "+(isText?"note":"diagram");
+    remove.setAttribute("aria-label","Remove placed "+(isText?"note":record.name+" diagram"));
     remove.draggable=false;remove.addEventListener("mousedown",ev=>ev.stopPropagation());
     remove.addEventListener("click",ev=>{
-      ev.stopPropagation();save();stickers=stickers.filter(s=>s.id!==record.id);refresh();
+      ev.stopPropagation();save();stickers=stickers.filter(item=>item.id!==record.id);
+      if(activeNoteId===record.id)closeNoteEditor();
+      refresh();
     });
     const resize=document.createElement("button");resize.className="sticker-resize no-print";
     resize.type="button";resize.draggable=false;
-    resize.title="Drag corner to resize, preserving aspect ratio";
-    resize.setAttribute("aria-label","Resize placed "+record.name+" diagram");
-    el.append(inner,remove,resize);
-    el.addEventListener("dragstart",ev=>{
-      const box=el.getBoundingClientRect();
-      drag={type:"sticker",id:record.id,offsetX:ev.clientX-box.left,offsetY:ev.clientY-box.top};
-      ev.dataTransfer.effectAllowed="move";
-      ev.dataTransfer.setData("text/plain","chordstudio-sticker:"+record.id);
-      el.classList.add("dragging");
-    });
-    el.addEventListener("dragend",()=>{el.classList.remove("dragging");drag=null;clearDrops();});
+    resize.title=isText?"Drag corner to resize note":"Drag corner to resize, preserving aspect ratio";
+    resize.setAttribute("aria-label","Resize placed "+(isText?"note":record.name+" diagram"));
+    el.append(remove,resize);
     el.addEventListener("keydown",ev=>{
       if(ev.key==="Delete"||ev.key==="Backspace"){
-        ev.preventDefault();save();stickers=stickers.filter(s=>s.id!==record.id);refresh();
+        ev.preventDefault();save();stickers=stickers.filter(item=>item.id!==record.id);
+        if(activeNoteId===record.id)closeNoteEditor();refresh();
+      }else if(ev.key==="Enter"&&isText){
+        ev.preventDefault();openNoteEditor(record.id,{focus:true});
       }else if(ev.altKey&&["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(ev.key)){
         ev.preventDefault();save();const size=pageSize(),delta=ev.shiftKey?20:5;
         record.x=Math.max(0,Math.min(size.innerWidth-stickerWidth(record),record.x+(ev.key==="ArrowLeft"?-delta:ev.key==="ArrowRight"?delta:0)));
@@ -189,8 +277,13 @@
     const size=pageSize();
     stickers.forEach(record=>{
       while(record.page>=pages.length)pages.push(freshPage(pages.length+1));
-      const maxFit=Math.max(MIN_SCALE,Math.min(MAX_SCALE,size.innerWidth/STICKER_W,size.innerHeight/STICKER_H));
-      record.scale=Math.min(stickerScale(record),maxFit);
+      if(record.type==="text"){
+        record.w=Math.max(NOTE_MIN_W,Math.min(record.w||190,size.innerWidth));
+        record.h=Math.max(NOTE_MIN_H,Math.min(record.h||85,size.innerHeight));
+      }else{
+        const maxFit=Math.max(MIN_SCALE,Math.min(MAX_SCALE,size.innerWidth/STICKER_W,size.innerHeight/STICKER_H));
+        record.scale=Math.min(stickerScale(record),maxFit);
+      }
       record.x=Math.max(0,Math.min(size.innerWidth-stickerWidth(record),record.x));
       record.y=Math.max(0,Math.min(size.innerHeight-stickerHeight(record),record.y));
       pages[record.page].overlay.append(stickerElement(record));
@@ -241,6 +334,7 @@
       renderStickerTray();
       $("pageCount").textContent=pages.length+" printable "+(pages.length===1?"page":"pages");
       updateUndoButtons();
+      if(activeNoteId!=null)positionNoteEditor();
     }finally{building=false;}
   }
   // Unified pointer drag: works when dragging into scrolled pages. Native
