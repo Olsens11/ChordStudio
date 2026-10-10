@@ -38,7 +38,7 @@
   function toggleStickerTray(open){
     $("stickerBoard").hidden=!open;
     $("toggleStickerBoard").setAttribute("aria-expanded",String(open));
-    $("toggleStickerBoard").textContent=open?"🎸 Hide sticker tray":"🎸 Open sticker tray";
+    $("toggleStickerBoard").textContent=open?"Hide sticker tray":"Open sticker tray";
   }
   function noteRecord(id){
     return stickers.find(item=>item.id===id&&item.type==="text");
