@@ -19,7 +19,7 @@
   function reset(){stickers=[];history=[];redo=[];nextId=1;refresh();}
   function pageSize(){
     const a4=$("paperSize").value==="a4";
-    return {name:a4?"A4":"Letter",width:a4?794:816,height:a4?1123:1056,innerWidth:a4?730:752,innerHeight:a4?1059:992};
+    return {name:a4?"A4":"Letter",width:a4?794:816,height:a4?1123:1056,innerWidth:a4?746:768,innerHeight:a4?1075:1008};
   }
   function updatePaperCSS(){
     let style=$("paperFormatCSS");
