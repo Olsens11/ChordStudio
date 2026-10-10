@@ -1,7 +1,10 @@
 "use strict";
 (function(){
   const $=id=>document.getElementById(id);
-  const STICKER_W=104,STICKER_H=107;
+  const STICKER_W=104,STICKER_H=107,MIN_SCALE=.4,MAX_SCALE=3.5;
+  const stickerScale=record=>Math.max(MIN_SCALE,Number(record.scale)||1);
+  const stickerWidth=record=>STICKER_W*stickerScale(record);
+  const stickerHeight=record=>STICKER_H*stickerScale(record);
   let stickers=[], history=[], redo=[], nextId=1, drag=null;
   let building=false;
   let pointerDrag=null;
@@ -113,20 +116,28 @@
   function stickerElement(record){
     const el=document.createElement("div");el.className="paper-sticker";
     el.dataset.stickerId=record.id;el.draggable=false;el.tabIndex=0;
-    el.setAttribute("aria-label","Placed "+record.name+" diagram. Drag to move; Delete to remove.");
-    el.title="Drag to move · Delete to remove";
+    el.setAttribute("aria-label","Placed "+record.name+" diagram. Drag to move; drag the lower-right corner to resize; Delete to remove.");
+    el.title="Drag to move · resize at bottom-right corner · Delete to remove";
     el.style.left=record.x+"px";el.style.top=record.y+"px";
+    el.style.width=stickerWidth(record)+"px";el.style.height=stickerHeight(record)+"px";
+    const inner=document.createElement("div");inner.className="sticker-inner";
+    inner.style.transform="scale("+stickerScale(record)+")";
     const name=document.createElement("div");name.className="chord-name";name.textContent=record.name;
     const art=document.createElement("div");art.className="diagram-art";
     art.append(makeDiagramCanvas(record.shape));
+    inner.append(name,art);
     const remove=document.createElement("button");remove.className="sticker-delete no-print";
-    remove.type="button";remove.textContent="×";remove.title="Remove placed diagram";
+    remove.type="button";remove.title="Remove placed diagram";
     remove.setAttribute("aria-label","Remove placed "+record.name+" diagram");
     remove.draggable=false;remove.addEventListener("mousedown",ev=>ev.stopPropagation());
     remove.addEventListener("click",ev=>{
       ev.stopPropagation();save();stickers=stickers.filter(s=>s.id!==record.id);refresh();
     });
-    el.append(name,art,remove);
+    const resize=document.createElement("button");resize.className="sticker-resize no-print";
+    resize.type="button";resize.draggable=false;
+    resize.title="Drag corner to resize, preserving aspect ratio";
+    resize.setAttribute("aria-label","Resize placed "+record.name+" diagram");
+    el.append(inner,remove,resize);
     el.addEventListener("dragstart",ev=>{
       const box=el.getBoundingClientRect();
       drag={type:"sticker",id:record.id,offsetX:ev.clientX-box.left,offsetY:ev.clientY-box.top};
@@ -140,8 +151,8 @@
         ev.preventDefault();save();stickers=stickers.filter(s=>s.id!==record.id);refresh();
       }else if(ev.altKey&&["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(ev.key)){
         ev.preventDefault();save();const size=pageSize(),delta=ev.shiftKey?20:5;
-        record.x=Math.max(0,Math.min(size.innerWidth-STICKER_W,record.x+(ev.key==="ArrowLeft"?-delta:ev.key==="ArrowRight"?delta:0)));
-        record.y=Math.max(0,Math.min(size.innerHeight-STICKER_H,record.y+(ev.key==="ArrowUp"?-delta:ev.key==="ArrowDown"?delta:0)));
+        record.x=Math.max(0,Math.min(size.innerWidth-stickerWidth(record),record.x+(ev.key==="ArrowLeft"?-delta:ev.key==="ArrowRight"?delta:0)));
+        record.y=Math.max(0,Math.min(size.innerHeight-stickerHeight(record),record.y+(ev.key==="ArrowUp"?-delta:ev.key==="ArrowDown"?delta:0)));
         refresh();
         $("printPage").querySelector('[data-sticker-id="'+record.id+'"]')?.focus();
       }
@@ -152,8 +163,10 @@
     const size=pageSize();
     stickers.forEach(record=>{
       while(record.page>=pages.length)pages.push(freshPage(pages.length+1));
-      record.x=Math.max(0,Math.min(size.innerWidth-STICKER_W,record.x));
-      record.y=Math.max(0,Math.min(size.innerHeight-STICKER_H,record.y));
+      const maxFit=Math.max(MIN_SCALE,Math.min(MAX_SCALE,size.innerWidth/STICKER_W,size.innerHeight/STICKER_H));
+      record.scale=Math.min(stickerScale(record),maxFit);
+      record.x=Math.max(0,Math.min(size.innerWidth-stickerWidth(record),record.x));
+      record.y=Math.max(0,Math.min(size.innerHeight-stickerHeight(record),record.y));
       pages[record.page].overlay.append(stickerElement(record));
     });
   }
@@ -233,11 +246,12 @@
   }
   function pointToPaper(ev,inside,record){
     const rect=inside.getBoundingClientRect(),size=pageSize();
+    const scale=record.type==="sticker"?stickerScale(record):1;
     const offsetX=record.type==="sticker"?record.offsetX:STICKER_W/2;
     const offsetY=record.type==="sticker"?record.offsetY:20;
     return {
-      x:Math.max(0,Math.min(size.innerWidth-STICKER_W,Math.round(ev.clientX-rect.left-offsetX))),
-      y:Math.max(0,Math.min(size.innerHeight-STICKER_H,Math.round(ev.clientY-rect.top-offsetY)))
+      x:Math.max(0,Math.min(size.innerWidth-STICKER_W*scale,Math.round(ev.clientX-rect.left-offsetX))),
+      y:Math.max(0,Math.min(size.innerHeight-STICKER_H*scale,Math.round(ev.clientY-rect.top-offsetY)))
     };
   }
   function showPointerFeedback(){
@@ -275,8 +289,48 @@
     }
     scrollFrame=requestAnimationFrame(scrollDuringDrag);
   }
+  function maximumStickerScale(record){
+    const size=pageSize();
+    return Math.max(MIN_SCALE,Math.min(MAX_SCALE,
+      (size.innerWidth-record.x)/STICKER_W,
+      (size.innerHeight-record.y)/STICKER_H));
+  }
+  function beginResize(ev,handle){
+    const sticker=handle.closest(".paper-sticker");
+    if(!sticker)return;
+    const record=stickers.find(item=>item.id===Number(sticker.dataset.stickerId));
+    if(!record)return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    pointerDrag={type:"resize",id:record.id,pointerId:ev.pointerId,
+      startX:ev.clientX,startY:ev.clientY,initialScale:stickerScale(record),
+      before:stickers.map(item=>structuredClone(item)),element:sticker,started:false};
+    document.addEventListener("pointermove",movePointerDrag,{capture:true,passive:false});
+    document.addEventListener("pointerup",endPointerDrag,true);
+    document.addEventListener("pointercancel",cancelPointerDrag,true);
+    document.body.classList.add("chord-resizing");
+  }
+  function moveResize(ev,state){
+    const record=stickers.find(item=>item.id===state.id);
+    if(!record)return;
+    ev.preventDefault();
+    const dx=(ev.clientX-state.startX)/STICKER_W;
+    const dy=(ev.clientY-state.startY)/STICKER_H;
+    const primary=Math.abs(dx)>=Math.abs(dy)?dx:dy;
+    const next=Math.max(MIN_SCALE,Math.min(maximumStickerScale(record),
+      Math.round((state.initialScale+primary)*1000)/1000));
+    if(Math.abs(next-stickerScale(record))<.001)return;
+    state.started=true;
+    record.scale=next;
+    state.element.style.width=stickerWidth(record)+"px";
+    state.element.style.height=stickerHeight(record)+"px";
+    state.element.querySelector(".sticker-inner").style.transform="scale("+next+")";
+    state.element.classList.add("resizing");
+  }
   function startPointerDrag(ev){
     if(pointerDrag||!ev.isPrimary||ev.button!==0)return;
+    const handle=ev.target.closest(".sticker-resize");
+    if(handle){beginResize(ev,handle);return;}
     if(ev.target.closest("button,input,select,textarea,a"))return;
     const sticker=ev.target.closest(".paper-sticker");
     const source=sticker?null:ev.target.closest("#chordGrid .chord-card,.paper-bank .chord-card");
@@ -287,7 +341,8 @@
       const record=stickers.find(s=>s.id===id);
       if(!record)return;
       const box=sticker.getBoundingClientRect();
-      model={type:"sticker",id,name:record.name,shape:record.shape,offsetX:ev.clientX-box.left,offsetY:ev.clientY-box.top};
+      model={type:"sticker",id,name:record.name,shape:record.shape,scale:stickerScale(record),
+        offsetX:ev.clientX-box.left,offsetY:ev.clientY-box.top};
     }else{
       const key=source.dataset.diagramKey;
       const item=findItem(key);
@@ -302,6 +357,7 @@
   function movePointerDrag(ev){
     const state=pointerDrag;
     if(!state||ev.pointerId!==state.pointerId)return;
+    if(state.type==="resize"){moveResize(ev,state);return;}
     state.x=ev.clientX;state.y=ev.clientY;
     if(!state.started&&Math.hypot(state.x-state.startX,state.y-state.startY)<6)return;
     ev.preventDefault();
@@ -317,6 +373,18 @@
   function endPointerDrag(ev){
     const state=pointerDrag;
     if(!state||ev.pointerId!==state.pointerId)return;
+    if(state.type==="resize"){
+      ev.preventDefault();
+      const record=stickers.find(item=>item.id===state.id);
+      if(record&&Math.abs(stickerScale(record)-state.initialScale)>.001){
+        // One history entry per completed resize gesture, NOT per pointer move.
+        history.push(state.before);
+        if(history.length>60)history.shift();
+        redo=[];
+        message("Diagram resized to "+Math.round(stickerScale(record)*100)+"%. Undo restores its previous size.");
+      }
+      endPointerCleanup();refresh();return;
+    }
     if(state.started){
       ev.preventDefault();
       const hit=itemAtPointer(ev.clientX,ev.clientY);
@@ -339,7 +407,7 @@
             const item=findItem(state.key);
             if(item){
               save();
-              stickers.push({id:nextId++,name:item.name,key:state.key,shape:structuredClone(item.source),page:pageIndex,...point});
+              stickers.push({id:nextId++,name:item.name,key:state.key,shape:structuredClone(item.source),scale:1,page:pageIndex,...point});
             }
           }
           message("Diagram "+(state.type==="sticker"?"position":"copy")+" saved on page "+(pageIndex+1)+".");
@@ -355,7 +423,13 @@
     endPointerCleanup();
   }
   function cancelPointerDrag(ev){
-    if(pointerDrag&&ev.pointerId===pointerDrag.pointerId)endPointerCleanup();
+    if(!pointerDrag||ev.pointerId!==pointerDrag.pointerId)return;
+    if(pointerDrag.type==="resize"){
+      const record=stickers.find(item=>item.id===pointerDrag.id);
+      if(record)record.scale=pointerDrag.initialScale;
+      endPointerCleanup();refresh();return;
+    }
+    endPointerCleanup();
   }
   function endPointerCleanup(){
     document.removeEventListener("pointermove",movePointerDrag,true);
@@ -364,7 +438,7 @@
     if(scrollFrame){cancelAnimationFrame(scrollFrame);scrollFrame=0;}
     pointerDrag?.ghost?.remove();
     pointerDrag=null;
-    document.body.classList.remove("chord-pointer-dragging");
+    document.body.classList.remove("chord-pointer-dragging","chord-resizing");
     clearPointerFeedback();
   }
   function init(){
