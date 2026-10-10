@@ -31,9 +31,22 @@ Some other websites restrict cross-origin browser requests, so a GitHub Pages si
 
 For manual importing, use saved HTML or JSON. The current importer recognizes `.js-store[data-content]` with `applicature` objects in the song data or a nested `tab_view`. Not every tab site or page format is supported.
 
+## Editing the song before printing
+
+After importing a song, choose **Edit song text** above the preview. This opens a large in-page editor displaying chords and lyrics exactly as they appear in the print sheet, without showing raw tab markup.
+
+- Edit the song text, correct chord names, or reposition chord labels by changing the spaces before them.
+- Select text and choose **Bold**, **Italic**, or **Underline**.
+- Choose a monospaced font, text size, and line spacing. Monospaced fonts help keep the chord annotations aligned with lyrics.
+- **Apply changes** updates the printable preview.
+- **Apply & print** applies your changes and opens the browser's print dialog.
+- **Cancel** discards uncommitted edits; **Restore imported text** reverts the editor to its initial imported content.
+
+Printing via Ctrl+P while the editor is open also applies the current edits. Changes are stored in the current browser page only; refreshing or reimporting the song clears them.
+
 ## Printing and Google Docs
 
-- **Print / Save PDF**: print the sheet with chord diagrams and song text.
+- **Print / Save PDF**: print the sheet with chord diagrams and your edited song text.
 - **Copy diagrams for Docs**: copy a high-resolution PNG containing chord names and diagrams, then paste into Google Docs with `Ctrl+V`.
 - **Download PNG**: save the diagrams if clipboard image access is unavailable.
 
