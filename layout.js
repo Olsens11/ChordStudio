@@ -3,8 +3,8 @@
   const $=id=>document.getElementById(id);
   const STICKER_W=104,STICKER_H=107,MIN_SCALE=.4,MAX_SCALE=3.5;
   const stickerScale=record=>Math.max(MIN_SCALE,Number(record.scale)||1);
-  const stickerWidth=record=>record.type==="text"?(record.w||190):STICKER_W*stickerScale(record);
-  const stickerHeight=record=>record.type==="text"?(record.h||85):STICKER_H*stickerScale(record);
+  const stickerWidth=record=>(record.type==="text"||record.noteType==="text")?(record.w||190):STICKER_W*stickerScale(record);
+  const stickerHeight=record=>(record.type==="text"||record.noteType==="text")?(record.h||85):STICKER_H*stickerScale(record);
   const NOTE_MIN_W=85,NOTE_MIN_H=36;
   let placingNote=false,activeNoteId=null,noteTextHistorySaved=false;
   let stickers=[], history=[], redo=[], nextId=1, drag=null;
@@ -341,22 +341,22 @@
   // HTML drag/drop is not reliable here and does not reach the drop target.
   // Palette items are COPIED; existing placed stickers are MOVED.
   function makeGhost(state){
-    // Use the same intrinsic 104×107 layout and scale as a placed sticker.
-    // Only the editing handles differ: the drag preview has none.
     const el=document.createElement("div");
-    el.className="chord-drag-ghost";
+    el.className="chord-drag-ghost"+(state.noteType==="text"?" note-ghost":"");
     el.setAttribute("aria-hidden","true");
     el.style.width=stickerWidth(state)+"px";
     el.style.height=stickerHeight(state)+"px";
-    const inner=document.createElement("div");
-    inner.className="sticker-inner";
-    inner.style.transform="scale("+stickerScale(state)+")";
-    const title=document.createElement("div");title.className="chord-name";
-    title.textContent=state.name;
-    const art=document.createElement("div");art.className="diagram-art";
-    art.append(makeDiagramCanvas(state.shape));
-    inner.append(title,art);
-    el.append(inner);
+    if(state.noteType==="text"){
+      const content=document.createElement("div");content.className="note-content";
+      content.textContent=state.text||"";noteStyle(content,state);
+      el.append(content);
+    }else{
+      const inner=document.createElement("div");inner.className="sticker-inner";
+      inner.style.transform="scale("+stickerScale(state)+")";
+      const title=document.createElement("div");title.className="chord-name";title.textContent=state.name;
+      const art=document.createElement("div");art.className="diagram-art";
+      art.append(makeDiagramCanvas(state.shape));inner.append(title,art);el.append(inner);
+    }
     document.body.append(el);
     return el;
   }
@@ -381,13 +381,12 @@
   }
   function pointToPaper(ev,inside,record){
     const rect=inside.getBoundingClientRect(),size=pageSize();
-    const scale=record.type==="sticker"?stickerScale(record):1;
     const offsetX=record.type==="sticker"?record.offsetX:STICKER_W/2;
     const offsetY=record.type==="sticker"?record.offsetY:20;
     const snap=!!(record.ctrlKey&&record.shiftKey);
     return {
-      x:snapValue(ev.clientX-rect.left-offsetX,size.innerWidth-STICKER_W*scale,snap),
-      y:snapValue(ev.clientY-rect.top-offsetY,size.innerHeight-STICKER_H*scale,snap)
+      x:snapValue(ev.clientX-rect.left-offsetX,size.innerWidth-stickerWidth(record),snap),
+      y:snapValue(ev.clientY-rect.top-offsetY,size.innerHeight-stickerHeight(record),snap)
     };
   }
   function beginSortPreview(state){
@@ -521,6 +520,7 @@
     ev.stopPropagation();
     pointerDrag={type:"resize",id:record.id,pointerId:ev.pointerId,
       startX:ev.clientX,startY:ev.clientY,initialScale:stickerScale(record),
+      initialW:record.w,initialH:record.h,isText:record.type==="text",
       before:stickers.map(item=>structuredClone(item)),element:sticker,started:false};
     document.addEventListener("pointermove",movePointerDrag,{capture:true,passive:false});
     document.addEventListener("pointerup",endPointerDrag,true);
@@ -531,6 +531,16 @@
     const record=stickers.find(item=>item.id===state.id);
     if(!record)return;
     ev.preventDefault();
+    if(state.isText){
+      const size=pageSize();
+      const w=Math.max(NOTE_MIN_W,Math.min(size.innerWidth-record.x,Math.round(state.initialW+ev.clientX-state.startX)));
+      const h=Math.max(NOTE_MIN_H,Math.min(size.innerHeight-record.y,Math.round(state.initialH+ev.clientY-state.startY)));
+      if(w===record.w&&h===record.h)return;
+      state.started=true;record.w=w;record.h=h;
+      state.element.style.width=w+"px";state.element.style.height=h+"px";
+      state.element.classList.add("resizing");
+      return;
+    }
     const dx=(ev.clientX-state.startX)/STICKER_W;
     const dy=(ev.clientY-state.startY)/STICKER_H;
     const primary=Math.abs(dx)>=Math.abs(dy)?dx:dy;
@@ -545,7 +555,7 @@
     state.element.classList.add("resizing");
   }
   function startPointerDrag(ev){
-    if(pointerDrag||!ev.isPrimary||ev.button!==0)return;
+    if(pointerDrag||!ev.isPrimary||ev.button!==0||placingNote)return;
     const handle=ev.target.closest(".sticker-resize");
     if(handle){beginResize(ev,handle);return;}
     if(ev.target.closest("button,input,select,textarea,a"))return;
@@ -559,7 +569,11 @@
       if(!record)return;
       const box=sticker.getBoundingClientRect();
       model={type:"sticker",id,name:record.name,shape:record.shape,scale:stickerScale(record),
+        noteType:record.type==="text"?"text":"diagram",w:record.w,h:record.h,
+        text:record.text,fontSize:record.fontSize,bold:record.bold,italic:record.italic,
+        align:record.align,color:record.color,background:record.background,
         offsetX:ev.clientX-box.left,offsetY:ev.clientY-box.top};
+      if(record.type==="text")closeNoteEditor();
     }else{
       const key=source.dataset.diagramKey;
       const item=findItem(key);
@@ -594,12 +608,12 @@
     if(state.type==="resize"){
       ev.preventDefault();
       const record=stickers.find(item=>item.id===state.id);
-      if(record&&Math.abs(stickerScale(record)-state.initialScale)>.001){
+      if(record&&(state.isText?(record.w!==state.initialW||record.h!==state.initialH):Math.abs(stickerScale(record)-state.initialScale)>.001)){
         // One history entry per completed resize gesture, NOT per pointer move.
         history.push(state.before);
         if(history.length>60)history.shift();
         redo=[];
-        message("Diagram resized to "+Math.round(stickerScale(record)*100)+"%. Undo restores its previous size.");
+        message(state.isText?"Note resized. Undo restores the previous dimensions.":"Diagram resized to "+Math.round(stickerScale(record)*100)+"%. Undo restores its previous size.");
       }
       endPointerCleanup();refresh();return;
     }
@@ -661,7 +675,7 @@
     if(!pointerDrag||ev.pointerId!==pointerDrag.pointerId)return;
     if(pointerDrag.type==="resize"){
       const record=stickers.find(item=>item.id===pointerDrag.id);
-      if(record)record.scale=pointerDrag.initialScale;
+      if(record){if(pointerDrag.isText){record.w=pointerDrag.initialW;record.h=pointerDrag.initialH;}else record.scale=pointerDrag.initialScale;}
       endPointerCleanup();refresh();return;
     }
     endPointerCleanup();
@@ -684,7 +698,31 @@
     $("redoPlacement").addEventListener("click",redoChange);
     $("clearPlacements").addEventListener("click",clearAll);
     $("toggleStickerBoard").addEventListener("click",()=>toggleStickerTray($("stickerBoard").hidden));
-    $("closeStickerBoard").addEventListener("click",()=>toggleStickerTray(false));
+    $("closeStickerBoard").addEventListener("click",()=>{setNotePlacementMode(false);toggleStickerTray(false);});
+    $("addTextNote").addEventListener("click",()=>{
+      closeNoteEditor();setNotePlacementMode(!placingNote);
+    });
+    document.addEventListener("click",clickToPlaceNote,true);
+    $("closeNoteEditor").addEventListener("click",closeNoteEditor);
+    $("doneNote").addEventListener("click",closeNoteEditor);
+    $("noteText").addEventListener("input",()=>{
+      const record=noteRecord(activeNoteId);if(!record)return;
+      if(!noteTextHistorySaved){save();noteTextHistorySaved=true;}
+      record.text=$("noteText").value;updateNoteView(record);
+    });
+    $("noteFontSize").addEventListener("change",()=>applyNoteFormat("fontSize",Number($("noteFontSize").value)));
+    $("noteAlign").addEventListener("change",()=>applyNoteFormat("align",$("noteAlign").value));
+    $("noteBackground").addEventListener("change",()=>applyNoteFormat("background",$("noteBackground").value));
+    $("noteColor").addEventListener("change",()=>applyNoteFormat("color",$("noteColor").value));
+    for(const [id,prop] of [["noteBold","bold"],["noteItalic","italic"]]){
+      $(id).addEventListener("click",()=>{
+        const record=noteRecord(activeNoteId);if(!record)return;
+        applyNoteFormat(prop,!record[prop]);
+        $(id).setAttribute("aria-pressed",String(!!record[prop]));
+      });
+    }
+    window.addEventListener("scroll",()=>{if(activeNoteId!=null)positionNoteEditor();},{passive:true});
+    window.addEventListener("resize",()=>{if(activeNoteId!=null)positionNoteEditor();});
     document.addEventListener("keydown",ev=>{
       if(!pointerDrag?.started||!["Control","Shift"].includes(ev.key))return;
       pointerDrag.ctrlKey=ev.ctrlKey;pointerDrag.shiftKey=ev.shiftKey;
