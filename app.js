@@ -205,6 +205,81 @@ function syncSongTypography(){
     el.style.setProperty("--song-leading",leading);
   }
 }
+
+function paperGeometry(){
+  if($("paperSize").value==="a4"){
+    return {width:(210-24)*96/25.4,height:(297-26)*96/25.4,label:"A4"};
+  }
+  return {width:(215.9-24)*96/25.4,height:(279.4-26)*96/25.4,label:"US Letter"};
+}
+function syncPaperSize(){
+  let style=$("dynamicPaperStyles");
+  if(!style){
+    style=document.createElement("style");style.id="dynamicPaperStyles";
+    document.head.append(style);
+  }
+  style.textContent="@media print{@page{size:"+($("paperSize").value==="a4"?"A4":"letter")+";margin:13mm 12mm;}}";
+  schedulePageGuides();
+}
+function schedulePageGuides(){
+  if($("songEditorPanel").hidden||pageGuidePending)return;
+  pageGuidePending=true;
+  requestAnimationFrame(()=>{
+    pageGuidePending=false;
+    if(!$("songEditorPanel").hidden)updatePageGuides();
+  });
+}
+function updatePageGuides(){
+  const host=$("pageGuides");host.replaceChildren();
+  host.hidden=!$("showPageGuides").checked;
+  if(host.hidden){$("pageGuideSummary").textContent="Page guides hidden";return;}
+  const editor=$("songEditor"),stage=$("songEditorStage");
+  const paper=paperGeometry();
+  // Measure a print-width, off-screen copy. The title and the currently
+  // selected diagrams take space away from the first page.
+  const mirror=$("printPage").cloneNode(true);
+  mirror.removeAttribute("id");
+  mirror.classList.add("print-measure");
+  mirror.style.width=paper.width+"px";
+  const copy=mirror.querySelector("#songLines");
+  if(!copy)return;
+  copy.replaceChildren(...Array.from(editor.childNodes,node=>node.cloneNode(true)));
+  copy.removeAttribute("id");
+  const manager=mirror.querySelector(".chord-manager");
+  if(manager)manager.remove();
+  const section=mirror.querySelector("#chordSection");
+  const songSection=mirror.querySelector("#songSection");
+  if(section)section.hidden=$("chordSection").hidden||!rendered.length;
+  if(songSection)songSection.hidden=false;
+  document.body.append(mirror);
+  try{
+    const mr=mirror.getBoundingClientRect(),cr=copy.getBoundingClientRect();
+    const songStart=cr.top-mr.top;
+    const lines=Array.from(copy.children).map(node=>({
+      top:node.getBoundingClientRect().top-cr.top
+    }));
+    const pad=parseFloat(getComputedStyle(editor).paddingTop)||0;
+    const contentHeight=Math.max(0,copy.scrollHeight,editor.scrollHeight-pad*2);
+    let boundary=Math.max(0,paper.height-songStart),pageNo=2;
+    while(boundary<contentHeight && pageNo<=100){
+      const next=lines.find(line=>line.top>=boundary-.5);
+      const aligned=next?next.top:boundary;
+      const guide=document.createElement("div");guide.className="page-guide";
+      guide.style.top=(pad+aligned)+"px";
+      const label=document.createElement("span");label.textContent="PAGE "+pageNo+" STARTS HERE";
+      guide.append(label);host.append(guide);
+      boundary=Math.max(boundary+paper.height,aligned+paper.height);
+      pageNo++;
+    }
+    const count=Math.max(1,pageNo-1);
+    $("pageGuideSummary").textContent=
+      "Est. "+count+" "+(count===1?"page":"pages")+" · "+paper.label+
+      " · "+rendered.length+" selected diagram"+(rendered.length===1?"":"s");
+    editor.style.width=paper.width+"px";
+    host.style.width=paper.width+"px";
+  }finally{mirror.remove();}
+}
+
 function resetImportedSongNodes(){
   importedSongNodes=Array.from($("songLines").childNodes,node=>node.cloneNode(true));
 }
@@ -219,12 +294,14 @@ function openSongEditor(){
   $("songEditor").replaceChildren(...Array.from($("songLines").childNodes,node=>node.cloneNode(true)));
   panel.hidden=false;
   syncSongTypography();
+  schedulePageGuides();
   panel.scrollIntoView({behavior:"smooth",block:"start"});
   $("songEditor").focus({preventScroll:true});
 }
 function closeSongEditor(){
   $("songEditorPanel").hidden=true;
   $("songEditor").replaceChildren();
+  $("pageGuides").replaceChildren();
 }
 function cancelSongEditor(){
   if(editorOriginalStyle){
@@ -398,6 +475,10 @@ function init(){
   $("undoChordBtn").addEventListener("click",undoDiagramChange);
   $("redoChordBtn").addEventListener("click",redoDiagramChange);
   $("restoreAllChordsBtn").addEventListener("click",restoreAllDiagrams);
+  $("paperSize").addEventListener("change",syncPaperSize);
+  $("showPageGuides").addEventListener("change",schedulePageGuides);
+  $("songEditor").addEventListener("input",schedulePageGuides);
+  window.addEventListener("resize",schedulePageGuides);
   $("editSongBtn").addEventListener("click",openSongEditor);
   $("applySongEdit").addEventListener("click",()=>applySongEdit());
   $("applyPrintSong").addEventListener("click",()=>{applySongEdit(true);window.print();});
@@ -420,7 +501,7 @@ function init(){
     renderDiagrams();
   });
   for(const id of ["songEditFont","songEditLeading"]){
-    $(id).addEventListener("change",syncSongTypography);
+    $(id).addEventListener("change",()=>{syncSongTypography();schedulePageGuides();});
   }
   window.addEventListener("beforeprint",()=>applySongEdit(true));
   $("printBtn").addEventListener("click",()=>{applySongEdit(true);window.print();});
@@ -434,5 +515,6 @@ function init(){
     $(id).addEventListener("change",renderDiagrams);
   }
   $("chordEditor").addEventListener("input",renderDiagrams);
+  syncPaperSize();
 }
 init();
