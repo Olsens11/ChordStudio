@@ -50,6 +50,14 @@ Printing via Ctrl+P while the editor is open also applies the current edits. Cha
 - **Copy diagrams for Docs**: copy a high-resolution PNG containing chord names and diagrams, then paste into Google Docs with `Ctrl+V`.
 - **Download PNG**: save the diagrams if clipboard image access is unavailable.
 
+## Page layout and chord selection
+
+- Open **Edit song text** to adjust your song in a large editor. Dashed blue lines mark **estimated** starts of new printed pages.
+- Choose **US Letter** or **A4** paper and toggle page-break guides on or off. Estimates account for the title, currently selected diagrams, font size and line spacing; your browser's actual print preview is the final authority.
+- Hover over a chord diagram for the **× Remove** button. This removes only that diagram from the print sheet and PNG exports, not chord annotations within song lyrics.
+- Use **Undo**, **Redo**, and **Restore all chords** above the diagrams to refine your selection. Keeping just one unusual fingering is supported.
+- Removing/restoring diagrams refreshes the page-break estimate so you can revise the song layout accordingly.
+
 ## Notes
 
 - The drawing code is original and does not bundle external site scripts or copyrighted songs.
