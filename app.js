@@ -13,6 +13,8 @@ let rendered = [];
 let importedSongNodes = [];
 let editorOriginalStyle = null;
 let removedDiagrams = new Set();
+let diagramOrder = [];
+let draggingChordKey = null;
 let chordUndo = [];
 let chordRedo = [];
 let pageGuidePending = false;
@@ -95,10 +97,17 @@ function diagramKey(item){
   return item.name+"\u001f"+item.arr.join(",");
 }
 function resetDiagramHistory(){
-  removedDiagrams=new Set();chordUndo=[];chordRedo=[];
+  removedDiagrams=new Set();diagramOrder=[];chordUndo=[];chordRedo=[];
+}
+function diagramSnapshot(){
+  return {removed:[...removedDiagrams],order:[...diagramOrder]};
+}
+function restoreDiagramSnapshot(snapshot){
+  removedDiagrams=new Set(snapshot.removed);
+  diagramOrder=[...snapshot.order];
 }
 function captureDiagramChange(){
-  chordUndo.push([...removedDiagrams]);
+  chordUndo.push(diagramSnapshot());
   if(chordUndo.length>80)chordUndo.shift();
   chordRedo=[];
 }
@@ -111,42 +120,123 @@ function removeDiagram(key,name){
 }
 function undoDiagramChange(){
   if(!chordUndo.length)return;
-  chordRedo.push([...removedDiagrams]);
-  removedDiagrams=new Set(chordUndo.pop());
+  chordRedo.push(diagramSnapshot());
+  restoreDiagramSnapshot(chordUndo.pop());
   renderDiagrams();
-  message("Diagram selection undone.");
+  message("Diagram change undone.");
 }
 function redoDiagramChange(){
   if(!chordRedo.length)return;
-  chordUndo.push([...removedDiagrams]);
-  removedDiagrams=new Set(chordRedo.pop());
+  chordUndo.push(diagramSnapshot());
+  restoreDiagramSnapshot(chordRedo.pop());
   renderDiagrams();
-  message("Diagram selection redone.");
+  message("Diagram change redone.");
 }
 function restoreAllDiagrams(){
   if(!removedDiagrams.size)return;
   captureDiagramChange();
   removedDiagrams.clear();
   renderDiagrams();
-  message("All chord diagrams restored.");
+  message("All chord diagrams restored in their current order.");
+}
+function reorderDiagram(fromKey,toKey,after=false){
+  if(fromKey===toKey||!diagramOrder.includes(fromKey)||!diagramOrder.includes(toKey))return;
+  const next=diagramOrder.filter(key=>key!==fromKey);
+  const index=next.indexOf(toKey)+(after?1:0);
+  next.splice(index,0,fromKey);
+  if(next.every((key,index)=>key===diagramOrder[index]))return;
+  captureDiagramChange();
+  diagramOrder=next;
+  renderDiagrams();
+  message("Chord diagram moved. Print and PNG order updated.");
+}
+function clearChordDropIndicators(){
+  for(const card of $("chordGrid").querySelectorAll(".chord-card")){
+    card.classList.remove("drop-before","drop-after","chord-dragging");
+  }
+}
+function setupChordDrag(card,key,name){
+  card.draggable=true;
+  card.tabIndex=0;
+  card.title="Drag to reorder diagrams";
+  card.setAttribute("aria-label",name+" diagram. Drag to reorder, or Alt+arrow keys to move.");
+  card.addEventListener("dragstart",event=>{
+    draggingChordKey=key;
+    event.dataTransfer.effectAllowed="move";
+    event.dataTransfer.setData("text/plain",key);
+    card.classList.add("chord-dragging");
+  });
+  card.addEventListener("dragover",event=>{
+    if(!draggingChordKey||draggingChordKey===key)return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect="move";
+    const box=card.getBoundingClientRect();
+    const after=event.clientX>box.left+box.width/2;
+    clearChordDropIndicators();
+    card.classList.add(after?"drop-after":"drop-before");
+  });
+  card.addEventListener("dragleave",event=>{
+    if(!card.contains(event.relatedTarget)){
+      card.classList.remove("drop-before","drop-after");
+    }
+  });
+  card.addEventListener("drop",event=>{
+    event.preventDefault();
+    event.stopPropagation();
+    const source=draggingChordKey||event.dataTransfer.getData("text/plain");
+    const box=card.getBoundingClientRect();
+    const after=event.clientX>box.left+box.width/2;
+    clearChordDropIndicators();
+    draggingChordKey=null;
+    reorderDiagram(source,key,after);
+  });
+  card.addEventListener("dragend",()=>{
+    draggingChordKey=null;
+    clearChordDropIndicators();
+  });
+  card.addEventListener("keydown",event=>{
+    if(!event.altKey||!["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(event.key))return;
+    const visible=rendered.map(item=>diagramKey(item));
+    const index=visible.indexOf(key);
+    const offset=event.key==="ArrowLeft"?-1:
+      event.key==="ArrowRight"?1:
+      event.key==="ArrowUp"?-Number($("columns").value):Number($("columns").value);
+    const target=visible[index+offset];
+    if(!target)return;
+    event.preventDefault();
+    reorderDiagram(key,target,offset>0);
+    const moved=[...$("chordGrid").querySelectorAll(".chord-card")].find(el=>el.dataset.diagramKey===key);
+    moved?.focus();
+  });
 }
 function renderDiagrams(){
-  const {items,errors}=parseEditor();
+  const parsed=parseEditor();
+  const {errors}=parsed;
+  const current=new Map(parsed.items.map(item=>[diagramKey(item),item]));
+  diagramOrder=[...diagramOrder.filter(key=>current.has(key)),...parsed.items.map(diagramKey).filter(key=>!diagramOrder.includes(key))];
+  const items=diagramOrder.map(key=>current.get(key));
   const grid=$("chordGrid");grid.replaceChildren();rendered=[];
   for(const item of items){
     const key=diagramKey(item);
     if(removedDiagrams.has(key))continue;
     const source=getShape(item.name,item.arr);
     const card=document.createElement("div");card.className="chord-card";
+    card.dataset.diagramKey=key;
+    setupChordDrag(card,key,item.name);
     const heading=document.createElement("div");heading.className="chord-name";heading.textContent=item.name;
     const canvas=makeDiagramCanvas(source);
     canvas.setAttribute("role","img");canvas.setAttribute("aria-label",item.name+" guitar chord "+item.arr.join(" "));
     const remove=document.createElement("button");remove.type="button";
-    remove.className="diagram-remove no-print";remove.textContent="×";
+    remove.className="diagram-remove no-print";
+    remove.draggable=false;
+    remove.addEventListener("mousedown",event=>event.stopPropagation());
+    remove.addEventListener("dragstart",event=>event.preventDefault());
     remove.title="Click to remove "+item.name+" diagram from printout";
     remove.setAttribute("aria-label","Remove "+item.name+" diagram from printout");
     remove.addEventListener("click",()=>removeDiagram(key,item.name));
-    card.append(heading,canvas,remove);
+    const art=document.createElement("div");art.className="diagram-art";
+    art.append(canvas,remove);
+    card.append(heading,art);
     if($("showCodes").checked){
       const code=document.createElement("div");code.className="chord-code";
       code.textContent=item.arr.map(n=>n<0?"x":String(n)).join(" ");
