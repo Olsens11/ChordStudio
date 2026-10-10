@@ -105,9 +105,10 @@ function renderDiagrams(){
   const cols=Number($("columns").value);
   grid.style.setProperty("--cols",cols);
   $("chordSection").hidden=!$("includeChords").checked||items.length===0;
-  $("songSection").hidden=!$("includeSong").checked||!page?.content;
+  // Print visibility follows the actually displayed document, not the original import metadata.
+  // The editor must not depend on whether the importer supplied a nonempty content field.
+  $("songSection").hidden=!$("includeSong").checked||!$("songLines").textContent.trim();
   syncSongTypography();
-  $("editSongBtn").disabled=!page?.content;
   if(errors.length)message(errors.join(" | "),true);
   return rendered;
 }
@@ -149,7 +150,6 @@ function resetImportedSongNodes(){
   importedSongNodes=Array.from($("songLines").childNodes,node=>node.cloneNode(true));
 }
 function openSongEditor(){
-  if(!page?.content){message("Import a song before editing its text.",true);return;}
   const panel=$("songEditorPanel");
   if(!panel.hidden){$("songEditor").focus();return;}
   editorOriginalStyle={
@@ -181,8 +181,13 @@ function applySongEdit(quiet=false){
   if($("songEditorPanel").hidden)return false;
   const editor=$("songEditor");
   $("songLines").replaceChildren(...Array.from(editor.childNodes,node=>node.cloneNode(true)));
+  if(!page){
+    page={title:$("songName").textContent||"Untitled song",artist:$("artistName").textContent||"",content:"",source:""};
+    $("status").textContent="Custom song sheet";
+  }
   closeSongEditor();
   syncSongTypography();
+  $("songSection").hidden=!$("includeSong").checked||!$("songLines").textContent.trim();
   if(!quiet)message("Song changes applied. The print preview now includes your edits.");
   return true;
 }
