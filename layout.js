@@ -787,6 +787,59 @@
     });
     refresh();
   }
-  window.ChordLayout={init,refresh,reset,undo,redo:redoChange,clearAll,stickers:()=>structuredClone(stickers)};
+  function exportProjectLayout(){
+    return {
+      stickers:structuredClone(stickers),
+      trayOpen:!$("stickerBoard").hidden
+    };
+  }
+  function importProjectLayout(data){
+    if(!data||typeof data!=="object"||!Array.isArray(data.stickers))
+      throw Error("Saved project is missing its sticker layout.");
+    if(data.stickers.length>500)throw Error("Project has too many placed items.");
+    const size=pageSize();
+    const restored=[];
+    const used=new Set();
+    for(const raw of data.stickers){
+      if(!raw||typeof raw!=="object")throw Error("Project contains an invalid sticker.");
+      const isText=raw.type==="text";
+      if(!isText && raw.type!=="diagram" && raw.type!=="sticker" && raw.type!=null)
+        throw Error("Project contains an unsupported sticker type.");
+      if(!isText && (!raw.shape||!Array.isArray(raw.shape.frets)||raw.shape.frets.length!==6))
+        throw Error("Project contains a chord sticker without fret data.");
+      const number=(value,fallback)=>Number.isFinite(Number(value))?Number(value):fallback;
+      const id=Math.floor(number(raw.id,0));
+      if(id<1||used.has(id))throw Error("Project has duplicate or missing sticker IDs.");
+      used.add(id);
+      const item={
+        id,type:isText?"text":"diagram",
+        name:String(raw.name|| (isText?"Note":"Chord")).slice(0,100),
+        page:Math.max(0,Math.min(100,Math.floor(number(raw.page,0)))),
+        x:number(raw.x,0),y:number(raw.y,0),scale:Math.max(.2,Math.min(MAX_SCALE,number(raw.scale,1)))
+      };
+      if(isText){
+        item.text=String(raw.text||"").slice(0,15000);
+        item.w=Math.max(NOTE_MIN_W,Math.min(2500,number(raw.w,190)));
+        item.h=Math.max(NOTE_MIN_H,Math.min(2500,number(raw.h,85)));
+        item.fontSize=Math.max(8,Math.min(72,number(raw.fontSize,16)));
+        item.bold=!!raw.bold;item.italic=!!raw.italic;
+        item.align=["left","right","center"].includes(raw.align)?raw.align:"left";
+        item.background=["transparent","#fff0ae","#d8edff","#fce0eb","#ddf5e2","#ffffff"].includes(raw.background)?raw.background:"transparent";
+        item.color=/^#[0-9a-f]{6}$/i.test(raw.color||"")?raw.color:"#181818";
+      }else{
+        item.key=String(raw.key||"").slice(0,150);
+        item.shape=structuredClone(raw.shape);
+      }
+      restored.push(item);
+    }
+    closeNoteEditor();
+    setNotePlacementMode(false);
+    stickers=restored;history=[];redo=[];
+    nextId=Math.max(1,...restored.map(item=>item.id))+1;
+    toggleStickerTray(!!data.trayOpen);
+    refresh();
+  }
+  window.ChordLayout={init,refresh,reset,undo,redo:redoChange,clearAll,
+    stickers:()=>structuredClone(stickers),exportProjectLayout,importProjectLayout};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
 })();
