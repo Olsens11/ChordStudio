@@ -12,8 +12,9 @@
 .paper-head p{margin:0;color:#555;font:13px/1.4 Arial,sans-serif}
 .paper-section-label{font:700 16px/1.3 Arial,sans-serif;margin:14px 0 8px}
 .paper-bank{display:grid;grid-template-columns:repeat(var(--cols,6),minmax(0,1fr));gap:8px 2px;margin:0 0 12px}
-.paper-bank .chord-card{min-height:100px;cursor:default}
-.paper-bank .chord-card:hover{background:transparent}
+.paper-bank .chord-card{min-height:100px;cursor:grab;touch-action:none;user-select:none}
+.paper-bank .chord-card:hover{background:#e7f2ff!important;outline:1px dashed #6e9ae1}
+.paper-bank .chord-card:hover{background:#e7f2ff!important}
 .paper-bank .diagram-remove{display:none!important}
 .paper-song{width:100%;overflow:visible}
 .paper-song .song-line{break-inside:avoid;white-space:pre}
@@ -54,3 +55,15 @@
  .paper-bank .chord-card{break-inside:avoid!important}
  .paper-song .song-line{break-inside:avoid!important}
 }
+
+/* Unified pointer ghost for dragging from either chord bank or relocating stickers. */
+#chordGrid .chord-card{touch-action:none;cursor:grab}
+.paper-sticker{touch-action:none;cursor:grab}
+.chord-pointer-dragging,.chord-pointer-dragging *{cursor:grabbing!important;user-select:none!important}
+.chord-drag-ghost{position:fixed;z-index:99999;width:104px;min-height:106px;background:#fff;border:2px solid #3b78ce;border-radius:9px;box-shadow:0 8px 22px #1732575c;display:flex;align-items:center;flex-direction:column;transform:translate(-50%,-24%);pointer-events:none;opacity:.9}
+.chord-drag-ghost .chord-name{margin-top:3px}
+.chord-drag-ghost .diagram-art{pointer-events:none}
+.chord-drag-ghost::after{content:attr(data-tip);position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:7px;background:#173251;color:white;font:700 11px/1.3 system-ui,sans-serif;padding:4px 7px;border-radius:4px;white-space:nowrap}
+.chord-drag-target{outline:2px solid #2d6bc1;background:#d9eafe!important}
+.paper-page.page-drop-active{outline:3px dashed #2673d4;outline-offset:-5px}
+@media print{.chord-drag-ghost{display:none!important}.paper-bank .chord-card:hover{background:transparent!important;outline:0!important}}
