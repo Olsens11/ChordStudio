@@ -724,6 +724,10 @@
     window.addEventListener("scroll",()=>{if(activeNoteId!=null)positionNoteEditor();},{passive:true});
     window.addEventListener("resize",()=>{if(activeNoteId!=null)positionNoteEditor();});
     document.addEventListener("keydown",ev=>{
+      if(ev.key==="Escape"){
+        if(placingNote){setNotePlacementMode(false);ev.preventDefault();}
+        else if(activeNoteId!=null){closeNoteEditor();ev.preventDefault();}
+      }
       if(!pointerDrag?.started||!["Control","Shift"].includes(ev.key))return;
       pointerDrag.ctrlKey=ev.ctrlKey;pointerDrag.shiftKey=ev.shiftKey;
       moveGhost();showPointerFeedback();
