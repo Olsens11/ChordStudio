@@ -32,8 +32,16 @@ details{border-top:1px solid #e0e7ef;margin-top:16px;padding-top:12px}details su
 .chord-grid{display:grid;grid-template-columns:repeat(var(--cols,6),minmax(0,1fr));gap:13px 6px}
 .chord-card{display:flex;align-items:center;flex-direction:column;break-inside:avoid;min-width:0}.chord-name{font:700 14px/19px Arial,sans-serif;text-align:center;white-space:nowrap;min-height:24px}.chord-card canvas{width:76px;height:72px}
 .chord-code{font:10px Arial,sans-serif;color:#555;text-align:center}
-.chord-card{position:relative}
-.diagram-remove{position:absolute;top:-7px;right:5px;border:0;border-radius:50%;width:25px;height:25px;padding:0;background:#b92c2c;color:white;box-shadow:0 2px 7px #0003;opacity:0;transform:scale(.82);transition:opacity .12s,transform .12s;z-index:2;font-size:20px;line-height:24px}
+.chord-card{position:relative;cursor:move;user-select:none;-webkit-user-select:none;border-radius:8px;transition:background .12s,box-shadow .12s}
+.chord-card:hover{background:#f3f7ff}
+.chord-card.chord-dragging{opacity:.4}
+.chord-card.drop-before{box-shadow:inset 3px 0 #2873bd;background:#edf4ff}
+.chord-card.drop-after{box-shadow:inset -3px 0 #2873bd;background:#edf4ff}
+.diagram-art{position:relative;width:76px;height:72px;flex:none;cursor:move}
+.diagram-art canvas{display:block}
+.diagram-remove{position:absolute;top:-5px;right:-4px;border:0;border-radius:50%;width:22px;height:22px;padding:0;background:#b92c2c;color:#fff;box-shadow:0 1px 5px #0003;opacity:0;transform:scale(.94);transition:opacity .12s,transform .12s;z-index:2;display:grid;place-items:center;cursor:pointer}
+.diagram-remove::before,.diagram-remove::after{content:"";position:absolute;left:50%;top:50%;width:11px;height:2px;background:currentColor;border-radius:1px;transform:translate(-50%,-50%) rotate(45deg)}
+.diagram-remove::after{transform:translate(-50%,-50%) rotate(-45deg)}
 .chord-card:hover .diagram-remove,.chord-card:focus-within .diagram-remove{opacity:1;transform:scale(1)}
 .diagram-remove:hover,.diagram-remove:focus-visible{background:#921f1f;outline:2px solid #f5b1b1}
 .chord-manager{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-2px 0 14px}
@@ -43,7 +51,7 @@ details{border-top:1px solid #e0e7ef;margin-top:16px;padding-top:12px}details su
 .print-measure{position:absolute!important;left:-100000px!important;top:0!important;visibility:hidden!important;width:725px;max-width:none!important;min-width:0!important;padding:0!important;margin:0!important;pointer-events:none!important}
 .print-measure .chord-grid{gap:8px 3px}
 .print-measure .diagram-remove,.print-measure .chord-manager{display:none!important}
-@media(hover:none){.diagram-remove{opacity:1;transform:none;right:0}}
+@media(hover:none){.diagram-remove{opacity:1;transform:scale(1)}}
 .song-lines{font:var(--song-font,14px)/var(--song-leading,1.38) var(--song-family,"Roboto Mono","Courier New",monospace);white-space:pre;max-width:100%}
 .song-line{min-height:calc(1em * var(--song-leading,1.38));white-space:pre}.song-line.heading{font-weight:700;margin-top:9px}.song-chord{font-weight:800;color:#111}
 #songSection{border-top:1px solid #ddd;padding-top:18px}.credit{font:10px Arial,sans-serif;color:#666;margin-top:16px;overflow-wrap:anywhere}
@@ -138,5 +146,5 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  </section>
 </main>
 <footer class="no-print">Independent, open-source chord-sheet formatter. Not affiliated with the sites you import from. No song lyrics are bundled; import only material you are authorized to use.</footer>
-<script src="app.js?v=20261010-pagination-calibrated-1" defer></script>
+<script src="app.js?v=20261010-chord-reorder-1" defer></script>
 </body></html>
