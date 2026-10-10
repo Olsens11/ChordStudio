@@ -219,15 +219,23 @@
   // Unified pointer drag: works when dragging into scrolled pages. Native
   // HTML drag/drop is not reliable here and does not reach the drop target.
   // Palette items are COPIED; existing placed stickers are MOVED.
-  function makeGhost(name,shape){
+  function makeGhost(state){
+    // Use the same intrinsic 104×107 layout and scale as a placed sticker.
+    // Only the editing handles differ: the drag preview has none.
     const el=document.createElement("div");
     el.className="chord-drag-ghost";
     el.setAttribute("aria-hidden","true");
+    el.style.width=stickerWidth(state)+"px";
+    el.style.height=stickerHeight(state)+"px";
+    const inner=document.createElement("div");
+    inner.className="sticker-inner";
+    inner.style.transform="scale("+stickerScale(state)+")";
     const title=document.createElement("div");title.className="chord-name";
-    title.textContent=name;
+    title.textContent=state.name;
     const art=document.createElement("div");art.className="diagram-art";
-    art.append(makeDiagramCanvas(shape));
-    el.append(title,art);
+    art.append(makeDiagramCanvas(state.shape));
+    inner.append(title,art);
+    el.append(inner);
     document.body.append(el);
     return el;
   }
@@ -270,9 +278,25 @@
   }
   function moveGhost(){
     if(!pointerDrag?.ghost)return;
-    const ghost=pointerDrag.ghost;
-    ghost.style.left=pointerDrag.x+"px";
-    ghost.style.top=pointerDrag.y+"px";
+    const state=pointerDrag;
+    const ghost=state.ghost;
+    const offsetX=state.type==="sticker"?state.offsetX:STICKER_W/2;
+    const offsetY=state.type==="sticker"?state.offsetY:20;
+    let x=state.x-offsetX,y=state.y-offsetY;
+    // Apply the same edge clamping as the eventual drop. What the user sees
+    // inside the page is exactly where the sticker will land.
+    const page=itemAtPointer(state.x,state.y).page;
+    if(page){
+      const inside=page.querySelector(".paper-inside");
+      if(inside){
+        const point=pointToPaper({clientX:state.x,clientY:state.y},inside,state);
+        const rect=inside.getBoundingClientRect();
+        x=rect.left+point.x;
+        y=rect.top+point.y;
+      }
+    }
+    ghost.style.left=x+"px";
+    ghost.style.top=y+"px";
   }
   function scrollDuringDrag(){
     scrollFrame=0;
@@ -285,7 +309,7 @@
     if(speed){
       const oldY=window.scrollY;
       window.scrollBy(0,speed);
-      if(window.scrollY!==oldY)showPointerFeedback();
+      if(window.scrollY!==oldY){moveGhost();showPointerFeedback();}
     }
     scrollFrame=requestAnimationFrame(scrollDuringDrag);
   }
@@ -363,7 +387,7 @@
     ev.preventDefault();
     if(!state.started){
       state.started=true;
-      state.ghost=makeGhost(state.name,state.shape);
+      state.ghost=makeGhost(state);
       document.body.classList.add("chord-pointer-dragging");
       scrollFrame=requestAnimationFrame(scrollDuringDrag);
     }
