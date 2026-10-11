@@ -100,7 +100,8 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <details class="activity-disclosure" id="importDetails" open><summary>Bring a song into ChordStudio</summary><div class="activity-body">
  <div class="song-start-choices" aria-label="Choose how to start">
   <section class="song-start-option compose-start">
-    <div class="song-start-top"><span class="start-icon" aria-hidden="true">✎</span><div><h3>Write my own song</h3><p>Write an original song or arrange someone else’s. Add lyrics, chords, and your own diagrams.</p></div></div>
+    <div class="song-start-top"><span class="start-icon" aria-hidden="true">✎</span><div><h3>Write my own song</h3></div></div>
+    <p class="song-start-description">Write an original song or arrange someone else’s. Add lyrics, chords, and your own diagrams.</p>
     <div class="compose-fields">
       <label for="newSongTitle"><span class="compose-field-label">Song title <span class="field-optional">(optional)</span></span><input id="newSongTitle" type="text" placeholder="Untitled song" maxlength="200"></label>
       <label for="newSongArtist"><span class="compose-field-label">Written by <span class="field-optional">(optional)</span></span><input id="newSongArtist" type="text" placeholder="Songwriter's name" maxlength="200"></label>
@@ -111,7 +112,8 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
     </div>
   </section>
   <section class="song-start-option import-start">
-    <div class="song-start-top"><span class="start-icon" aria-hidden="true">↗</span><div><h3>Import an existing song</h3><p>Bring in lyrics and chord diagrams from a supported song page, then make the arrangement your own.</p></div></div>
+    <div class="song-start-top"><span class="start-icon" aria-hidden="true">↗</span><div><h3>Import an existing song</h3></div></div>
+    <p class="song-start-description">Bring in lyrics and chord diagrams from a supported song page, then make the arrangement your own.</p>
     <p class="import-start-hint">Drag this yellow button to your bookmarks bar, then click it while viewing a song's chord page.</p>
     <div class="bookmark-start-link"><a href="#" id="bookmarklet" class="bookmarklet" draggable="true" title="Drag to bookmarks bar, or click for setup steps">↗ ChordStudio</a>
      <button id="showImportHelp" class="linklike" type="button" aria-controls="bookmarkHelp" aria-expanded="false">Can't drag it? See alternate setup instructions</button></div>
@@ -449,7 +451,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <div class="chord-builder-actions"><button id="builderCancel" type="button">Cancel</button><button id="builderSave" class="primary" type="button">Save chord to organizer</button></div>
 </dialog>
 <footer class="no-print">Independent, open-source chord-sheet formatter. Not affiliated with the sites you import from. No song lyrics are bundled; import only material you are authorized to use.</footer>
-<link rel="stylesheet" href="layout.css?v=20261011-centered-cta-1">
+<link rel="stylesheet" href="layout.css?v=20261011-song-card-layout-1">
 <script src="workflow.js?v=20261011-project-restore-1" defer></script>
 <script src="app.js?v=20261011-credits-modal-focus-1" defer></script>
 <script src="layout.js?v=20261011-layout-credits-qr-2" defer></script>
