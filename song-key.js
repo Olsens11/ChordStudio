@@ -39,9 +39,10 @@
    selected=value;source=selected?newSource:"";
    if($("songKey"))$("songKey").value=selected;
    const key=keyById(selected);
+   if($("confirmSongKey"))$("confirmSongKey").hidden=!key||source==="manual"||source==="confirmed"||source==="transposed";
    if($("keySummary")){
      $("keySummary").textContent=key?
-       key.name+(source==="imported"?" · imported metadata (review before relying on it)":source==="suggested"?" · suggested (please confirm)":" · selected"):
+       key.name+(source==="imported"?" · imported metadata — please confirm":source==="suggested"?" · suggested — please confirm":" · confirmed"):
        "Unselected — no key is assumed. Songs with multiple keys may stay unselected.";
    }
    document.dispatchEvent(new CustomEvent("chordstudio:keychange",{detail:getState()}));
@@ -130,7 +131,10 @@
    const from=keyById(selected),to=keyById($("transposeKey").value);
    if(!from)throw Error("Select and confirm the song's current key first.");
    if(!to)throw Error("Choose a target key.");
-   const shift=mod(to.root-from.root);
+   if(source==="imported"||source==="suggested")
+     throw Error("Confirm the imported or suggested current key before transposing.");
+   let shift=mod(to.root-from.root);
+   if(shift>6)shift-=12;
    if(!shift)throw Error("These keys have the same tonic. Changing major/minor alone is not a pitch transposition.");
    applySongEdit(true);
    const items=parseEditor().items,layout=window.ChordLayout.exportProjectLayout();
@@ -186,7 +190,8 @@
    try{
      prepared=prepare();
      $("transposeExplanation").textContent=prepared.from.name+" → "+prepared.to.name+
-       " · "+prepared.shift+" semitones upward (modulo 12). Suggested voicings use the selected guitar tuning.";
+       " · "+Math.abs(prepared.shift)+" semitone"+(Math.abs(prepared.shift)===1?"":"s")+
+       (prepared.shift>0?" up":" down")+". Suggested voicings use the selected guitar tuning.";
      const host=$("transposeChanges");host.replaceChildren();
      const list=document.createElement("div");list.className="transpose-pairs";
      for(const [oldName,newName] of prepared.replacements){
@@ -265,6 +270,9 @@
    }
    $("songKey").addEventListener("change",()=>setKey($("songKey").value,"manual"));
    $("suggestSongKey").addEventListener("click",suggestKey);
+   $("confirmSongKey").addEventListener("click",()=>{
+     if(selected){setKey(selected,"confirmed");message("Confirmed "+keyById(selected).name+" as the song key.");}
+   });
    $("previewTranspose").addEventListener("click",previewTranspose);
    $("transposeApply").addEventListener("click",applyTranspose);
    $("transposeClose").addEventListener("click",closeDialog);
