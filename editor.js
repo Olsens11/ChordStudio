@@ -3,7 +3,38 @@
   const $=id=>document.getElementById(id);
   const undo=[], redo=[];
   let timer=0,lastChange=0,applying=false;
-  const snapshot=()=>$("songEditor").innerHTML;
+  function cursorPosition(){
+    const root=$("songEditor"),sel=window.getSelection();
+    if(!sel?.anchorNode||!root.contains(sel.anchorNode))return null;
+    const start=sel.anchorNode.nodeType===Node.ELEMENT_NODE?sel.anchorNode:sel.anchorNode.parentElement;
+    const line=start?.closest(".song-line")||start?.closest("#songEditor")?.firstElementChild;
+    if(!line)return null;
+    const index=[...root.children].indexOf(line);
+    if(index<0)return null;
+    try{
+      const range=document.createRange();range.selectNodeContents(line);
+      range.setEnd(sel.anchorNode,sel.anchorOffset);
+      return {line:index,offset:range.toString().length};
+    }catch{return null;}
+  }
+  function restoreCursor(caret){
+    const editor=$("songEditor"),line=caret&&editor.children[caret.line];
+    const range=document.createRange();
+    if(line){
+      let left=caret.offset;
+      const walker=document.createTreeWalker(line,NodeFilter.SHOW_TEXT);
+      let node;
+      while((node=walker.nextNode())){
+        if(left<=node.length){
+          range.setStart(node,Math.max(0,left));range.collapse(true);break;
+        }
+        left-=node.length;
+      }
+      if(!node){range.selectNodeContents(line);range.collapse(false);}
+    }else{range.selectNodeContents(editor);range.collapse(false);}
+    const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);
+  }
+  const snapshot=()=>({html:$("songEditor").innerHTML,caret:cursorPosition()});
   const isOpen=()=>!$("songEditorPanel").hidden;
   function availability(){
     const active=isOpen();
@@ -26,7 +57,7 @@
   function recordChange(){
     if(!isOpen()||applying)return;
     const html=snapshot();
-    if(undo[undo.length-1]===html)return;
+    if(undo[undo.length-1].html===html.html)return;
     const time=Date.now();
     if(lastChange&&time-lastChange<350&&undo.length>1){
       undo[undo.length-1]=html;
@@ -39,14 +70,13 @@
     availability();
     updateGuides();
   }
-  function replace(html){
+  function replace(saved){
     applying=true;
-    $("songEditor").innerHTML=html;
+    $("songEditor").innerHTML=saved.html;
     const editor=$("songEditor");
     // Keep the editor focus. Subsequent typing can start immediately.
     editor.focus({preventScroll:true});
-    const range=document.createRange();range.selectNodeContents(editor);range.collapse(false);
-    const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);
+    restoreCursor(saved.caret);
     applying=false;
     availability();
     updateGuides();
@@ -54,7 +84,7 @@
   function undoText(){
     if(!isOpen()||undo.length<2)return;
     const current=snapshot();
-    if(undo[undo.length-1]!==current)undo.push(current);
+    if(undo[undo.length-1].html!==current.html)undo.push(current);
     redo.push(undo.pop());
     lastChange=0;
     replace(undo[undo.length-1]);
@@ -100,6 +130,10 @@
     $("showPageGuides").addEventListener("change",showGuides);
     for(const id of ["includeChords","includeSong","showDiagrams","showCodes","columns","fontSize","paperSize","songEditFont","songEditLeading"])
       $(id)?.addEventListener("change",updateGuides);
+    $("songEditor").addEventListener("beforeinput",()=>{
+      if(!isOpen()||applying||!undo.length)return;
+      undo[undo.length-1].caret=cursorPosition();
+    });
     $("songEditor").addEventListener("input",recordChange);
     for(const id of ["undoSongText","undoSongTextMenu"])
       $(id).addEventListener("click",undoText);
