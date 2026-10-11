@@ -15,6 +15,18 @@
   "7b5":[0,4,6,10],"7#5":[0,4,8,10],
   "6/9":[0,2,4,7,9]
  };
+ const KNOWN_STANDARD={
+  "C":["x32010","x35553"],"Cm":["x35543"],
+  "Cmaj7":["x32000"],"C7":["x32310"],
+  "D":["xx0232"],"Dm":["xx0231"],"D7":["xx0212"],"Dsus4":["xx0233"],
+  "E":["022100"],"Em":["022000"],"E7":["020100"],
+  "F":["133211","xx3211"],"Fm":["133111"],"Fmaj7":["xx3210"],
+  "F#m":["244222"],"F#m7":["242222"],
+  "G":["320003","320033"],"G7":["320001"],"G/B":["x20033"],
+  "A":["x02220"],"Am":["x02210"],"A7":["x02020"],"Am7":["x02010"],
+  "B":["x24442"],"Bm":["x24432"],"B7":["x21202"],
+  "Bb":["x13331"],"Bbmaj7":["x13231"]
+ };
  const PC={C:0,D:2,E:4,F:5,G:7,A:9,B:11},mod=x=>(x%12+12)%12;
  function noteToPc(name){
   const m=String(name).match(/^([A-G])([#b♯♭]?)$/);
@@ -126,6 +138,24 @@
    visit(0,new Set(),0,Infinity,0,Infinity);
   }
   const ranked=[...seen.values()].sort((a,b)=>a.score-b.score||a.code.localeCompare(b.code));
+  const standard=[40,45,50,55,59,64];
+  if(standard.every((n,i)=>strings[i]===n)){
+    const seeds=KNOWN_STANDARD[chord.name]||[];
+    for(let index=seeds.length-1;index>=0;index--){
+      const frets=[...seeds[index]].map(x=>x==="x"?-1:Number(x));
+      const sound=frets.map((f,i)=>f<0?null:strings[i]+f).filter(x=>x!==null);
+      if(!sound.length||mod(Math.min(...sound))!==chord.bass)continue;
+      const pcs=[...new Set(sound.map(mod))];
+      if(pcs.length!==valid.size||pcs.some(x=>!valid.has(x)))continue;
+      const positive=frets.filter(f=>f>0),min=positive.length?Math.min(...positive):0;
+      const code=frets.join(",");
+      const entry={frets,fingers:estimateFingering(frets),
+        score:-1000+index,base:min>=5?min:1,code};
+      const existing=ranked.findIndex(x=>x.code===code);
+      if(existing>=0)ranked.splice(existing,1);
+      ranked.unshift(entry);
+    }
+  }
   const diverse=[],used=new Set();
   for(const v of ranked){
     const signature=v.base+":"+v.frets.filter(f=>f>=0).length;
