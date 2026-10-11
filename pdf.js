@@ -51,6 +51,23 @@
     if(i)pdf.addPage(format,"portrait");
     pdf.addImage(canvas.toDataURL("image/jpeg",.94),"JPEG",0,0,w,h,
       undefined,"FAST");
+    // The visible page is rasterized, so hyperlink annotations must be added
+    // separately over the rendered objects. This also makes the QR itself clickable.
+    const pageRect=pages[i].getBoundingClientRect();
+    const urlTargets=[...pages[i].querySelectorAll(".link-sticker,.paper-source-footer a")];
+    for(const item of urlTargets){
+      const candidate=item.classList.contains("link-sticker")
+        ?window.ChordLayout?.stickers().find(sticker=>String(sticker.id)===item.dataset.stickerId)?.url
+        :item.href;
+      const url=validSourceUrl(candidate);
+      if(!url)continue;
+      const rect=item.getBoundingClientRect();
+      const x=Math.max(0,(rect.left-pageRect.left)/pageRect.width*w);
+      const y=Math.max(0,(rect.top-pageRect.top)/pageRect.height*h);
+      const linkW=Math.min(w-x,rect.width/pageRect.width*w);
+      const linkH=Math.min(h-y,rect.height/pageRect.height*h);
+      if(linkW>0&&linkH>0)pdf.link(x,y,linkW,linkH,{url});
+    }
     // Allow the UI to update after each page.
     await new Promise(resolve=>setTimeout(resolve,0));
    }
