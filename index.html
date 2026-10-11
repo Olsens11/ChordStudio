@@ -204,9 +204,10 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
       <label for="songEditSize">Text size<br><select id="songEditSize"><option value="10">10 px</option><option value="12">12 px</option><option value="14" selected>14 px</option><option value="16">16 px</option><option value="18">18 px</option><option value="20">20 px</option></select></label>
       <label for="songEditLeading">Line spacing<br><select id="songEditLeading"><option value="1.15">Tight</option><option value="1.38" selected>Normal</option><option value="1.6">Relaxed</option><option value="2">Double</option></select></label>
     </div>
-    <p class="muted">Apply edits to refresh the printable pages below. Page boundaries now come from the actual paper boxes, so separate estimated line guides are no longer needed.</p>
+    <label class="page-guide-control"><input type="checkbox" id="showPageGuides" checked> Show page boundaries in editor</label><p class="page-guide-note">Dashed boundaries are calculated from the same Letter or A4 page boxes used to print. They update as you edit.</p>
     <div class="song-editor-stage" id="songEditorStage">
       <div id="songEditor" class="song-lines song-editor-text" role="textbox" aria-label="Editable song lyrics and chords" aria-multiline="true" contenteditable="true" spellcheck="false"></div>
+      <div id="pageGuides" class="page-guides" aria-hidden="true"></div>
     </div>
     <div class="song-editor-actions"><button class="primary" id="applySongEdit" type="button">Apply changes</button><button id="applyPrintSong" type="button">Apply &amp; print</button><button id="cancelSongEdit" type="button">Cancel</button><button id="restoreSongEdit" type="button">Restore imported text</button></div>
  </section>
@@ -251,4 +252,6 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
 <script src="layout.js?v=20261010-quietsort-1" defer></script>
 <script src="project.js?v=20261010-organizer-2" defer></script>
 <script src="toolbar.js?v=20261010-fullscreen-1" defer></script>
+<script src="editor.js?v=20261011-editor-1" defer></script>
+<script src="image.js?v=20261011-images-1" defer></script>
 </body></html>
