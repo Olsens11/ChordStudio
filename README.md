@@ -84,6 +84,8 @@ The page preview is built from actual Letter or A4 page boxes; those same elemen
 
 ## Optional song keys and confirmed transposition
 
+**Experimental / In development:** The **Song key & transposition** section in the chord bank organizer is collapsed by default. Expanding it displays a caution because imported keys, generated/transposed grips, chord spellings, and annotations may require correction. Review the preview and final document carefully, and use Save As to preserve an original copy before applying a transposition.
+
 The **Song key** control in the Chord bank organizer starts as **Unselected**. ChordStudio imports recognizable textual keys from supported page-source fields, including the tab tonality name and page-view tonality metadata. Numeric site-specific key codes are never guessed. Already installed bookmarklets do not update automatically when ChordStudio changes: replace the existing bookmarklet with the latest link from this site to import these metadata fields. **Suggest key** lists possibilities from the chord roots without automatically selecting one. Relative keys, modulations and unusual harmony are ambiguous; leaving a key Unselected is valid.
 
 There are now two transposition methods. **Transpose to key** uses a confirmed current key and a target key of the same major/minor mode; imported keys require pressing **Confirm key** first. **Shift by semitones** moves chords by −12 to +12 steps, and works even with an Unselected key. For either method, pressing **Preview** shows the proposed chord names and shapes, while **Apply transposition** makes the actual change. Selecting a dropdown alone never rewrites chords. Preview failures are shown beside the controls.
