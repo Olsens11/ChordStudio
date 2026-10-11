@@ -87,7 +87,7 @@ function drawDiagram(ctx,v){
     }
     if(f>0&&finger>0)text(finger,x,top+43,"10px Arial");
   }
-  if(base>0)text(base+"fr",left+38,top,"11px Arial","left");
+  if(base>0)text(base+"fr",left+38,top,base>=10?"9px Arial":"10px Arial","left");
 }
 function makeDiagramCanvas(v){
   const canvas=document.createElement("canvas");canvas.width=152;canvas.height=144;
