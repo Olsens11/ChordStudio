@@ -145,7 +145,10 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
      <button id="confirmSongTuning" type="button" class="confirm-tuning">Confirm tuning</button>
      <span id="tuningSummary" class="tuning-summary">Standard tuning assumed. Confirm before using chord-name suggestions.</span>
    </div>
-   <div class="key-control" aria-label="Song key and transposition">
+   <details class="key-control key-experimental" id="songKeyDetails">
+     <summary><span class="key-experimental-title">Song key &amp; transposition</span><span class="key-experimental-status">Experimental / In development</span></summary>
+     <div class="key-experimental-body">
+      <p class="key-experimental-notice" role="note"><strong>This feature is still in development.</strong> Imported keys, suggested chords, transposed fingerings, and song annotations may be inaccurate. Preview the changes, check the resulting song and diagrams carefully, and use Save As to keep an original copy before applying a transposition.</p>
      <div class="key-control-field"><label for="songKey">Song key <select id="songKey"><option value="">Unselected</option></select></label>
        <button id="suggestSongKey" type="button">Suggest key</button>
        <button id="confirmSongKey" type="button" hidden>Confirm key</button>
@@ -159,7 +162,8 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
        <span class="key-step-help">Use + to move up or − to move down. Works even with no song key selected.</span></div>
      <p id="transposeFeedback" class="transpose-feedback" role="alert" hidden></p>
      <p class="key-disclaimer">Key selection is optional and does not change chords. Transpose requires a preview and confirmation; songs with multiple keys can remain Unselected.</p>
-   </div>
+     </div>
+   </details>
       <div class="organizer-toolbar">
       <div class="display-toggles"><label><input id="showDiagrams" type="checkbox" checked> Diagram</label><label><input id="showCodes" type="checkbox"> Fret codes</label></div>
       <label>Columns <select id="columns"><option>4</option><option>5</option><option selected>6</option><option>8</option><option>10</option></select></label>
@@ -402,7 +406,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <div class="chord-builder-actions"><button id="builderCancel" type="button">Cancel</button><button id="builderSave" class="primary" type="button">Save chord to organizer</button></div>
 </dialog>
 <footer class="no-print">Independent, open-source chord-sheet formatter. Not affiliated with the sites you import from. No song lyrics are bundled; import only material you are authorized to use.</footer>
-<link rel="stylesheet" href="layout.css?v=20261011-key-import-fix-2">
+<link rel="stylesheet" href="layout.css?v=20261011-key-experimental-1">
 <script src="app.js?v=20261011-key-import-fix-2" defer></script>
 <script src="layout.js?v=20261010-menus-tuning-1" defer></script>
 <script src="project.js?v=20261011-key-1" defer></script>
