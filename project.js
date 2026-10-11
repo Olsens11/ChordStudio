@@ -77,6 +77,7 @@
       catalog:structuredClone(catalog),
       originalCatalog:structuredClone(original),
       chordEditor:$("chordEditor").value,
+      tuning:window.ChordTheory?.getTuning()||{id:"standard"},
       chordOrder:[...diagramOrder],
       removedDiagrams:[...removedDiagrams],
       songLines:serializeLines($("songLines").childNodes),
@@ -143,6 +144,15 @@
         String(meta.title||"Untitled song").slice(0,200),
         String(meta.artist||"").slice(0,200),false);
     }
+    // Version-1 projects from before tuning support intentionally fall back
+    // to an *unconfirmed* standard-tuning assumption.
+    if(data.tuning&&typeof data.tuning==="object"){
+      try{window.ChordTheory?.setTuning(
+        data.tuning.id||"standard",
+        data.tuning.custom||"E2 A2 D3 G3 B3 E4",
+        data.tuning.confirmed===true);}
+      catch(e){throw Error("Saved guitar tuning is invalid: "+e.message);}
+    }else window.ChordTheory?.setTuning("standard",null,false);
     catalog=structuredClone(savedCatalog);
     original=structuredClone(originalCatalog);
     page.content=String(meta.content||"");
