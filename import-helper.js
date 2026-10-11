@@ -3,8 +3,9 @@
 (function(){
  const $=id=>document.getElementById(id);
  function help(){
-   $("bookmarkHelp").hidden=false;
    $("importDetails").open=true;
+   $("importHowto").open=true;
+   $("bookmarkHelp").hidden=false;
  }
  async function copy(){
    const data=$("bookmarklet").href;
@@ -43,6 +44,10 @@
  function init(){
    const bookmark=$("bookmarklet");
    bookmark.addEventListener("click",event=>{event.preventDefault();help();});
+   $("showImportHelp").addEventListener("click",()=>{
+     $("importDetails").open=true;$("importHowto").open=true;
+     $("importHowto").scrollIntoView({behavior:"smooth",block:"nearest"});
+   });
    $("copyBookmarklet").addEventListener("click",copy);
    $("closeBookmarkHelp").addEventListener("click",()=>{$("bookmarkHelp").hidden=true;});
    $("importPaste").addEventListener("click",event=>{
