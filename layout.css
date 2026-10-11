@@ -679,3 +679,38 @@ body.chord-rotating,body.chord-rotating *{cursor:alias!important;user-select:non
  .builder-name-controls input{flex:1 1 170px}
  .builder-name-controls #builderSuggestVoicing{flex:1}
 }
+
+/* Compact, purpose-sized chord builder inputs and key controls. */
+.chord-builder-fields .builder-name-label{flex:0 1 440px!important;min-width:240px;max-width:460px}
+.chord-builder-fields label:has(#builderCode){flex:1 1 190px;min-width:170px}
+.chord-builder-fields label:has(#builderBase){flex:0 0 112px;min-width:88px;max-width:112px}
+#builderBase{width:92px!important;max-width:100%;font-variant-numeric:tabular-nums}
+.builder-note-label,.builder-spelling-label{flex:0 0 150px!important;min-width:130px!important}
+.builder-note-label select,.builder-spelling-label select{width:100%}
+.builder-status-row button.note-label{font:700 12px/1.1 Arial,sans-serif;letter-spacing:-.4px}
+.builder-note-spellings{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:8px 0;padding:7px 0}
+.builder-note-spellings[hidden]{display:none!important}
+.builder-note-spellings span{font:11px/1.4 system-ui,sans-serif;color:#547091}
+.builder-note-spellings button{background:#eaf4ff;color:#1d558e;border:1px solid #9fc1ea;
+ border-radius:6px;padding:5px 8px;font:bold 11px system-ui,sans-serif;cursor:pointer}
+.key-control{padding:11px 12px;border:1px solid #c8daf0;border-radius:9px;background:#f8fbff;margin:10px 0}
+.key-control-field{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px;margin-bottom:7px}
+.key-control-field label{display:flex;flex-direction:column;gap:5px;
+ font:700 11px/1.3 system-ui,sans-serif;color:#365d88}
+.key-control-field select{min-width:174px;max-width:100%;padding:8px 10px;border:1px solid #b6cae1;
+ border-radius:7px;background:#fff;color:#26476e;font:12px system-ui,sans-serif}
+.key-control-field button{padding:8px 10px;border:1px solid #a7c3e3;border-radius:7px;
+ background:#eaf3ff;color:#1d568e;font:700 11px/1.2 system-ui,sans-serif}
+.key-control-field button[hidden]{display:none!important}
+.key-summary{font:11px/1.45 system-ui,sans-serif;color:#526e91;align-self:center;flex:1;min-width:170px}
+.key-disclaimer{font:10px/1.5 system-ui,sans-serif;color:#6c809b;margin:5px 0 0}
+.transpose-dialog{width:min(600px,calc(100vw - 20px))}
+.transpose-pairs{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;max-height:290px;overflow:auto}
+.transpose-pairs>div{padding:7px 8px;background:#f0f6ff;border-radius:6px;
+ font:12px/1.3 system-ui,sans-serif;color:#355c8b}
+.transpose-warning{border-top:1px solid #d8e4f3;margin-top:15px!important;padding-top:8px}
+@media(max-width:620px){
+ .chord-builder-fields .builder-name-label{flex:1 1 100%!important;max-width:100%}
+ .chord-builder-fields label:has(#builderCode){flex:1 1 180px}
+ .key-control-field select{min-width:150px}
+}
