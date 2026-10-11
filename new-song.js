@@ -36,10 +36,18 @@
      });
    }
    $("fileNewSongBtn").addEventListener("click",()=>{
-     $("importDetails").open=true;
-     $("importDetails").scrollIntoView({behavior:"smooth",block:"start"});
-     $("newSongTitle").focus({preventScroll:true});
+     if(hasUnsavedSheet()&&!window.confirm(
+       "Create a new document? Save the current project first if you want to keep it."))return;
+     $("newSongTitle").value="";$("newSongArtist").value="";
+     window.ChordSong.startBlankSong("Untitled song","",true);
    });
+   document.addEventListener("keydown",event=>{
+     if((event.ctrlKey||event.metaKey)&&!event.altKey&&!event.shiftKey&&
+       event.key.toLowerCase()==="n"){
+       event.preventDefault();
+       $("fileNewSongBtn").click();
+     }
+   },true);
    $("editSongDetailsBtn").addEventListener("click",details);
    $("songDetailsClose").addEventListener("click",close);
    $("songDetailsCancel").addEventListener("click",close);
