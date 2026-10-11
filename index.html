@@ -180,7 +180,8 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
          <button id="openProjectBtn" type="button" title="Open a previously saved ChordStudio project">Open project…</button>
          <button id="recentProjectsBtn" type="button">Recent projects…</button>
          <input id="projectFile" type="file" accept=".chordstudio,.json,application/json" hidden>
-         <button id="saveProjectBtn" type="button">Save project</button>
+         <button id="saveProjectBtn" type="button">Save <span class="menu-keyhint">Ctrl+S</span></button>
+         <button id="saveProjectAsBtn" type="button">Save As… <span class="menu-keyhint">Ctrl+Shift+S</span></button>
          <div class="toolbar-menu-rule"></div>
          <button id="importImageBtn" type="button">Import image…</button>
          <input id="imageFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
@@ -297,7 +298,14 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <p id="message" class="message no-print" aria-live="polite"></p>
  </section>
 </main>
-<dialog id="recentProjectsDialog" class="recent-projects-dialog no-print" aria-labelledby="recentProjectsHeading">
+<dialog id="saveAsDialog" class="song-details-dialog no-print" aria-labelledby="saveAsTitle">
+ <div class="song-details-header"><h3 id="saveAsTitle">Save As</h3><button id="saveAsClose" type="button" aria-label="Close Save As">×</button></div>
+ <p id="saveAsDescription">Choose a filename for this ChordStudio project.</p>
+ <label for="saveAsName">Project filename<input id="saveAsName" type="text" maxlength="140" spellcheck="false" placeholder="My Song.chordstudio"></label>
+ <p id="saveAsError" class="save-as-error" role="alert" hidden></p>
+ <div class="song-details-actions"><button id="saveAsCancel" type="button">Cancel</button><button id="saveAsConfirm" class="primary" type="button">Save project</button></div>
+ </dialog>
+ <dialog id="recentProjectsDialog" class="recent-projects-dialog no-print" aria-labelledby="recentProjectsHeading">
   <div class="recent-dialog-heading"><h3 id="recentProjectsHeading">Recent projects</h3><button type="button" id="recentProjectsClose" aria-label="Close recent projects">×</button></div>
   <p>Recent saved or opened projects on this device. Projects are stored locally in this browser; downloading a .chordstudio file is still recommended for backups.</p>
   <div id="recentProjectsList" class="recent-projects-list"></div>
@@ -324,9 +332,25 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
 </dialog>
 <dialog id="chordBuilderDialog" class="chord-builder-dialog no-print" aria-labelledby="chordBuilderTitle">
  <div class="chord-builder-head"><div><h3 id="chordBuilderTitle">Chord diagram builder</h3><p>Click a string and fret for dots. Drag between strings on the same fret to add a barre.</p></div><button id="chordBuilderClose" type="button" aria-label="Close chord builder">×</button></div>
- <div class="chord-builder-fields"><label>Chord name <input id="builderName" type="text" placeholder="e.g. Cmaj7" maxlength="80" required></label><label>Fret code (low E → high E) <input id="builderCode" type="text" placeholder="x 3 2 0 0 0" spellcheck="false"></label></div>
- <div class="chord-builder-fields"><label>Top fret number <input id="builderBase" type="number" min="1" max="24" value="1"></label><label>Finger for selected dot/barre <select id="builderFinger"><option value="0">Unnumbered</option><option value="1">1 · index</option><option value="2">2 · middle</option><option value="3">3 · ring</option><option value="4">4 · pinky</option></select></label><label><input id="builderShowDots" type="checkbox" checked> Show all dots</label></div>
- <div class="chord-builder-workspace"><div><div id="builderGrid" class="builder-grid" role="group" aria-label="Interactive six-string guitar fretboard"></div><div id="builderStringNames" class="builder-string-names" aria-hidden="true"><span>E</span><span>A</span><span>D</span><span>G</span><span>B</span><span>e</span></div></div>
+ <div class="chord-builder-fields">
+  <label class="builder-name-label">Chord name
+    <span class="builder-name-controls"><input id="builderName" type="text" placeholder="e.g. Cmaj7" maxlength="80" required>
+      <button id="builderSuggestVoicing" type="button" title="Find playable fingerings for this chord name">Suggest voicing</button>
+      <button id="builderPrevVoicing" type="button" aria-label="Previous voicing" title="Previous voicing" disabled>‹</button>
+      <button id="builderNextVoicing" type="button" aria-label="Next voicing" title="Next voicing" disabled>›</button>
+    </span>
+    <span id="builderVoicingStatus" class="builder-voicing-status" role="status">Enter a chord name, then suggest voicings or draw your own.</span>
+  </label>
+  <label>Fret code (low string → high string) <input id="builderCode" type="text" placeholder="x 3 2 0 0 0" spellcheck="false"></label>
+ </div>
+ <div class="chord-builder-fields"><label>Top fret number <input id="builderBase" type="number" min="1" max="24" value="1"></label><label class="builder-note-label">Diagram labels <select id="builderDotMode"><option value="dots">Dots</option><option value="notes">Note names</option></select></label>
+ <button id="builderReset" type="button" title="Reset drawing to an empty muted fretboard">↺ Reset drawing</button></div>
+ <div class="chord-builder-workspace"><div><div id="builderGrid" class="builder-grid" role="group" aria-label="Interactive six-string guitar fretboard"></div><div id="builderStringNames" class="builder-string-names" aria-hidden="true"><span>E</span><span>A</span><span>D</span><span>G</span><span>B</span><span>e</span></div>
+ <section class="builder-finger-section" aria-label="Finger number per string">
+  <div class="builder-finger-heading"><strong>Fingering (low → high)</strong><span>0 or – = no finger; 1 index · 2 middle · 3 ring · 4 pinky</span></div>
+  <div id="builderFingerRow" class="builder-finger-row"></div>
+  <div class="builder-finger-actions"><button id="builderAutoFingers" type="button">Suggest fingering</button><button id="builderClearFingers" type="button">Clear fingering</button></div>
+ </section></div>
  <div class="builder-sidebar"><div class="builder-help">Tap the string status above a column to cycle between <strong>open</strong> and <strong>muted</strong>. Click a cell for a fret dot, or drag horizontally across cells for a barre. Use finger labels when needed.</div>
  <div id="builderBarres" class="builder-barres"></div><div class="builder-live"><strong>Diagram preview</strong><div id="builderPreview"></div><span id="builderFeedback" role="status"></span></div>
  <div class="builder-tuning-confirm">
