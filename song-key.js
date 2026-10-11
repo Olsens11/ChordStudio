@@ -219,9 +219,9 @@
        if(sticker.type!=="diagram")continue;
        const newName=p.replacements.get(sticker.name);
        if(!newName)continue;
-       sticker.name=newName;sticker.shape=structuredClone(p.shapes.get(sticker.name===newName?
-         [...p.replacements].find(pair=>pair[1]===newName)?.[0]:sticker.name)||
-         [...p.shapes.values()][0]);
+       const originalName=sticker.name;
+       sticker.name=newName;
+       sticker.shape=structuredClone(p.shapes.get(originalName));
        sticker.code=[...sticker.shape.frets].reverse()
          .map(x=>x<0?"x":String(x)).join(" ");
        sticker.key=diagramKeyFor(newName,[...sticker.shape.frets].reverse());
