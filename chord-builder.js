@@ -142,6 +142,8 @@
       button.addEventListener("click",()=>{
         const now=window.ChordKey?.noteName(pc,state.noteSpellings)||sharp[pc];
         state.noteSpellings[pc]=now===sharp[pc]?flat[pc]:sharp[pc];
+        // This button is replaced by draw(); hold focus on a stable control.
+        $("builderGrid").focus({preventScroll:true});
         draw();
       });
       host.append(button);
@@ -156,7 +158,13 @@
     state.barres=state.barres.filter(bar=>index<bar.from||index>bar.to);
   }
   function draw(){
-    const grid=$("builderGrid");grid.replaceChildren();
+    const grid=$("builderGrid");
+    // Keep focus on a stable, non-editable target when rebuilding the fretboard.
+    // Clicking a fret replaces its button; never let the dialog re-focus the
+    // chord-name text field as a side effect.
+    if(grid.contains(document.activeElement)&&document.activeElement!==grid)
+      grid.focus({preventScroll:true});
+    grid.replaceChildren();
     grid.style.setProperty("--builder-base",state.base);
     // Status row toggles muted / open strings; also shows fretted string state.
     const status=document.createElement("div");status.className="builder-status-row";
@@ -173,6 +181,7 @@
       button.addEventListener("click",()=>{
         removeBarresOnString(string);
         state.frets[string]=fret===0?-1:0;state.fingers[string]=0;
+        grid.focus({preventScroll:true});
         clearSuggestions();autoFingers();draw();setCodeText();
       });
       status.append(button);
@@ -224,7 +233,8 @@
             }
             state.barres.push({from,to,fret:targetFret,finger:finger||1});
           }
-          state.start=null;clearSuggestions();autoFingers();setCodeText();draw();
+          state.start=null;grid.focus({preventScroll:true});
+          clearSuggestions();autoFingers();setCodeText();draw();
         });
         button.addEventListener("pointercancel",()=>{state.start=null;});
         cells.append(button);
@@ -272,7 +282,11 @@
     $("chordBuilderTitle").textContent=key?"Edit chord diagram":"Create chord diagram";
     $("builderSave").textContent=key?"Save chord changes":"Add chord to organizer";
     const dlg=$("chordBuilderDialog");if(!dlg.open)dlg.showModal();
-    $("builderName").focus();
+    // Avoid summoning the on-screen keyboard immediately on touch devices.
+    // A user can still tap the name field when they want to enter a name.
+    if(window.matchMedia("(pointer: coarse)").matches)
+      dlg.focus({preventScroll:true});
+    else $("builderName").focus({preventScroll:true});
   }
   function close(){
     $("chordBuilderDialog").close();state.editKey=null;
@@ -352,9 +366,13 @@
     $("builderName").addEventListener("input",()=>{
       if(state.voicingName!==$("builderName").value.trim())clearSuggestions();
     });
-    $("builderName").addEventListener("keydown",event=>{
-      if(event.key==="Enter"){event.preventDefault();suggestVoicings();}
-    });
+    for(const id of ["builderName","builderCode","builderBase"]){
+      $(id).addEventListener("keydown",event=>{
+        if(event.key==="Enter"&&!event.isComposing){
+          event.preventDefault();save();
+        }
+      });
+    }
     document.addEventListener("chordstudio:tuningchange",()=>{if($("chordBuilderDialog").open){clearSuggestions();draw();}});
   }
   window.ChordBuilder={open};
