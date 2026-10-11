@@ -3,7 +3,9 @@
   const $=id=>document.getElementById(id);
   const STICKER_W=104,STICKER_H=107,MIN_SCALE=.4,MAX_SCALE=3.5;
   const imageMinScale=record=>Math.min(1,18/Math.max(record.w||190,record.h||85));
-  const minimumScale=record=>record.type==="image"||record.noteType==="image"?imageMinScale(record):MIN_SCALE;
+  const minimumScale=record=>(record.type==="link"||record.noteType==="link")
+    ?(record.linkStyle==="text"?.4:Math.min(1,88/126))
+    :(record.type==="image"||record.noteType==="image"||record.type==="link"||record.noteType==="link")?imageMinScale(record):MIN_SCALE;
   // Text and emoji notes may use the entire paper; 3.5x limits are for other stickers.
   const maxTextScale=record=>{
     const paper=pageSize();
@@ -31,9 +33,9 @@
   const chordHeight=record=>record.showDiagram===false?54:record.showCode===true?127:STICKER_H;
   const stickerScale=record=>Math.max(minimumScale(record),Number(record.scale)||1);
   const stickerWidth=record=>(record.type==="text"||record.noteType==="text")?noteRenderedWidth(record):
-    (record.type==="image"||record.noteType==="image")?(record.w||190)*stickerScale(record):STICKER_W*stickerScale(record);
+    (record.type==="image"||record.noteType==="image"||record.type==="link"||record.noteType==="link")?(record.w||190)*stickerScale(record):STICKER_W*stickerScale(record);
   const stickerHeight=record=>(record.type==="text"||record.noteType==="text")?noteRenderedHeight(record):
-    (record.type==="image"||record.noteType==="image")?(record.h||85)*stickerScale(record):chordHeight(record)*stickerScale(record);
+    (record.type==="image"||record.noteType==="image"||record.type==="link"||record.noteType==="link")?(record.h||85)*stickerScale(record):chordHeight(record)*stickerScale(record);
   const NOTE_MIN_W=85,NOTE_MIN_H=36;
   let placingNote=false,activeNoteId=null,noteTextHistorySaved=false;
   let stickers=[], history=[], redo=[], nextId=1, drag=null;
@@ -222,8 +224,45 @@
   function titleBlock(){
     const el=document.createElement("div");el.className="paper-head";
     const name=document.createElement("h2");name.textContent=$("songName").textContent;
-    const artist=document.createElement("p");artist.textContent=$("artistName").textContent;
-    el.append(name,artist);return el;
+    el.append(name);
+    const meta=page||{},credits=[
+      ["Written by",meta.writtenBy],
+      ["As performed by",meta.performedBy??meta.artist],
+      ["Arranged by",meta.arrangedBy]
+    ].filter(item=>String(item[1]||"").trim());
+    if(credits.length){
+      const block=document.createElement("div");block.className="paper-head-credits";
+      for(const [label,value] of credits){
+        const line=document.createElement("p");
+        line.textContent=label+" "+value;line.title=label+" "+value;
+        block.append(line);
+      }
+      el.append(block);
+    }
+    return el;
+  }
+  function fitTitle(head){
+    const name=head.querySelector("h2");
+    // Measure the actual browser-wrapped text within its flex width.
+    name.style.display="block";name.style.webkitLineClamp="";
+    for(let font=25;font>=10;font--){
+      name.style.fontSize=font+"px";
+      if(name.scrollHeight<=57&&name.scrollWidth<=name.clientWidth+1)return;
+    }
+    name.style.fontSize="10px";
+    name.style.display="-webkit-box";
+    name.style.webkitBoxOrient="vertical";
+    name.style.webkitLineClamp="2";
+  }
+  function sourceFooter(first){
+    const url=validSourceUrl(page?.source);
+    if(!url||!$("includeSourceFooter").checked)return;
+    first.inside.classList.add("has-source-footer");
+    const footer=document.createElement("div");footer.className="paper-source-footer";
+    const prefix=document.createElement("span");prefix.textContent="Original source: ";
+    const link=document.createElement("a");link.href=url;link.textContent=url;
+    link.target="_blank";link.rel="noopener noreferrer";
+    footer.append(prefix,link);first.inside.append(footer);
   }
   function renderBank(main,pages,current,size){
     if(!$("includeChords").checked||!rendered.length)return current;
@@ -238,7 +277,7 @@
       copy.className="chord-card";copy.dataset.diagramKey=key;copy.draggable=false;
       copy.title="Drag to place another copy of this chord";
       fillChordCard(copy,item,mode);bank.append(copy);
-      if(bank.getBoundingClientRect().bottom>current.inside.getBoundingClientRect().bottom-.5){
+      if(bank.getBoundingClientRect().bottom>current.main.getBoundingClientRect().bottom-.5){
         copy.remove();
         if(!bank.childElementCount){bank.remove();title.remove();}
         current=freshPage(pages.length+1);pages.push(current);
@@ -261,7 +300,7 @@
       const clone=source.cloneNode(true);
       clone.classList.remove("print-page-start");
       area.append(clone);
-      if(clone.getBoundingClientRect().bottom>current.inside.getBoundingClientRect().bottom-.5){
+      if(clone.getBoundingClientRect().bottom>current.main.getBoundingClientRect().bottom-.5){
         clone.remove();
         if(!area.children.length){label.remove();area.remove();}
         current=freshPage(pages.length+1);pages.push(current);
@@ -299,6 +338,24 @@
     img.style.width="100%";img.style.height="100%";
     return img;
   }
+  function linkStickerArtwork(record){
+    const wrap=document.createElement("a");
+    wrap.className="sticker-link-art";wrap.href=record.url;
+    wrap.target="_blank";wrap.rel="noopener noreferrer";
+    wrap.draggable=false;wrap.tabIndex=-1;
+    // Editing/dragging works on the sticker; open URL is an explicit dialog action.
+    if(record.linkStyle!=="text"){
+      const img=document.createElement("img");img.className="sticker-link-qr";
+      img.src=record.src;img.alt="QR code for "+record.url;img.draggable=false;
+      wrap.append(img);
+    }
+    if(record.linkStyle!=="qr"){
+      const caption=document.createElement("span");caption.className="sticker-link-caption";
+      caption.textContent=record.caption||record.url;
+      wrap.append(caption);
+    }
+    return wrap;
+  }
   let lastImageDragAt=0;
   function rotatableArtwork(content,rotation=0){
     const wrap=document.createElement("div");
@@ -309,8 +366,8 @@
   }
   function stickerElement(record){
     const isText=record.type==="text";
-    const isImage=record.type==="image";
-    const el=document.createElement("div");el.className="paper-sticker"+(isText?" text-sticker":isImage?" image-sticker":"");
+    const isImage=record.type==="image",isLink=record.type==="link";
+    const el=document.createElement("div");el.className="paper-sticker"+(isText?" text-sticker":isImage?" image-sticker":isLink?" link-sticker":"");
     el.dataset.stickerId=record.id;
     if(isText&&record.autoSize===true)el.dataset.autoSize="true";
     el.draggable=false;el.tabIndex=0;
@@ -332,6 +389,14 @@
         if(!ev.shiftKey&&!ev.ctrlKey&&!ev.altKey&&!ev.target.closest(".sticker-delete,.sticker-resize,.sticker-rotate")&&ev.target.closest(".paper-sticker")===el){
           openNoteEditor(record.id);
         }
+      });
+    }else if(isLink){
+      el.append(rotatableArtwork(linkStickerArtwork(record),record.rotation));
+      el.addEventListener("click",ev=>{
+        if(ev.shiftKey||ev.ctrlKey||ev.altKey||
+          ev.target.closest(".sticker-delete,.sticker-resize,.sticker-rotate")||
+          performance.now()-lastImageDragAt<500)return;
+        window.ChordLinks?.edit(record.id);
       });
     }else if(isImage){
       el.append(rotatableArtwork(imageStickerArtwork(record),record.rotation));
@@ -370,6 +435,8 @@
         if(activeNoteId===record.id)closeNoteEditor();refresh();
       }else if(ev.key==="Enter"&&isText){
         ev.preventDefault();openNoteEditor(record.id,{focus:true});
+      }else if(ev.key==="Enter"&&isLink){
+        ev.preventDefault();window.ChordLinks?.edit(record.id);
       }else if(ev.key==="Enter"&&isImage){
         ev.preventDefault();window.ChordImages?.editSticker(record.id);
       }else if(ev.altKey&&ev.key.toLowerCase()==="r"){
@@ -390,7 +457,7 @@
     const size=pageSize();
     stickers.forEach(record=>{
       while(record.page>=pages.length)pages.push(freshPage(pages.length+1));
-      if(record.type==="text"||record.type==="image"){
+      if(record.type==="text"||record.type==="image"||record.type==="link"){
         const baseMin=record.type==="text"&&record.autoSize!==false?18:30;
         record.w=Math.max(baseMin,record.w||190);
         record.h=Math.max(baseMin,record.h||85);
@@ -445,7 +512,8 @@
       root.replaceChildren();
       const pages=[freshPage(1)];
       let current=pages[0];
-      current.main.append(titleBlock());
+      sourceFooter(current);
+      const head=titleBlock();current.main.append(head);fitTitle(head);
       current=renderBank(current.main,pages,current,pageSize());
       renderSong(current,pages);
       decorate(pages);
@@ -465,7 +533,9 @@
     if(tightNote(state))el.dataset.autoSize="true";
     el.style.width=stickerWidth(state)+"px";
     el.style.height=stickerHeight(state)+"px";
-    if(state.noteType==="image"){
+    if(state.noteType==="link"){
+      el.append(rotatableArtwork(linkStickerArtwork(state),state.rotation));
+    }else if(state.noteType==="image"){
       el.append(rotatableArtwork(imageStickerArtwork(state),state.rotation));
     }else if(state.noteType==="text"){
       const inner=document.createElement("div");inner.className="note-inner";
@@ -666,7 +736,8 @@
       startX:ev.clientX,startY:ev.clientY,initialScale:stickerScale(record),
       initialX:record.x,initialY:record.y,
       initialPixelW:stickerWidth(record),initialPixelH:stickerHeight(record),
-      initialW:record.w,initialH:record.h,isText:record.type==="text"||record.type==="image",isImage:record.type==="image",
+      initialW:record.w,initialH:record.h,isText:["text","image","link"].includes(record.type),
+      isImage:record.type==="image"||record.type==="link",
       before:stickers.map(item=>structuredClone(item)),element:sticker,started:false};
     document.addEventListener("pointermove",movePointerDrag,{capture:true,passive:false});
     document.addEventListener("pointerup",endPointerDrag,true);
@@ -767,7 +838,8 @@
       if(!record)return;
       const box=sticker.getBoundingClientRect();
       model={type:"sticker",id,name:record.name,shape:record.shape,scale:stickerScale(record),
-        noteType:record.type==="text"?"text":record.type==="image"?"image":"diagram",w:record.w,h:record.h,src:record.src,
+        noteType:record.type==="text"?"text":record.type==="image"?"image":record.type==="link"?"link":"diagram",
+        w:record.w,h:record.h,src:record.src,url:record.url,caption:record.caption,linkStyle:record.linkStyle,
         text:record.text,fontSize:record.fontSize,bold:record.bold,italic:record.italic,autoSize:record.autoSize,
         showDiagram:record.showDiagram!==false,showCode:record.showCode===true,code:record.code,
         align:record.align,color:record.color,background:record.background,rotation:record.rotation||0,
@@ -831,7 +903,7 @@
     }
     if(state.started){
       ev.preventDefault();
-      if(state.noteType==="image")lastImageDragAt=performance.now();
+      if(state.noteType==="image"||state.noteType==="link")lastImageDragAt=performance.now();
       const hit=itemAtPointer(ev.clientX,ev.clientY);
       if(hit.page){
         state.ctrlKey=ev.ctrlKey;state.shiftKey=ev.shiftKey;
@@ -1002,6 +1074,30 @@
     message("Image placed. Drag it to move, use the corner to resize, or Shift+click to duplicate.");
     return item.id;
   }
+  function addLinkSticker(url,linkStyle,caption,src){
+    const safe=validSourceUrl(url),style=["qr","text","both"].includes(linkStyle)?linkStyle:"both";
+    if(!safe||safe.length>2048)throw Error("Use a complete https:// or http:// URL.");
+    if(style!=="text"&&(!/^data:image\/png;base64,[a-z0-9+/=]+$/i.test(src||"")||(src||"").length>400000))
+      throw Error("Could not generate valid QR artwork.");
+    const w=style==="text"?210:136,h=style==="text"?32:style==="both"?164:136;
+    const item={id:nextId++,type:"link",name:"Web link",url:safe,linkStyle:style,
+      caption:String(caption||"").trim().slice(0,150),src:style==="text"?"":src,
+      page:0,x:24,y:100,w,h,scale:1,rotation:0};
+    save();stickers.push(item);refresh();
+    message("Link sticker added. Drag to position, resize with the corner, or click to edit.");
+    return item.id;
+  }
+  function updateLinkSticker(id,url,linkStyle,caption,src){
+    const item=stickers.find(s=>s.id===id&&s.type==="link");
+    if(!item)throw Error("Link sticker is no longer present.");
+    const safe=validSourceUrl(url);
+    if(!safe||safe.length>2048)throw Error("Use a complete https:// or http:// URL.");
+    if(linkStyle!=="text"&&(!/^data:image\/png;base64,[a-z0-9+/=]+$/i.test(src||"")||(src||"").length>400000))
+      throw Error("Could not generate valid QR artwork.");
+    save();Object.assign(item,{url:safe,linkStyle,caption:String(caption||"").trim().slice(0,150),
+      src:linkStyle==="text"?"":src,w:linkStyle==="text"?210:136,h:linkStyle==="text"?32:linkStyle==="both"?164:136});
+    refresh();
+  }
   function editorPageBreaks(){
     const editor=$("songEditor");if(!editor||$("songEditorPanel").hidden)return [];
     if(!$("includeSong").checked)return [];
@@ -1044,17 +1140,17 @@
     const used=new Set();
     for(const raw of data.stickers){
       if(!raw||typeof raw!=="object")throw Error("Project contains an invalid sticker.");
-      const isText=raw.type==="text",isImage=raw.type==="image";
-      if(!isText&&!isImage && raw.type!=="diagram" && raw.type!=="sticker" && raw.type!=null)
+      const isText=raw.type==="text",isImage=raw.type==="image",isLink=raw.type==="link";
+      if(!isText&&!isImage&&!isLink && raw.type!=="diagram" && raw.type!=="sticker" && raw.type!=null)
         throw Error("Project contains an unsupported sticker type.");
-      if(!isText&&!isImage && (!raw.shape||!Array.isArray(raw.shape.frets)||raw.shape.frets.length!==6))
+      if(!isText&&!isImage&&!isLink && (!raw.shape||!Array.isArray(raw.shape.frets)||raw.shape.frets.length!==6))
         throw Error("Project contains a chord sticker without fret data.");
       const number=(value,fallback)=>Number.isFinite(Number(value))?Number(value):fallback;
       const id=Math.floor(number(raw.id,0));
       if(id<1||used.has(id))throw Error("Project has duplicate or missing sticker IDs.");
       used.add(id);
       const item={
-        id,type:isText?"text":isImage?"image":"diagram",
+        id,type:isText?"text":isImage?"image":isLink?"link":"diagram",
         name:String(raw.name|| (isText?"Note":"Chord")).slice(0,100),
         page:Math.max(0,Math.min(100,Math.floor(number(raw.page,0)))),
         x:number(raw.x,0),y:number(raw.y,0),scale:Math.max(isImage?0.001:.2,Math.min(isText?1000:MAX_SCALE,number(raw.scale,1))),
@@ -1070,6 +1166,18 @@
         item.align=["left","right","center"].includes(raw.align)?raw.align:"left";
         item.background=["transparent","#fff0ae","#d8edff","#fce0eb","#ddf5e2","#ffffff"].includes(raw.background)?raw.background:"transparent";
         item.color=/^#[0-9a-f]{6}$/i.test(raw.color||"")?raw.color:"#181818";
+      }else if(isLink){
+        const url=validSourceUrl(raw.url);
+        if(!url||url.length>2048)throw Error("Project contains an invalid link destination.");
+        if(!["qr","text","both"].includes(raw.linkStyle))throw Error("Project has an invalid QR/link format.");
+        if(raw.linkStyle!=="text"&&
+          (typeof raw.src!=="string"||!/^data:image\/png;base64,[a-z0-9+/=]+$/i.test(raw.src)||raw.src.length>400000))
+          throw Error("Project contains invalid QR artwork.");
+        item.url=url;item.src=raw.linkStyle==="text"?"":raw.src;
+        item.caption=String(raw.caption||"").slice(0,150);
+        item.linkStyle=raw.linkStyle;
+        item.w=raw.linkStyle==="text"?Math.max(110,Math.min(600,number(raw.w,210))):136;
+        item.h=raw.linkStyle==="text"?Math.max(26,Math.min(150,number(raw.h,32))):raw.linkStyle==="both"?164:136;
       }else if(isImage){
         if(typeof raw.src!=="string"||!/^data:image\/(png|jpeg|webp|gif);base64,[a-z0-9+/=]+$/i.test(raw.src)||raw.src.length>9000000)
           throw Error("Project contains an unsupported or oversized image.");
@@ -1098,6 +1206,6 @@
     refresh();
   }
   window.ChordLayout={init,refresh,reset,undo,redo:redoChange,clearAll,
-    stickers:()=>structuredClone(stickers),exportProjectLayout,importProjectLayout,addImageSticker,updateImageSticker,editorPageBreaks};
+    stickers:()=>structuredClone(stickers),exportProjectLayout,importProjectLayout,addImageSticker,updateImageSticker,addLinkSticker,updateLinkSticker,editorPageBreaks};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
 })();
