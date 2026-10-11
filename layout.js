@@ -4,8 +4,8 @@
   const STICKER_W=104,STICKER_H=107,MIN_SCALE=.4,MAX_SCALE=3.5;
   const chordHeight=record=>record.showDiagram===false?54:record.showCode===true?127:STICKER_H;
   const stickerScale=record=>Math.max(MIN_SCALE,Number(record.scale)||1);
-  const stickerWidth=record=>(record.type==="text"||record.noteType==="text")?(record.w||190)*stickerScale(record):STICKER_W*stickerScale(record);
-  const stickerHeight=record=>(record.type==="text"||record.noteType==="text")?(record.h||85)*stickerScale(record):chordHeight(record)*stickerScale(record);
+  const stickerWidth=record=>(record.type==="text"||record.noteType==="text"||record.type==="image"||record.noteType==="image")?(record.w||190)*stickerScale(record):STICKER_W*stickerScale(record);
+  const stickerHeight=record=>(record.type==="text"||record.noteType==="text"||record.type==="image"||record.noteType==="image")?(record.h||85)*stickerScale(record):chordHeight(record)*stickerScale(record);
   const NOTE_MIN_W=85,NOTE_MIN_H=36;
   let placingNote=false,activeNoteId=null,noteTextHistorySaved=false;
   let stickers=[], history=[], redo=[], nextId=1, drag=null;
@@ -227,11 +227,22 @@
     }
     return inner;
   }
+  function imageStickerArtwork(record){
+    const img=document.createElement("img");
+    img.className="sticker-image";
+    img.src=record.src;
+    img.alt=record.name||"Imported image";
+    img.width=record.w||200;img.height=record.h||100;
+    img.draggable=false;
+    img.style.width="100%";img.style.height="100%";
+    return img;
+  }
   function stickerElement(record){
     const isText=record.type==="text";
-    const el=document.createElement("div");el.className="paper-sticker"+(isText?" text-sticker":"");
+    const isImage=record.type==="image";
+    const el=document.createElement("div");el.className="paper-sticker"+(isText?" text-sticker":isImage?" image-sticker":"");
     el.dataset.stickerId=record.id;el.draggable=false;el.tabIndex=0;
-    el.setAttribute("aria-label",isText?"Text note. Click to edit, drag to move, corner to resize. Shift click to duplicate.":"Placed "+record.name+" diagram. Shift click to duplicate, drag to move, corner to resize.");
+    el.setAttribute("aria-label",isText?"Text note. Click to edit, drag to move, corner to resize. Shift click to duplicate.":isImage?"Image sticker. Drag to move, corner to resize. Shift click to duplicate.":"Placed "+record.name+" diagram. Shift click to duplicate, drag to move, corner to resize.");
     el.title=isText?"Click to edit note · drag to move · corner resizes · Shift+click copies":
       "Drag to move · Shift+click copies · Ctrl+Shift snaps to 5px grid · corner resizes";
     el.style.left=record.x+"px";el.style.top=record.y+"px";
@@ -249,6 +260,8 @@
           openNoteEditor(record.id);
         }
       });
+    }else if(isImage){
+      el.append(imageStickerArtwork(record));
     }else{
       el.append(chordStickerArtwork(record));
     }
@@ -286,9 +299,9 @@
     const size=pageSize();
     stickers.forEach(record=>{
       while(record.page>=pages.length)pages.push(freshPage(pages.length+1));
-      if(record.type==="text"){
-        record.w=Math.max(NOTE_MIN_W,record.w||190);
-        record.h=Math.max(NOTE_MIN_H,record.h||85);
+      if(record.type==="text"||record.type==="image"){
+        record.w=Math.max(30,record.w||190);
+        record.h=Math.max(30,record.h||85);
         const maxFit=Math.min(MAX_SCALE,size.innerWidth/record.w,size.innerHeight/record.h);
         record.scale=Math.max(.2,Math.min(stickerScale(record),maxFit));
       }else{
@@ -358,7 +371,9 @@
     el.setAttribute("aria-hidden","true");
     el.style.width=stickerWidth(state)+"px";
     el.style.height=stickerHeight(state)+"px";
-    if(state.noteType==="text"){
+    if(state.noteType==="image"){
+      el.append(imageStickerArtwork(state));
+    }else if(state.noteType==="text"){
       const inner=document.createElement("div");inner.className="note-inner";
       inner.style.width=(state.w||190)+"px";
       inner.style.height=(state.h||85)+"px";
@@ -554,7 +569,7 @@
     ev.stopPropagation();
     pointerDrag={type:"resize",id:record.id,pointerId:ev.pointerId,
       startX:ev.clientX,startY:ev.clientY,initialScale:stickerScale(record),
-      initialW:record.w,initialH:record.h,isText:record.type==="text",
+      initialW:record.w,initialH:record.h,isText:record.type==="text"||record.type==="image",isImage:record.type==="image",
       before:stickers.map(item=>structuredClone(item)),element:sticker,started:false};
     document.addEventListener("pointermove",movePointerDrag,{capture:true,passive:false});
     document.addEventListener("pointerup",endPointerDrag,true);
@@ -581,7 +596,7 @@
       state.started=true;record.scale=next;
       state.element.style.width=stickerWidth(record)+"px";
       state.element.style.height=stickerHeight(record)+"px";
-      state.element.querySelector(".note-inner").style.transform="scale("+next+")";
+      if(!state.isImage)state.element.querySelector(".note-inner").style.transform="scale("+next+")";
       state.element.classList.add("resizing");
       return;
     }
@@ -613,7 +628,7 @@
       if(!record)return;
       const box=sticker.getBoundingClientRect();
       model={type:"sticker",id,name:record.name,shape:record.shape,scale:stickerScale(record),
-        noteType:record.type==="text"?"text":"diagram",w:record.w,h:record.h,
+        noteType:record.type==="text"?"text":record.type==="image"?"image":"diagram",w:record.w,h:record.h,src:record.src,
         text:record.text,fontSize:record.fontSize,bold:record.bold,italic:record.italic,
         showDiagram:record.showDiagram!==false,showCode:record.showCode===true,code:record.code,
         align:record.align,color:record.color,background:record.background,
@@ -796,6 +811,48 @@
     });
     refresh();
   }
+  function addImageSticker(src,w,h,pageIndex,x,y){
+    const size=pageSize();
+    if(typeof src!=="string"||src.length>9000000||!/^data:image\/(png|jpeg|webp|gif);base64,[a-z0-9+/=]+$/i.test(src))
+      throw Error("Only supported local image files can be added.");
+    const width=Math.max(20,Math.min(3000,Number(w)||200));
+    const height=Math.max(20,Math.min(3000,Number(h)||120));
+    const fit=Math.min(1,size.innerWidth/width,size.innerHeight/height);
+    const scale=Math.min(fit,Math.min(1,240/width,180/height));
+    const page=Math.max(0,Math.floor(Number(pageIndex)||0));
+    const maxX=size.innerWidth-width*scale,maxY=size.innerHeight-height*scale;
+    const item={id:nextId++,type:"image",name:"Imported image",src,w:width,h:height,scale,
+      page,x:Math.max(0,Math.min(maxX,Math.round(Number(x)||0))),y:Math.max(0,Math.min(maxY,Math.round(Number(y)||0)))};
+    save();stickers.push(item);refresh();
+    message("Image placed. Drag it to move, use the corner to resize, or Shift+click to duplicate.");
+    return item.id;
+  }
+  function editorPageBreaks(){
+    const editor=$("songEditor");if(!editor||$("songEditorPanel").hidden)return [];
+    if(!$("includeSong").checked)return [];
+    const saved=[...$("songLines").childNodes];
+    const nodes=[...editor.children].map((node,i)=>{
+      const clone=node.cloneNode(true);clone.classList.add("song-line");
+      clone.dataset.editorLineIndex=String(i);return clone;
+    });
+    const breakList=[];
+    try{
+      $("songLines").replaceChildren(...nodes);
+      refresh();
+      const paperPages=[...$("printPage").querySelectorAll(".paper-page")];
+      for(const paper of paperPages){
+        const first=paper.querySelector(".paper-song .song-line[data-editor-line-index]");
+        if(first){
+          const index=Number(first.dataset.editorLineIndex);
+          if(index>0)breakList.push({page:paperPages.indexOf(paper)+1,index});
+        }
+      }
+    }finally{
+      $("songLines").replaceChildren(...saved);
+      refresh();
+    }
+    return breakList;
+  }
   function exportProjectLayout(){
     return {
       stickers:structuredClone(stickers),
@@ -812,17 +869,17 @@
     const used=new Set();
     for(const raw of data.stickers){
       if(!raw||typeof raw!=="object")throw Error("Project contains an invalid sticker.");
-      const isText=raw.type==="text";
-      if(!isText && raw.type!=="diagram" && raw.type!=="sticker" && raw.type!=null)
+      const isText=raw.type==="text",isImage=raw.type==="image";
+      if(!isText&&!isImage && raw.type!=="diagram" && raw.type!=="sticker" && raw.type!=null)
         throw Error("Project contains an unsupported sticker type.");
-      if(!isText && (!raw.shape||!Array.isArray(raw.shape.frets)||raw.shape.frets.length!==6))
+      if(!isText&&!isImage && (!raw.shape||!Array.isArray(raw.shape.frets)||raw.shape.frets.length!==6))
         throw Error("Project contains a chord sticker without fret data.");
       const number=(value,fallback)=>Number.isFinite(Number(value))?Number(value):fallback;
       const id=Math.floor(number(raw.id,0));
       if(id<1||used.has(id))throw Error("Project has duplicate or missing sticker IDs.");
       used.add(id);
       const item={
-        id,type:isText?"text":"diagram",
+        id,type:isText?"text":isImage?"image":"diagram",
         name:String(raw.name|| (isText?"Note":"Chord")).slice(0,100),
         page:Math.max(0,Math.min(100,Math.floor(number(raw.page,0)))),
         x:number(raw.x,0),y:number(raw.y,0),scale:Math.max(.2,Math.min(MAX_SCALE,number(raw.scale,1)))
@@ -836,6 +893,12 @@
         item.align=["left","right","center"].includes(raw.align)?raw.align:"left";
         item.background=["transparent","#fff0ae","#d8edff","#fce0eb","#ddf5e2","#ffffff"].includes(raw.background)?raw.background:"transparent";
         item.color=/^#[0-9a-f]{6}$/i.test(raw.color||"")?raw.color:"#181818";
+      }else if(isImage){
+        if(typeof raw.src!=="string"||!/^data:image\/(png|jpeg|webp|gif);base64,[a-z0-9+/=]+$/i.test(raw.src)||raw.src.length>9000000)
+          throw Error("Project contains an unsupported or oversized image.");
+        item.src=raw.src;
+        item.w=Math.max(20,Math.min(3000,number(raw.w,200)));
+        item.h=Math.max(20,Math.min(3000,number(raw.h,120)));
       }else{
         item.key=String(raw.key||"").slice(0,150);
         item.shape=structuredClone(raw.shape);
@@ -858,6 +921,6 @@
     refresh();
   }
   window.ChordLayout={init,refresh,reset,undo,redo:redoChange,clearAll,
-    stickers:()=>structuredClone(stickers),exportProjectLayout,importProjectLayout};
+    stickers:()=>structuredClone(stickers),exportProjectLayout,importProjectLayout,addImageSticker,editorPageBreaks};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
 })();
