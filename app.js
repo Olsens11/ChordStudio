@@ -212,51 +212,73 @@ function setupChordDrag(card,key,name){
     moved?.focus();
   });
 }
+function activeChordMode(tray=false){
+  return {
+    diagram:$(tray?"trayShowDiagrams":"showDiagrams").checked,
+    codes:$(tray?"trayShowCodes":"showCodes").checked
+  };
+}
+function fretCode(arr){
+  return arr.map(n=>n<0?"x":String(n)).join(" ");
+}
+function fillChordCard(card,item,mode){
+  card.dataset.showDiagram=String(mode.diagram);
+  card.dataset.showCode=String(mode.codes);
+  card.classList.toggle("code-only",!mode.diagram);
+  card.classList.toggle("diagram-with-code",mode.diagram&&mode.codes);
+  const name=document.createElement("div");name.className="chord-name";name.textContent=item.name;
+  card.append(name);
+  if(mode.diagram){
+    const art=document.createElement("div");art.className="diagram-art";
+    const canvas=makeDiagramCanvas(item.source);
+    canvas.setAttribute("role","img");
+    canvas.setAttribute("aria-label",item.name+" guitar chord "+fretCode(item.arr));
+    art.append(canvas);card.append(art);
+  }
+  if(mode.codes){
+    const code=document.createElement("div");code.className="chord-code";
+    code.textContent=fretCode(item.arr);
+    card.append(code);
+  }
+}
 function renderDiagrams(){
-  const parsed=parseEditor();
-  const {errors}=parsed;
+  const parsed=parseEditor(),{errors}=parsed;
   const current=new Map(parsed.items.map(item=>[diagramKey(item),item]));
   diagramOrder=[...diagramOrder.filter(key=>current.has(key)),...parsed.items.map(diagramKey).filter(key=>!diagramOrder.includes(key))];
   const items=diagramOrder.map(key=>current.get(key));
   const grid=$("chordGrid");grid.replaceChildren();rendered=[];
+  const mode=activeChordMode(false);
   for(const item of items){
     const key=diagramKey(item);
     if(removedDiagrams.has(key))continue;
     const source=getShape(item.name,item.arr);
+    const record={name:item.name,arr:item.arr,source};
     const card=document.createElement("div");card.className="chord-card";
-    card.dataset.diagramKey=key;
-    setupChordDrag(card,key,item.name);
-    const heading=document.createElement("div");heading.className="chord-name";heading.textContent=item.name;
-    const canvas=makeDiagramCanvas(source);
-    canvas.setAttribute("role","img");canvas.setAttribute("aria-label",item.name+" guitar chord "+item.arr.join(" "));
+    card.dataset.diagramKey=key;setupChordDrag(card,key,item.name);
+    fillChordCard(card,record,mode);
     const remove=document.createElement("button");remove.type="button";
     remove.className="diagram-remove no-print";
     remove.draggable=false;
     remove.addEventListener("mousedown",event=>event.stopPropagation());
     remove.addEventListener("dragstart",event=>event.preventDefault());
-    remove.title="Click to remove "+item.name+" diagram from printout";
-    remove.setAttribute("aria-label","Remove "+item.name+" diagram from printout");
+    remove.title="Remove "+item.name+" from the chord bank";
+    remove.setAttribute("aria-label","Remove "+item.name+" from the chord bank");
     remove.addEventListener("click",()=>removeDiagram(key,item.name));
-    const art=document.createElement("div");art.className="diagram-art";
-    art.append(canvas,remove);
-    card.append(heading,art);
-    if($("showCodes").checked){
-      const code=document.createElement("div");code.className="chord-code";
-      code.textContent=item.arr.map(n=>n<0?"x":String(n)).join(" ");
-      card.append(code);
-    }
-    grid.append(card);rendered.push({name:item.name,arr:item.arr,source,canvas});
+    (card.querySelector(".diagram-art")||card).append(remove);
+    grid.append(card);
+    rendered.push({...record,canvas:mode.diagram?card.querySelector("canvas"):null});
   }
   grid.style.setProperty("--cols",Number($("columns").value));
-  $("chordSection").hidden=!$("includeChords").checked||items.length===0;
+  // Printing the chord bank is a separate choice; keep the organizer usable.
+  $("chordSection").hidden=false;
   $("chordSection").classList.toggle("no-selected-diagrams",rendered.length===0);
-  $("chordCount").textContent=rendered.length+" of "+items.length+" diagrams included";
+  $("chordCount").textContent=rendered.length+" of "+items.length+" chords selected";
   $("undoChordBtn").disabled=!chordUndo.length;
   $("redoChordBtn").disabled=!chordRedo.length;
   $("restoreAllChordsBtn").disabled=!removedDiagrams.size;
   if(items.length&&!rendered.length){
-    const empty=document.createElement("p");empty.className="muted no-print";
-    empty.textContent="All diagrams removed. Use Restore all chords above to bring them back.";
+    const empty=document.createElement("p");empty.className="muted";
+    empty.textContent="All chords removed. Use Restore all chords above to bring them back.";
     grid.append(empty);
   }
   $("songSection").hidden=!$("includeSong").checked||!$("songLines").textContent.trim();
@@ -440,10 +462,11 @@ function loadPage(data){
   renderDiagrams();message("Imported "+Object.keys(next).length+" chord names. Ready to print or export.");
 }
 function makeImage(){
-  const list=renderDiagrams();if(!list.length)throw Error("No diagrams to export.");
+  const list=renderDiagrams();if(!list.length)throw Error("No chords to export.");
+  const mode=activeChordMode(false);
   const columns=Math.max(1,Number($("columns").value));
   const cols=Math.min(columns,list.length),rows=Math.ceil(list.length/columns);
-  const tileW=112,tileH=$("showCodes").checked?120:106,scale=3;
+  const tileW=112,tileH=mode.diagram?(mode.codes?125:106):54,scale=3;
   const output=document.createElement("canvas");
   output.width=cols*tileW*scale;output.height=rows*tileH*scale;
   const ctx=output.getContext("2d");ctx.scale(scale,scale);
@@ -452,9 +475,13 @@ function makeImage(){
     const x=(i%columns)*tileW,y=Math.floor(i/columns)*tileH;
     ctx.textAlign="center";ctx.textBaseline="top";ctx.font="bold 14px Arial";ctx.fillStyle="#111";
     ctx.fillText(item.name,x+tileW/2,y+6);
-    ctx.drawImage(item.canvas,x+(tileW-76)/2,y+27,76,72);
-    if($("showCodes").checked){
-      ctx.font="10px Arial";ctx.fillText(item.arr.map(n=>n<0?"x":String(n)).join(" "),x+tileW/2,y+102);
+    if(mode.diagram){
+      const canvas=item.canvas||makeDiagramCanvas(item.source);
+      ctx.drawImage(canvas,x+(tileW-76)/2,y+27,76,72);
+    }
+    if(mode.codes){
+      ctx.font="11px Arial";
+      ctx.fillText(fretCode(item.arr),x+tileW/2,y+(mode.diagram?103:29));
     }
   });
   return output;
@@ -550,8 +577,18 @@ function init(){
     catalog=structuredClone(original);$("chordEditor").value=Object.entries(original).map(([k,v])=>k+": "+codeFrom(v[0])).join("\n");
     renderDiagrams();message("Restored imported chord shapes.");
   });
-  for(const id of ["includeChords","includeSong","showCodes","columns","fontSize"]){
+  for(const id of ["includeChords","includeSong","columns","fontSize"]){
     $(id).addEventListener("change",renderDiagrams);
+  }
+  for(const id of ["showDiagrams","showCodes"]){
+    $(id).addEventListener("change",()=>{
+      const other=id==="showDiagrams"?"showCodes":"showDiagrams";
+      if(!$(id).checked&&!$(other).checked){
+        $(id).checked=true;
+        message("Keep Diagram or Fret codes enabled to show a chord.");
+      }
+      renderDiagrams();
+    });
   }
   $("chordEditor").addEventListener("input",renderDiagrams);
 }
