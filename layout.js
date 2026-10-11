@@ -803,7 +803,8 @@
   function exportProjectLayout(){
     return {
       stickers:structuredClone(stickers),
-      trayOpen:!$("stickerBoard").hidden
+      trayOpen:!$("stickerBoard").hidden,
+      trayMode:activeChordMode(true)
     };
   }
   function importProjectLayout(data){
@@ -853,6 +854,10 @@
     setNotePlacementMode(false);
     stickers=restored;history=[];redo=[];
     nextId=Math.max(1,...restored.map(item=>item.id))+1;
+    const savedMode=data.trayMode||{diagram:true,codes:false};
+    $("trayShowDiagrams").checked=savedMode.diagram!==false;
+    $("trayShowCodes").checked=savedMode.codes===true;
+    if(!$("trayShowDiagrams").checked&&!$("trayShowCodes").checked)$("trayShowDiagrams").checked=true;
     toggleStickerTray(!!data.trayOpen);
     refresh();
   }
