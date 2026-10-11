@@ -656,7 +656,7 @@
     document.addEventListener("pointermove",movePointerDrag,{capture:true,passive:false});
     document.addEventListener("pointerup",endPointerDrag,true);
     document.addEventListener("pointercancel",cancelPointerDrag,true);
-    document.body.classList.add("chord-resizing");
+    document.body.classList.add("chord-rotating");
   }
   function moveRotate(ev,state){
     const record=stickers.find(x=>x.id===state.id);if(!record)return;
@@ -670,6 +670,7 @@
     record.rotation=next;state.started=true;
     state.element.querySelector(".sticker-rotatable").style.transform="rotate("+next+"deg)";
     state.element.classList.add("rotating");
+    state.element.dataset.angle=Math.round(next)+"°";
   }
   function startPointerDrag(ev){
     if(pointerDrag||!ev.isPrimary||ev.button!==0||placingNote)return;
@@ -829,7 +830,7 @@
     pointerDrag?.ghost?.remove();
     restoreSortPreview(pointerDrag);
     pointerDrag=null;
-    document.body.classList.remove("chord-pointer-dragging","chord-resizing");
+    document.body.classList.remove("chord-pointer-dragging","chord-resizing","chord-rotating");
     clearPointerFeedback();
   }
   function init(){
