@@ -839,3 +839,22 @@ body.has-document .intro{display:none}
 /* Only the bookmark label is visible under the pointer while dragging. */
 .bookmark-drag-ghost{background:transparent;border:0;padding:0;opacity:.72;text-shadow:0 1px 2px #fff}
 .toolbar-check:has(input:disabled){opacity:.55}
+
+/* Compact creation actions: no extra vertical row just for optional credits. */
+.compose-actions{display:flex;align-items:center;gap:15px;min-width:0}
+.compose-actions #startOriginalSong{flex:none;margin:0}
+.compose-actions .optional-credits{flex:1 1 auto;min-width:0;gap:9px;align-items:start;flex-wrap:nowrap}
+.compose-actions .optional-credits details{flex:1 1 0;min-width:0}
+.compose-actions .optional-credits summary{font-size:11px;line-height:1.35}
+.compose-actions .optional-credits label{font-size:11px}
+@media(max-width:520px){
+ .compose-actions{align-items:flex-start;flex-wrap:wrap}
+ .compose-actions .optional-credits{flex-basis:100%;justify-content:space-between}
+}
+.paper-inside.has-paper-footer .paper-main{height:calc(100% - 46px)}
+.paper-page-number{position:absolute;right:0;bottom:0;height:40px;min-width:72px;box-sizing:border-box;padding:9px 0 0 5px;text-align:right;border-top:1px solid #e5e5e5;font:10px/1.2 Arial,sans-serif;color:#666;z-index:6}
+.paper-source-footer.with-page-numbers{right:82px}
+.paper-sticker.link-sticker .sticker-link-art{flex:none;display:block;transform-origin:top left;padding:0;overflow:hidden}
+.paper-sticker.link-sticker .sticker-link-raster{width:100%;height:100%;display:block;image-rendering:auto;object-fit:contain}
+.paper-sticker.link-sticker .sticker-link-raster[data-qr]{image-rendering:auto}
+.compose-actions .optional-credits details{margin:0;padding:0;border:0}
