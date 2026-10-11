@@ -109,22 +109,23 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
     <div class="song-start-top"><span class="start-icon" aria-hidden="true">↗</span><div><h3>Import an existing song</h3><p>Bring in chord diagrams and song text from a page you've found.</p></div></div>
     <p class="import-start-hint">Add this link to your bookmarks bar, then click it while viewing a song's chord page.</p>
     <div class="bookmark-start-link"><a href="#" id="bookmarklet" class="bookmarklet" title="Drag to bookmarks bar, or click for setup steps">↗ ChordStudio</a></div>
-    <button id="showImportHelp" class="linklike" type="button">How to import a song</button>
+    <button id="showImportHelp" class="linklike" type="button" aria-controls="bookmarkHelp" aria-expanded="false">How to import a song</button>
   </section>
 </div>
 <div id="songStartHint" class="song-start-hint" hidden role="status"></div>
-<details id="importHowto" class="import-howto">
-  <summary>More ways to import a song</summary>
- <div class="how"><span class="step">1</span><div><strong>Add ChordStudio to your bookmarks bar</strong><div class="hint">Show bookmarks with Ctrl+Shift+B, then drag this yellow link onto the bar. This is a one-time setup.</div></div><span class="inline-import-reference">Use the yellow ↗ ChordStudio link above.</span></div>
- <div id="bookmarkHelp" class="bookmark-help" hidden><strong>Bookmarklet setup</strong><p>Browsers prevent sites from creating bookmarks automatically. Drag the yellow ↗ ChordStudio link to your bookmarks bar (Ctrl+Shift+B shows it).</p><p>On touch devices or if dragging isn't practical, copy the bookmarklet and create a bookmark named ChordStudio, then replace its URL with the copied code.</p><button id="copyBookmarklet" type="button">Copy bookmarklet code</button><button id="closeBookmarkHelp" type="button">Close</button></div>
- <div class="how import-followup"><span class="step">2</span><div><strong>Open a song's chord page normally</strong><div class="hint">When the page has loaded, click your ↗ ChordStudio bookmark. The song will open here, ready to customize.</div></div></div>
- </details>
+<div id="bookmarkHelp" class="bookmark-help bookmark-setup" hidden role="region" aria-label="Bookmarklet installation instructions">
+   <div class="bookmark-setup-head"><strong>Import setup</strong><button id="closeBookmarkHelp" type="button">Close</button></div>
+  <div class="how"><span class="step">1</span><div><strong>Add ↗ ChordStudio to your bookmarks bar</strong><div class="hint">Show bookmarks with Ctrl+Shift+B, then drag the yellow link above onto the bar.</div></div></div>
+  <div class="how"><span class="step">2</span><div><strong>Open a song's chord page</strong><div class="hint">Navigate to a supported song page and click the ↗ ChordStudio bookmark. The song opens here in a new tab.</div></div></div>
+   <p>If dragging isn't available, create a bookmark named ChordStudio and replace its URL with the copied code.</p>
+   <button id="copyBookmarklet" type="button">Copy bookmarklet code</button>
+  </div>
  <div class="continue-project"><div><strong>Coming back to an existing song?</strong><div class="hint">Open a saved .chordstudio project to pick up where you left off.</div></div><button id="welcomeOpenProject" type="button">Open saved project…</button></div>
  <details class="alt"><summary>Import saved page source, JSON, HTML or URL</summary><div class="fileinput"><input id="sourceFile" type="file" accept=".html,.htm,.json,.txt,text/html,text/plain,application/json"></div><textarea id="sourcePaste" placeholder="Paste a song URL, saved HTML, or JSON chord data"></textarea><button id="importPaste">Import</button> <a id="sourceOpenFromPaste" class="source-fallback-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Open song page ↗</a></details>
  </div></details>
 </section>
 <section class="card no-print" id="organizer">
- <details class="activity-disclosure" id="organizerDetails" open><summary>Chord bank organizer</summary>
+ <details class="activity-disclosure" id="organizerDetails"><summary>Chord bank organizer</summary>
   <div class="activity-body">
    <p class="hint">Arrange, remove, and choose the fretboard detail you want. Drag a chord onto a page to place a copy.</p>
    <div class="tuning-control" aria-label="Guitar tuning for chord analysis">
@@ -185,6 +186,8 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  </details>
 </section>
 <section class="card" id="workspace">
+ <button id="previewDisclosureToggle" class="preview-disclosure-toggle no-print" type="button" aria-expanded="false" aria-controls="previewContent"><span class="activity-chevron" aria-hidden="true">▸</span>Output preview</button>
+ <div id="previewContent" class="preview-content is-collapsed" aria-hidden="true" inert>
  <div id="originalSourceRow" class="original-source no-print" hidden><div><label for="songUrl">Original song page</label><p class="hint">Saved with your project so you can return to the source.</p></div><div class="import-row"><input type="url" id="songUrl" readonly spellcheck="false" aria-label="Original imported song URL"><button type="button" id="openSource">Open original ↗</button></div></div>
 
  <div class="preview-heading no-print"><div><p class="eyebrow">Output preview</p><h2 id="previewTitle">Chord and song sheet</h2><p class="muted" id="status">Example chord diagrams are loaded. Import a song to generate the complete sheet.</p></div>
@@ -315,6 +318,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
     <p id="emojiPickerHelp">Search emojis, choose categories or skin tones, then click to insert.</p>
   </aside>
  <p id="message" class="message no-print" aria-live="polite"></p>
+ </div>
  </section>
 </main>
 <dialog id="transposeDialog" class="song-details-dialog transpose-dialog no-print" aria-labelledby="transposeHeading">
@@ -406,20 +410,21 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <div class="chord-builder-actions"><button id="builderCancel" type="button">Cancel</button><button id="builderSave" class="primary" type="button">Save chord to organizer</button></div>
 </dialog>
 <footer class="no-print">Independent, open-source chord-sheet formatter. Not affiliated with the sites you import from. No song lyrics are bundled; import only material you are authorized to use.</footer>
-<link rel="stylesheet" href="layout.css?v=20261011-key-experimental-1">
-<script src="app.js?v=20261011-key-import-fix-2" defer></script>
+<link rel="stylesheet" href="layout.css?v=20261011-activity-flow-1">
+<script src="workflow.js?v=20261011-activity-flow-1" defer></script>
+<script src="app.js?v=20261011-activity-flow-1" defer></script>
 <script src="layout.js?v=20261010-menus-tuning-1" defer></script>
-<script src="project.js?v=20261011-key-1" defer></script>
+<script src="project.js?v=20261011-activity-flow-1" defer></script>
 <script src="toolbar.js?v=20261010-fullscreen-1" defer></script>
 <script src="editor.js?v=20261011-editor-2" defer></script>
 <script src="image.js?v=20261011-crop-2" defer></script>
 <script src="pdf.js?v=20261011-directpdf-1" defer></script>
 <script src="emoji.js?v=20261010-menus-tuning-1" defer></script>
 <script src="chord-builder.js?v=20261011-key-1" defer></script>
-<script src="import-helper.js?v=20261010-compose-1" defer></script>
+<script src="import-helper.js?v=20261011-activity-flow-1" defer></script>
 <script src="new-song.js?v=20261010-menus-tuning-1" defer></script>
 <script src="chord-theory.js?v=20261010-menus-tuning-1" defer></script>
 <script src="voicings.js?v=20261011-voicing-save-1" defer></script>
 <script src="song-key.js?v=20261011-key-import-fix-2" defer></script>
-<script src="recent-projects.js?v=20261010-menus-tuning-1" defer></script>
+<script src="recent-projects.js?v=20261011-activity-flow-1" defer></script>
 </body></html>
