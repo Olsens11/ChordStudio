@@ -143,7 +143,7 @@
       button.addEventListener("click",()=>{
         removeBarresOnString(string);
         state.frets[string]=fret===0?-1:0;state.fingers[string]=0;
-        draw();setCodeText();
+        clearSuggestions();autoFingers();draw();setCodeText();
       });
       status.append(button);
     }
@@ -194,7 +194,7 @@
             }
             state.barres.push({from,to,fret:targetFret,finger:finger||1});
           }
-          state.start=null;setCodeText();draw();
+          state.start=null;clearSuggestions();autoFingers();setCodeText();draw();
         });
         button.addEventListener("pointercancel",()=>{state.start=null;});
         cells.append(button);
@@ -296,7 +296,7 @@
     $("chordBuilderDialog").addEventListener("cancel",ev=>{ev.preventDefault();close();});
     $("builderCode").addEventListener("change",()=>{
       try{state.frets=parse($("builderCode").value);state.barres=[];
-        state.fingers=[0,0,0,0,0,0];
+        state.fingers=[0,0,0,0,0,0];clearSuggestions();autoFingers();
         const fretted=state.frets.filter(f=>f>0);
         if(fretted.length){
           const first=Math.min(...fretted);
@@ -305,8 +305,24 @@
         draw();}catch(e){feedback(e.message,true);}
     });
     $("builderBase").addEventListener("change",draw);
-    $("builderShowDots").addEventListener("change",updatePreview);
-    document.addEventListener("chordstudio:tuningchange",()=>{if($("chordBuilderDialog").open)updatePreview();});
+    $("builderDotMode").addEventListener("change",draw);
+    $("builderReset").addEventListener("click",resetDrawing);
+    $("builderAutoFingers").addEventListener("click",()=>{
+      autoFingers();draw();feedback("Suggested fingers. Adjust them in the six-string row if needed.");
+    });
+    $("builderClearFingers").addEventListener("click",()=>{
+      state.fingers.fill(0);state.barres.forEach(b=>b.finger=0);draw();
+    });
+    $("builderSuggestVoicing").addEventListener("click",suggestVoicings);
+    $("builderPrevVoicing").addEventListener("click",()=>applySuggestion(state.voicingIndex-1));
+    $("builderNextVoicing").addEventListener("click",()=>applySuggestion(state.voicingIndex+1));
+    $("builderName").addEventListener("input",()=>{
+      if(state.voicingName!==$("builderName").value.trim())clearSuggestions();
+    });
+    $("builderName").addEventListener("keydown",event=>{
+      if(event.key==="Enter"){event.preventDefault();suggestVoicings();}
+    });
+    document.addEventListener("chordstudio:tuningchange",()=>{if($("chordBuilderDialog").open){clearSuggestions();draw();}});
   }
   window.ChordBuilder={open};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
