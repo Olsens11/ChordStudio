@@ -768,3 +768,32 @@ body.chord-rotating,body.chord-rotating *{cursor:alias!important;user-select:non
 .key-experimental-body{padding:11px 12px 10px}
 .key-experimental-notice{margin:0 0 12px;font:11px/1.55 system-ui,sans-serif;color:#465f7d}
 .key-experimental-notice strong{color:#304f72}
+
+/* Activity-focused flow: keep the paper laid out for geometry while the UI is collapsed. */
+body.has-document .intro{display:none}
+.preview-disclosure-toggle{
+  display:flex;align-items:center;gap:8px;padding:0;border:0;border-radius:5px;
+  background:transparent;color:#1d355a;font:800 19px/1.4 system-ui,sans-serif;text-align:left;
+}
+.preview-disclosure-toggle:hover{background:transparent;color:#245596}
+.preview-disclosure-toggle:focus-visible{outline:2px solid #3275c5;outline-offset:4px}
+.preview-disclosure-toggle .activity-chevron{
+  display:inline-grid;place-items:center;width:25px;height:25px;border-radius:6px;
+  background:#e8f0fa;color:#265aa2;font-size:17px;font-weight:700;flex:none
+}
+.preview-content{padding-top:17px}
+.preview-content.is-collapsed{
+  max-height:0;padding-top:0;visibility:hidden;overflow:hidden;pointer-events:none
+}
+.preview-content .preview-heading .eyebrow{display:none}
+.bookmark-setup{margin:12px 0;padding:12px;border:1px solid #d9e4f3;border-radius:9px;background:#f8fbff}
+.bookmark-setup[hidden]{display:none!important}
+.bookmark-setup .how{margin-top:8px;background:#fff}
+.bookmark-setup-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.bookmark-setup-head button{padding:5px 10px}
+.bookmark-setup p{font:12px/1.5 system-ui,sans-serif;color:#506987}
+@media print{
+  .preview-content,.preview-content.is-collapsed{
+    max-height:none!important;padding:0!important;visibility:visible!important;overflow:visible!important
+  }
+}
