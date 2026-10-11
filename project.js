@@ -75,7 +75,10 @@
       format:FORMAT,version:VERSION,savedAt:new Date().toISOString(),
       page:{
         title:page?.title||$("songName").textContent||"Untitled song",
-        artist:page?.artist||$("artistName").textContent||"",
+        artist:page?.artist??$("artistName").textContent??"",
+        writtenBy:page?.writtenBy||"",
+        arrangedBy:page?.arrangedBy||"",
+        performedBy:page?.performedBy??page?.artist??"",
         content:page?.content||"",
         source:validSourceUrl(page?.source)
       },
@@ -91,6 +94,7 @@
       options:{
         includeChords:$("includeChords").checked,
         includeSong:$("includeSong").checked,
+        includeSourceFooter:$("includeSourceFooter").checked,
         showCodes:$("showCodes").checked,
         showDiagrams:$("showDiagrams").checked,
         columns:$("columns").value,
@@ -217,6 +221,15 @@
         String(meta.title||"Untitled song").slice(0,200),
         String(meta.artist||"").slice(0,200),false,false);
     }
+    // Older projects only stored "artist", which represented the performer.
+    page.writtenBy=String(meta.writtenBy||"").slice(0,200);
+    page.arrangedBy=String(meta.arrangedBy||"").slice(0,200);
+    page.performedBy=String(meta.performedBy??meta.artist??"").slice(0,200);
+    page.artist=page.performedBy;
+    $("artistName").textContent=page.performedBy;
+    $("songName").textContent=page.title;
+    $("includeSourceFooter").checked=opts.includeSourceFooter===true&&!!source;
+    updateOriginalSourceLink();
     // Version-1 projects from before tuning support intentionally fall back
     // to an *unconfirmed* standard-tuning assumption.
     if(data.tuning&&typeof data.tuning==="object"){
