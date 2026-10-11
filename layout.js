@@ -237,6 +237,7 @@
     img.style.width="100%";img.style.height="100%";
     return img;
   }
+  let lastImageDragAt=0;
   function stickerElement(record){
     const isText=record.type==="text";
     const isImage=record.type==="image";
@@ -262,6 +263,12 @@
       });
     }else if(isImage){
       el.append(imageStickerArtwork(record));
+      el.addEventListener("click",ev=>{
+        if(ev.shiftKey||ev.ctrlKey||ev.altKey||
+          ev.target.closest(".sticker-delete,.sticker-resize")||
+          performance.now()-lastImageDragAt<500)return;
+        window.ChordImages?.editSticker(record.id);
+      });
     }else{
       el.append(chordStickerArtwork(record));
     }
@@ -285,6 +292,8 @@
         if(activeNoteId===record.id)closeNoteEditor();refresh();
       }else if(ev.key==="Enter"&&isText){
         ev.preventDefault();openNoteEditor(record.id,{focus:true});
+      }else if(ev.key==="Enter"&&isImage){
+        ev.preventDefault();window.ChordImages?.editSticker(record.id);
       }else if(ev.altKey&&["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(ev.key)){
         ev.preventDefault();save();const size=pageSize(),delta=ev.shiftKey?20:5;
         record.x=Math.max(0,Math.min(size.innerWidth-stickerWidth(record),record.x+(ev.key==="ArrowLeft"?-delta:ev.key==="ArrowRight"?delta:0)));
@@ -682,6 +691,7 @@
     }
     if(state.started){
       ev.preventDefault();
+      if(state.noteType==="image")lastImageDragAt=performance.now();
       const hit=itemAtPointer(ev.clientX,ev.clientY);
       if(hit.page){
         state.ctrlKey=ev.ctrlKey;state.shiftKey=ev.shiftKey;
@@ -811,6 +821,22 @@
     });
     refresh();
   }
+  function updateImageSticker(id,src,width,height){
+    const record=stickers.find(s=>s.id===id&&s.type==="image");
+    if(!record)throw Error("Image sticker no longer exists.");
+    if(typeof src!=="string"||src.length>9000000||
+      !/^data:image\/(png|jpeg|webp|gif);base64,[a-z0-9+/=]+$/i.test(src))
+      throw Error("Unsupported edited image.");
+    const visualWidth=stickerWidth(record);
+    const w=Math.max(20,Math.min(1500,Number(width)||200));
+    const h=Math.max(20,Math.min(1500,Number(height)||100));
+    save();
+    record.src=src;
+    record.w=w;record.h=h;
+    record.scale=Math.max(.2,Math.min(MAX_SCALE,visualWidth/w));
+    refresh();
+    message("Image changes applied. Undo restores the previous crop and rotation.");
+  }
   function addImageSticker(src,w,h,pageIndex,x,y){
     const size=pageSize();
     if(typeof src!=="string"||src.length>9000000||!/^data:image\/(png|jpeg|webp|gif);base64,[a-z0-9+/=]+$/i.test(src))
@@ -921,6 +947,6 @@
     refresh();
   }
   window.ChordLayout={init,refresh,reset,undo,redo:redoChange,clearAll,
-    stickers:()=>structuredClone(stickers),exportProjectLayout,importProjectLayout,addImageSticker,editorPageBreaks};
+    stickers:()=>structuredClone(stickers),exportProjectLayout,importProjectLayout,addImageSticker,updateImageSticker,editorPageBreaks};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
 })();
