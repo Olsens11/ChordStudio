@@ -150,9 +150,14 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
        <button id="suggestSongKey" type="button">Suggest key</button>
        <button id="confirmSongKey" type="button" hidden>Confirm key</button>
        <span id="keySummary" class="key-summary">Unselected — no key is assumed.</span></div>
-     <div class="key-control-field"><label for="transposeKey">Transpose to <select id="transposeKey"><option value="">Choose target key…</option></select></label>
+     <div class="key-control-field"><label for="transposeKey">Transpose to key <select id="transposeKey"><option value="">Choose target key…</option></select></label>
        <button id="previewTranspose" type="button">Preview transposition…</button>
        <button id="undoTranspose" type="button" hidden>Undo transposition</button></div>
+     <div class="key-control-field key-step-field"><label for="transposeSteps">Or shift by semitones
+       <select id="transposeSteps"><option value="0">Choose steps…</option></select></label>
+       <button id="previewTransposeSteps" type="button">Preview step shift…</button>
+       <span class="key-step-help">Use + to move up or − to move down. Works even with no song key selected.</span></div>
+     <p id="transposeFeedback" class="transpose-feedback" role="alert" hidden></p>
      <p class="key-disclaimer">Key selection is optional and does not change chords. Transpose requires a preview and confirmation; songs with multiple keys can remain Unselected.</p>
    </div>
       <div class="organizer-toolbar">
