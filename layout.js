@@ -7,23 +7,33 @@
   // Text and emoji notes may use the entire paper; 3.5x limits are for other stickers.
   const maxTextScale=record=>{
     const paper=pageSize();
+    const padX=tightNote(record)?NOTE_PAD_X*2:0;
+    const padY=tightNote(record)?NOTE_PAD_Y*2:0;
     return Math.max(minimumScale(record),Math.min(
-      paper.innerWidth/Math.max(1,record.w||36),
-      paper.innerHeight/Math.max(1,record.h||33)));
+      (paper.innerWidth-padX)/Math.max(1,(record.w||36)-padX),
+      (paper.innerHeight-padY)/Math.max(1,(record.h||33)-padY)));
   };
   const centeredNotePosition=(record,scale,cx,cy)=>{
     const paper=pageSize();
     return {
-      x:Math.max(0,Math.min(paper.innerWidth-(record.w||36)*scale,
-        cx-(record.w||36)*scale/2)),
-      y:Math.max(0,Math.min(paper.innerHeight-(record.h||33)*scale,
-        cy-(record.h||33)*scale/2))
+      x:Math.max(0,Math.min(paper.innerWidth-noteRenderedWidth(record,scale),
+        cx-noteRenderedWidth(record,scale)/2)),
+      y:Math.max(0,Math.min(paper.innerHeight-noteRenderedHeight(record,scale),
+        cy-noteRenderedHeight(record,scale)/2))
     };
   };
+  const NOTE_PAD_X=9,NOTE_PAD_Y=7;
+  const tightNote=record=>record.autoSize===true&&(record.type==="text"||record.noteType==="text");
+  const noteRenderedWidth=(record,scale=stickerScale(record))=>tightNote(record)?
+    Math.max(1,(record.w||36)-NOTE_PAD_X*2)*scale+NOTE_PAD_X*2:(record.w||190)*scale;
+  const noteRenderedHeight=(record,scale=stickerScale(record))=>tightNote(record)?
+    Math.max(1,(record.h||33)-NOTE_PAD_Y*2)*scale+NOTE_PAD_Y*2:(record.h||85)*scale;
   const chordHeight=record=>record.showDiagram===false?54:record.showCode===true?127:STICKER_H;
   const stickerScale=record=>Math.max(minimumScale(record),Number(record.scale)||1);
-  const stickerWidth=record=>(record.type==="text"||record.noteType==="text"||record.type==="image"||record.noteType==="image")?(record.w||190)*stickerScale(record):STICKER_W*stickerScale(record);
-  const stickerHeight=record=>(record.type==="text"||record.noteType==="text"||record.type==="image"||record.noteType==="image")?(record.h||85)*stickerScale(record):chordHeight(record)*stickerScale(record);
+  const stickerWidth=record=>(record.type==="text"||record.noteType==="text")?noteRenderedWidth(record):
+    (record.type==="image"||record.noteType==="image")?(record.w||190)*stickerScale(record):STICKER_W*stickerScale(record);
+  const stickerHeight=record=>(record.type==="text"||record.noteType==="text")?noteRenderedHeight(record):
+    (record.type==="image"||record.noteType==="image")?(record.h||85)*stickerScale(record):chordHeight(record)*stickerScale(record);
   const NOTE_MIN_W=85,NOTE_MIN_H=36;
   let placingNote=false,activeNoteId=null,noteTextHistorySaved=false;
   let stickers=[], history=[], redo=[], nextId=1, drag=null;
@@ -118,19 +128,20 @@
     const desiredW=Math.max(18,Math.ceil(Math.max(0,...lines.map(line=>ctx.measureText(line).width)))+padX*2+2);
     const desiredH=Math.max(24,Math.ceil(lines.length*size*1.2)+padY*2+2);
     const paper=pageSize(),scale=stickerScale(record);
-    const nextW=Math.min(paper.innerWidth/scale,desiredW);
-    const nextH=Math.min(paper.innerHeight/scale,desiredH);
-    const oldW=(record.w||36)*scale,oldH=(record.h||30)*scale;
-    record.x=Math.max(0,Math.min(paper.innerWidth-nextW*scale,record.x+(oldW-nextW*scale)/2));
-    record.y=Math.max(0,Math.min(paper.innerHeight-nextH*scale,record.y+(oldH-nextH*scale)/2));
+    const nextW=Math.min(NOTE_PAD_X*2+(paper.innerWidth-NOTE_PAD_X*2)/scale,desiredW);
+    const nextH=Math.min(NOTE_PAD_Y*2+(paper.innerHeight-NOTE_PAD_Y*2)/scale,desiredH);
+    const oldW=stickerWidth(record),oldH=stickerHeight(record);
     record.w=nextW;record.h=nextH;
+    const newW=stickerWidth(record),newH=stickerHeight(record);
+    record.x=Math.max(0,Math.min(paper.innerWidth-newW,record.x+(oldW-newW)/2));
+    record.y=Math.max(0,Math.min(paper.innerHeight-newH,record.y+(oldH-newH)/2));
   }
   function fillPageNote(){
     const record=noteRecord(activeNoteId);
     if(!record)return;
     const paper=pageSize(),scale=Math.max(minimumScale(record),maxTextScale(record)*.94);
-    const x=Math.max(0,(paper.innerWidth-(record.w||36)*scale)/2);
-    const y=Math.max(0,(paper.innerHeight-(record.h||33)*scale)/2);
+    const x=Math.max(0,(paper.innerWidth-noteRenderedWidth(record,scale))/2);
+    const y=Math.max(0,(paper.innerHeight-noteRenderedHeight(record,scale))/2);
     if(Math.abs(stickerScale(record)-scale)<.001&&Math.abs(record.x-x)<1&&Math.abs(record.y-y)<1)return;
     save();record.scale=scale;record.x=x;record.y=y;
     refresh();positionNoteEditor();
@@ -310,8 +321,9 @@
     el.style.width=stickerWidth(record)+"px";el.style.height=stickerHeight(record)+"px";
     if(isText){
       const inner=document.createElement("div");inner.className="note-inner";
-      inner.style.width=(record.w||190)+"px";
-      inner.style.height=(record.h||85)+"px";
+      if(tightNote(record)){inner.style.left=NOTE_PAD_X+"px";inner.style.top=NOTE_PAD_Y+"px";}
+      inner.style.width=(tightNote(record)?Math.max(1,(record.w||36)-NOTE_PAD_X*2):(record.w||190))+"px";
+      inner.style.height=(tightNote(record)?Math.max(1,(record.h||33)-NOTE_PAD_Y*2):(record.h||85))+"px";
       inner.style.transform="scale("+stickerScale(record)+")";
       const content=document.createElement("div");content.className="note-content";
       content.textContent=record.text||"";
@@ -450,14 +462,16 @@
     const el=document.createElement("div");
     el.className="chord-drag-ghost"+(state.noteType==="text"?" note-ghost":"");
     el.setAttribute("aria-hidden","true");
+    if(tightNote(state))el.dataset.autoSize="true";
     el.style.width=stickerWidth(state)+"px";
     el.style.height=stickerHeight(state)+"px";
     if(state.noteType==="image"){
       el.append(rotatableArtwork(imageStickerArtwork(state),state.rotation));
     }else if(state.noteType==="text"){
       const inner=document.createElement("div");inner.className="note-inner";
-      inner.style.width=(state.w||190)+"px";
-      inner.style.height=(state.h||85)+"px";
+      if(tightNote(state)){inner.style.left=NOTE_PAD_X+"px";inner.style.top=NOTE_PAD_Y+"px";}
+      inner.style.width=(tightNote(state)?Math.max(1,(state.w||36)-NOTE_PAD_X*2):(state.w||190))+"px";
+      inner.style.height=(tightNote(state)?Math.max(1,(state.h||33)-NOTE_PAD_Y*2):(state.h||85))+"px";
       inner.style.transform="scale("+stickerScale(state)+")";
       const content=document.createElement("div");content.className="note-content";
       content.textContent=state.text||"";noteStyle(content,state);
@@ -651,6 +665,7 @@
     pointerDrag={type:"resize",id:record.id,pointerId:ev.pointerId,
       startX:ev.clientX,startY:ev.clientY,initialScale:stickerScale(record),
       initialX:record.x,initialY:record.y,
+      initialPixelW:stickerWidth(record),initialPixelH:stickerHeight(record),
       initialW:record.w,initialH:record.h,isText:record.type==="text"||record.type==="image",isImage:record.type==="image",
       before:stickers.map(item=>structuredClone(item)),element:sticker,started:false};
     document.addEventListener("pointermove",movePointerDrag,{capture:true,passive:false});
@@ -667,8 +682,8 @@
       // CSS transforms keep editable vector text sharp in the PDF.
       const size=pageSize();
       const baseW=record.w||190,baseH=record.h||85;
-      const dx=(ev.clientX-state.startX)/baseW;
-      const dy=(ev.clientY-state.startY)/baseH;
+      const dx=(ev.clientX-state.startX)/(tightNote(record)?Math.max(1,baseW-NOTE_PAD_X*2):baseW);
+      const dy=(ev.clientY-state.startY)/(tightNote(record)?Math.max(1,baseH-NOTE_PAD_Y*2):baseH);
       const delta=Math.abs(dx)>=Math.abs(dy)?dx:dy;
       const maxFit=state.isImage
         ?Math.min(MAX_SCALE,size.innerWidth/baseW,size.innerHeight/baseH)
@@ -679,8 +694,8 @@
       state.started=true;record.scale=next;
       if(!state.isImage){
         // Expand around the note's contents, not the original top-left corner.
-        const cx=state.initialX+baseW*state.initialScale/2;
-        const cy=state.initialY+baseH*state.initialScale/2;
+        const cx=state.initialX+state.initialPixelW/2;
+        const cy=state.initialY+state.initialPixelH/2;
         const pos=centeredNotePosition(record,next,cx,cy);
         record.x=pos.x;record.y=pos.y;
         state.element.style.left=pos.x+"px";
@@ -753,7 +768,7 @@
       const box=sticker.getBoundingClientRect();
       model={type:"sticker",id,name:record.name,shape:record.shape,scale:stickerScale(record),
         noteType:record.type==="text"?"text":record.type==="image"?"image":"diagram",w:record.w,h:record.h,src:record.src,
-        text:record.text,fontSize:record.fontSize,bold:record.bold,italic:record.italic,
+        text:record.text,fontSize:record.fontSize,bold:record.bold,italic:record.italic,autoSize:record.autoSize,
         showDiagram:record.showDiagram!==false,showCode:record.showCode===true,code:record.code,
         align:record.align,color:record.color,background:record.background,rotation:record.rotation||0,
         offsetX:ev.clientX-box.left,offsetY:ev.clientY-box.top};
