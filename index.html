@@ -98,10 +98,11 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
 <section class="intro no-print"><p class="eyebrow">From chord data to a print-ready sheet</p><h1>Import a song. Get the chords and the whole song, ready to print.</h1><p>Preserve chord placement and the original fingering diagrams. Export the diagrams as one image for Google Docs or print an entire formatted song sheet.</p></section>
 <section class="card no-print import-card" id="importCard">
  <details class="activity-disclosure" id="importDetails" open><summary>Bring a song into ChordStudio</summary><div class="activity-body">
- <div class="how"><span class="step">1</span><div><strong>Add ChordStudio to your bookmarks bar</strong><div class="hint">Show bookmarks with Ctrl+Shift+B, then drag this yellow link onto the bar. This is a one-time setup.</div></div><a href="#" id="bookmarklet" class="bookmarklet" title="Drag to your bookmarks bar to import a song">↗ ChordStudio</a></div>
+ <div class="how"><span class="step">1</span><div><strong>Add ChordStudio to your bookmarks bar</strong><div class="hint">Show bookmarks with Ctrl+Shift+B, then drag this yellow link onto the bar. This is a one-time setup.</div></div><a href="#" id="bookmarklet" class="bookmarklet" title="Drag to bookmarks bar, or click for setup steps">↗ ChordStudio</a></div>
+ <div id="bookmarkHelp" class="bookmark-help" hidden><strong>Bookmarklet setup</strong><p>Browsers prevent sites from creating bookmarks automatically. Drag the yellow ↗ ChordStudio link to your bookmarks bar (Ctrl+Shift+B shows it).</p><p>On touch devices or if dragging isn't practical, copy the bookmarklet and create a bookmark named ChordStudio, then replace its URL with the copied code.</p><button id="copyBookmarklet" type="button">Copy bookmarklet code</button><button id="closeBookmarkHelp" type="button">Close</button></div><div class="bookmark-placeholder" hidden></div>
  <div class="how import-followup"><span class="step">2</span><div><strong>Open a song's chord page normally</strong><div class="hint">When the page has loaded, click your ↗ ChordStudio bookmark. The song will open here, ready to customize.</div></div></div>
  <div class="continue-project"><div><strong>Coming back to an existing song?</strong><div class="hint">Open a saved .chordstudio project to pick up where you left off.</div></div><button id="welcomeOpenProject" type="button">Open saved project…</button></div>
- <details class="alt"><summary>Import saved page source or paste JSON / HTML</summary><div class="fileinput"><input id="sourceFile" type="file" accept=".html,.htm,.json,.txt,text/html,text/plain,application/json"></div><textarea id="sourcePaste" placeholder="Paste the page source (containing js-store), or JSON with store.page.data"></textarea><button id="importPaste">Import pasted source</button></details>
+ <details class="alt"><summary>Import saved page source, JSON, HTML or URL</summary><div class="fileinput"><input id="sourceFile" type="file" accept=".html,.htm,.json,.txt,text/html,text/plain,application/json"></div><textarea id="sourcePaste" placeholder="Paste a song URL, saved HTML, or JSON chord data"></textarea><button id="importPaste">Import</button></details>
  </div></details>
 </section>
 <section class="card no-print" id="organizer">
@@ -115,6 +116,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
    </div>
   <section id="chordSection" class="sheet-section"><h2 class="print-heading">CHORDS</h2>
     <div class="chord-manager no-print">
+      <button id="addCustomChord" type="button">+ Create chord</button>
       <span id="chordCount" class="count" aria-live="polite">Select the diagrams you want to print</span>
       <button type="button" id="undoChordBtn" disabled title="Undo last diagram change" aria-label="Undo diagram change">↶ Undo</button>
       <button type="button" id="redoChordBtn" disabled title="Redo diagram change" aria-label="Redo diagram change">↷ Redo</button>
@@ -266,6 +268,15 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <p id="imageEditNotice" class="image-edit-notice" role="status"></p>
  <div class="image-edit-actions"><button id="imageEditCancel" type="button">Cancel</button><button class="primary" id="imageEditApply" type="button">Apply image</button></div>
 </dialog>
+<dialog id="chordBuilderDialog" class="chord-builder-dialog no-print" aria-labelledby="chordBuilderTitle">
+ <div class="chord-builder-head"><div><h3 id="chordBuilderTitle">Chord diagram builder</h3><p>Click a string and fret for dots. Drag between strings on the same fret to add a barre.</p></div><button id="chordBuilderClose" type="button" aria-label="Close chord builder">×</button></div>
+ <div class="chord-builder-fields"><label>Chord name <input id="builderName" type="text" placeholder="e.g. Cmaj7" maxlength="80" required></label><label>Fret code (low E → high E) <input id="builderCode" type="text" placeholder="x 3 2 0 0 0" spellcheck="false"></label></div>
+ <div class="chord-builder-fields"><label>Top fret number <input id="builderBase" type="number" min="1" max="24" value="1"></label><label>Finger for selected dot/barre <select id="builderFinger"><option value="0">Unnumbered</option><option value="1">1 · index</option><option value="2">2 · middle</option><option value="3">3 · ring</option><option value="4">4 · pinky</option></select></label><label><input id="builderShowDots" type="checkbox" checked> Show all dots</label></div>
+ <div class="chord-builder-workspace"><div><div id="builderGrid" class="builder-grid" role="group" aria-label="Interactive six-string guitar fretboard"></div><div id="builderStringNames" class="builder-string-names" aria-hidden="true"><span>E</span><span>A</span><span>D</span><span>G</span><span>B</span><span>e</span></div></div>
+ <div class="builder-sidebar"><div class="builder-help">Tap the string status above a column to cycle between <strong>open</strong> and <strong>muted</strong>. Click a cell for a fret dot, or drag horizontally across cells for a barre. Use finger labels when needed.</div>
+ <div id="builderBarres" class="builder-barres"></div><div class="builder-live"><strong>Diagram preview</strong><div id="builderPreview"></div><span id="builderFeedback" role="status"></span></div></div></div>
+ <div class="chord-builder-actions"><button id="builderCancel" type="button">Cancel</button><button id="builderSave" class="primary" type="button">Save chord to organizer</button></div>
+</dialog>
 <footer class="no-print">Independent, open-source chord-sheet formatter. Not affiliated with the sites you import from. No song lyrics are bundled; import only material you are authorized to use.</footer>
 <link rel="stylesheet" href="layout.css?v=20261011-sticker-rotation-2">
 <script src="app.js?v=20261011-image-editor-1" defer></script>
@@ -276,4 +287,6 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
 <script src="image.js?v=20261011-crop-2" defer></script>
 <script src="pdf.js?v=20261011-directpdf-1" defer></script>
 <script src="emoji.js?v=20261011-emoji-2" defer></script>
+<script src="chord-builder.js?v=20261011-builder-1" defer></script>
+<script src="import-helper.js?v=20261011-import-1" defer></script>
 </body></html>
