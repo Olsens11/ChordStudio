@@ -42,10 +42,10 @@
     }
     return result;
   }
-  function safeCatalog(src){
+  function safeCatalog(src,{allowEmpty=false}={}){
     if(!src||Array.isArray(src)||typeof src!=="object")throw Error("Missing project chord definitions.");
     const entries=Object.entries(src);
-    if(!entries.length||entries.length>500)throw Error("Invalid number of saved chord definitions.");
+    if((!allowEmpty&&!entries.length)||entries.length>500)throw Error("Invalid number of saved chord definitions.");
     const result={};
     for(const [name,shapes] of entries){
       if(name.length>100||!Array.isArray(shapes)||shapes.length>100)
@@ -61,7 +61,7 @@
         }));
       if(!result[name].length)delete result[name];
     }
-    if(!Object.keys(result).length)throw Error("No usable fretboard shapes in saved project.");
+    if(!allowEmpty&&!Object.keys(result).length)throw Error("No usable fretboard shapes in saved project.");
     return result;
   }
   function snapshot(){
@@ -123,16 +123,24 @@
     // Validate song markup and chord models in detached nodes before altering the page.
     const editedNodes=decodeLines(data.songLines);
     const originalNodes=decodeLines(data.importedSongLines);
-    const savedCatalog=safeCatalog(data.catalog);
-    const originalCatalog=safeCatalog(data.originalCatalog||data.catalog);
+    const savedCatalog=safeCatalog(data.catalog,{allowEmpty:true});
+    const originalCatalog=safeCatalog(data.originalCatalog||data.catalog,{allowEmpty:true});
     const source=validSourceUrl(meta.source);
-    loadPage({
-      song_name:String(meta.title||"Untitled song").slice(0,200),
-      artist_name:String(meta.artist||"").slice(0,200),
-      content:String(meta.content||""),
-      source,
-      applicature:originalCatalog
-    });
+    if(Object.keys(originalCatalog).length){
+      loadPage({
+        song_name:String(meta.title||"Untitled song").slice(0,200),
+        artist_name:String(meta.artist||"").slice(0,200),
+        content:String(meta.content||""),
+        source,
+        applicature:originalCatalog
+      });
+    }else{
+      // Authored-from-scratch projects deliberately have no imported catalog.
+      // They can be reopened before the first custom chord has been added.
+      window.ChordSong.startBlankSong(
+        String(meta.title||"Untitled song").slice(0,200),
+        String(meta.artist||"").slice(0,200),false);
+    }
     catalog=structuredClone(savedCatalog);
     original=structuredClone(originalCatalog);
     page.content=String(meta.content||"");
