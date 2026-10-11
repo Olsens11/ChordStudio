@@ -85,6 +85,7 @@
         includeChords:$("includeChords").checked,
         includeSong:$("includeSong").checked,
         showCodes:$("showCodes").checked,
+        showDiagrams:$("showDiagrams").checked,
         columns:$("columns").value,
         fontSize:$("fontSize").value,
         songEditFont:$("songEditFont").value,
@@ -141,6 +142,8 @@
     for(const id of ["includeChords","includeSong","showCodes"]){
       if(typeof opts[id]==="boolean")$(id).checked=opts[id];
     }
+    $("showDiagrams").checked=opts.showDiagrams!==false;
+    if(!$("showDiagrams").checked&&!$("showCodes").checked)$("showDiagrams").checked=true;
     for(const id of ["columns","fontSize","songEditFont","songEditLeading","paperSize"]){
       const value=String(opts[id]||"");
       if([...$(id).options].some(option=>option.value===value))$(id).value=value;
