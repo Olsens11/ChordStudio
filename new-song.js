@@ -3,12 +3,11 @@
 (function(){
  const $=id=>document.getElementById(id);
  let dialogMode="edit";
- let draft={arrangedBy:"",performedBy:""};
  const newDetails=()=>({
    title:$("newSongTitle").value.trim(),
    writtenBy:$("newSongArtist").value.trim(),
-   arrangedBy:draft.arrangedBy,
-   performedBy:draft.performedBy
+   arrangedBy:"",
+   performedBy:""
  });
  const formDetails=()=>({
    title:$("songDetailsTitle").value.trim(),
@@ -16,10 +15,6 @@
    arrangedBy:$("songDetailsArranged").value.trim(),
    performedBy:$("songDetailsArtist").value.trim()
  });
- function updateCreditButtons(){
-   $("addArrangementCredit").textContent=draft.arrangedBy?"Edit arrangement credit":"Add arrangement credit";
-   $("addPerformerCredit").textContent=draft.performedBy?"Edit performer credit":"Add performer credit";
- }
  function hasUnsavedSheet(){
    if(!page)return false;
    return !!(
@@ -38,12 +33,6 @@
    if(title==="Untitled song")message("Your song is ready. Add a title or credits anytime from Edit → Song details & credits.");
    return true;
  }
- function applyDraft(values){
-   $("newSongTitle").value=values.title;
-   $("newSongArtist").value=values.writtenBy;
-   draft={arrangedBy:values.arrangedBy,performedBy:values.performedBy};
-   updateCreditButtons();
- }
  function showDetails(values,mode,focusField){
    dialogMode=mode;
    $("songDetailsTitle").value=values.title||"";
@@ -51,9 +40,9 @@
    $("songDetailsWritten").value=values.writtenBy||"";
    $("songDetailsArranged").value=values.arrangedBy||"";
    $("songDetailsStart").hidden=mode!=="create";
-   $("songDetailsSave").classList.toggle("primary",mode==="edit");
+   $("songDetailsSave").hidden=mode!=="edit";
    $("songDetailsDescription").textContent=mode==="create"
-     ?"Add the optional credits before you begin. Apply details to return to the card, or start writing now."
+     ?"Add any optional credits, then start writing your song."
      :"These details appear at the top of your sheet and in saved projects.";
    $("songDetailsDialog").showModal();
    $(focusField||"songDetailsTitle").focus();
@@ -74,16 +63,15 @@
    dialogMode="edit";
  }
  function applyDetails(){
+   if(dialogMode!=="edit")return;
    const values=formDetails();
-   if(dialogMode==="create")applyDraft(values);
-   else window.ChordSong.updateSongDetails(values.title,values);
+   window.ChordSong.updateSongDetails(values.title,values);
    close();
  }
  function createFromDialog(){
    if(dialogMode!=="create")return;
    const values=formDetails();
    if(!create(values))return; // Keep dialog open if the user declines replacing a sheet.
-   applyDraft(values);
    close();
  }
  function init(){
@@ -93,13 +81,11 @@
        if(event.key==="Enter"&&!event.isComposing){event.preventDefault();create();}
      });
    }
-   $("addArrangementCredit").addEventListener("click",()=>showDetails(newDetails(),"create","songDetailsArranged"));
-   $("addPerformerCredit").addEventListener("click",()=>showDetails(newDetails(),"create","songDetailsArtist"));
+   $("addCredits").addEventListener("click",()=>showDetails(newDetails(),"create","songDetailsArtist"));
    $("fileNewSongBtn").addEventListener("click",()=>{
      if(hasUnsavedSheet()&&!window.confirm(
        "Create a new document? Save the current project first if you want to keep it."))return;
      $("newSongTitle").value="";$("newSongArtist").value="";
-     draft={arrangedBy:"",performedBy:""};updateCreditButtons();
      window.ChordSong.startBlankSong("Untitled song","",true);
    });
    document.addEventListener("keydown",event=>{
@@ -118,13 +104,13 @@
      $(id).addEventListener("keydown",ev=>{
        if(ev.key==="Enter"&&!ev.isComposing){
          ev.preventDefault();
-         // Enter confirms the fields and dismisses the dialog. Starting the
-         // document remains the explicit "Start writing" action.
-         applyDetails();
+         // Enter confirms the visible primary action: create the song from
+         // the new-song dialog, or apply edits in an existing document.
+         if(dialogMode==="create")createFromDialog();
+         else applyDetails();
        }
      });
    }
-   updateCreditButtons();
  }
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
  else init();
