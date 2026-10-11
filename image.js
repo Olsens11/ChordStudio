@@ -47,10 +47,10 @@ function cropBetween(a,b){
  return w>.012&&h>.012?{x:Math.min(a.x,b.x),y:Math.min(a.y,b.y),w,h}:null;
 }
 function closeDialog(){if($("imageEditDialog").open)$("imageEditDialog").close();session=null;drag=null;}
-function edit(data,id=null){
+function edit(data,id=null,position=null){
  cancel();
  session={img:data.img,src:data.src,w:data.width,h:data.height,id,
-  large:!!data.large,rotation:0,crop:null};
+  large:!!data.large,rotation:0,crop:null,position};
  if(!$("imageEditDialog").open)$("imageEditDialog").showModal();
  showPreview();
 }
@@ -91,7 +91,7 @@ async function fromFile(file,position){
   const img=await decode(src),width=img.naturalWidth,height=img.naturalHeight;
   if(width*height>100000000||!width||!height)throw Error("Image exceeds the safe 100-megapixel decoding limit.");
   if(file.size>4*1024*1024||Math.max(width,height)>2400||width*height>6000000){
-   edit({src,img,width,height,large:true});return;
+   edit({src,img,width,height,large:true},null,position);return;
   }
   pending={src,width,height};
   if(position)place(position.page,position.x,position.y);else arm({src,width,height});
@@ -109,10 +109,12 @@ async function apply(){
  if(!session)return;
  const button=$("imageEditApply");button.disabled=true;
  try{
-  const result=await optimized(),id=session.id;
+  const result=await optimized(),id=session.id,position=session.position;
   closeDialog();
   if(id!=null)window.ChordLayout.updateImageSticker(id,result.src,result.width,result.height);
-  else arm(result);
+  else if(position){
+    pending=result;place(position.page,position.x,position.y);
+  }else arm(result);
  }catch(e){$("imageEditNotice").textContent=e.message;}
  finally{button.disabled=false;}
 }
@@ -124,6 +126,9 @@ function init(){
  for(const id of ["importImageBtn","trayImportImage"])$(id).addEventListener("click",()=>$("imageFile").click());
  $("imageFile").addEventListener("change",e=>{
   const file=e.target.files?.[0];e.target.value="";if(file)fromFile(file);
+ });
+ $("imagePlacementDismiss").addEventListener("pointerdown",event=>{
+   event.stopPropagation();cancel();
  });
  $("imagePlacementDismiss").addEventListener("click",cancel);
  $("imageEditClose").addEventListener("click",closeDialog);
