@@ -34,6 +34,10 @@
    await ensureLibraries();
    // Capture the actual printable geometry, not the small phone overview.
    window.ChordMobilePages?.suspend(true);
+   const inverted=$("invertDocument")?.checked===true;
+   // Render the original light page, then invert its pixels exactly once.
+   // html2canvas doesn't reliably implement CSS filter:invert().
+   if(inverted)$("printPage").classList.add("pdf-export-neutral");
    const pages=[...document.querySelectorAll("#printPage .paper-page")];
    if(!pages.length)throw Error("There are no printable pages.");
    if(pages.length>50)throw Error("This project has too many pages for direct PDF export.");
@@ -51,6 +55,15 @@
         el.classList?.contains("sticker-delete")||el.classList?.contains("sticker-resize")
     });
     if(i)pdf.addPage(format,"portrait");
+    if(inverted){
+      const ctx=canvas.getContext("2d",{willReadFrequently:true});
+      const pixels=ctx.getImageData(0,0,canvas.width,canvas.height);
+      const rgba=pixels.data;
+      for(let j=0;j<rgba.length;j+=4){
+        rgba[j]=255-rgba[j];rgba[j+1]=255-rgba[j+1];rgba[j+2]=255-rgba[j+2];
+      }
+      ctx.putImageData(pixels,0,0);
+    }
     pdf.addImage(canvas.toDataURL("image/jpeg",.94),"JPEG",0,0,w,h,
       undefined,"FAST");
     // The visible page is rasterized, so hyperlink annotations must be added
@@ -73,14 +86,13 @@
     // Allow the UI to update after each page.
     await new Promise(resolve=>setTimeout(resolve,0));
    }
-   const raw=($("songName")?.textContent||"ChordStudio-song")
-     .replace(/[^\w -]+/g,"").trim().replace(/\s+/g,"-").slice(0,75);
-   pdf.save((raw||"ChordStudio")+".pdf");
+   pdf.save((window.ChordAppearance?.filenameBase()||"ChordStudio")+".pdf");
    setStatus("PDF downloaded. For selectable text, use Print → Save as PDF.");
    setTimeout(()=>setStatus(""),9000);
   }catch(e){
    setStatus("PDF export failed: "+e.message+" — you can still use Print / PDF.");
   }finally{
+   $("printPage").classList.remove("pdf-export-neutral");
    window.ChordMobilePages?.suspend(false);
    busy=false;button.disabled=false;
   }

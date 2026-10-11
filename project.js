@@ -98,6 +98,7 @@
         repeatSourceFooter:$("repeatSourceFooter").checked,
         repeatSongHeader:$("repeatSongHeader").checked,
         showPageNumbers:$("showPageNumbers").checked,
+        invertDocument:$("invertDocument").checked,
         showCodes:$("showCodes").checked,
         showDiagrams:$("showDiagrams").checked,
         columns:$("columns").value,
@@ -235,6 +236,8 @@
     $("repeatSourceFooter").checked=opts.repeatSourceFooter===true&&!!source&&$("includeSourceFooter").checked;
     $("repeatSongHeader").checked=opts.repeatSongHeader===true;
     $("showPageNumbers").checked=opts.showPageNumbers===true;
+    $("invertDocument").checked=opts.invertDocument===true;
+    window.ChordAppearance?.apply();
     updateOriginalSourceLink();
     // Version-1 projects from before tuning support intentionally fall back
     // to an *unconfirmed* standard-tuning assumption.

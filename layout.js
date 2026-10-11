@@ -773,13 +773,6 @@
     }
     ghost.style.transform=factor===1?"none":"scale("+factor+")";
     ghost.style.left=x+"px";ghost.style.top=y+"px";
-    if(state.marker){
-      state.marker.hidden=!state.previewDrop;
-      if(state.previewDrop){
-        state.marker.style.left=x+stickerWidth(state)*factor/2+"px";
-        state.marker.style.top=y+stickerHeight(state)*factor/2+"px";
-      }
-    }
   }
   function scrollDuringDrag(){
     scrollFrame=0;
@@ -1132,7 +1125,7 @@
     }
     pointerDrag={...model,pointerId:ev.pointerId,x:ev.clientX,y:ev.clientY,startX:ev.clientX,startY:ev.clientY,ctrlKey:ev.ctrlKey,shiftKey:ev.shiftKey,started:false,ghost:null,
       lifted:ev.pointerType==="long-touch",liftY:ev.pointerType==="long-touch"?90:0,
-      marker:null,previewDrop:null};
+      previewDrop:null};
     document.addEventListener("pointermove",movePointerDrag,{capture:true,passive:false});
     document.addEventListener("pointerup",endPointerDrag,true);
     document.addEventListener("pointercancel",cancelPointerDrag,true);
@@ -1148,12 +1141,6 @@
     if(!state.started){
       state.started=true;
       state.ghost=makeGhost(state);
-      if(state.lifted){
-        state.marker=document.createElement("span");
-        state.marker.className="touch-drop-marker";
-        state.marker.setAttribute("aria-hidden","true");
-        document.body.append(state.marker);
-      }
       beginSortPreview(state);
       document.body.classList.add("chord-pointer-dragging");
       scrollFrame=requestAnimationFrame(scrollDuringDrag);
@@ -1265,7 +1252,6 @@
     document.removeEventListener("pointercancel",cancelPointerDrag,true);
     if(scrollFrame){cancelAnimationFrame(scrollFrame);scrollFrame=0;}
     pointerDrag?.ghost?.remove();
-    pointerDrag?.marker?.remove();
     restoreSortPreview(pointerDrag);
     pointerDrag=null;
     document.body.classList.remove("chord-pointer-dragging","chord-resizing","chord-rotating");

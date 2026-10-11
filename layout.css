@@ -1172,18 +1172,27 @@ body.has-document .intro{display:none}
     z-index:12!important;touch-action:none!important;
   }
   .chord-drag-ghost{opacity:.92;filter:drop-shadow(0 3px 5px #13345b66)}
-  .touch-drop-marker{
-    position:fixed;z-index:100001;width:20px;height:20px;
-    margin:-10px 0 0 -10px;border:2px solid #fff;border-radius:50%;
-    background:#216bd4cc;box-shadow:0 0 0 2px #216bd4,0 2px 7px #001e4d77;
-    pointer-events:none;
-  }
-  .touch-drop-marker[hidden]{display:none!important}
-  .touch-drop-marker::before,.touch-drop-marker::after{
-    content:"";position:absolute;background:#fff;left:50%;top:50%;
-    transform:translate(-50%,-50%)
-  }
-  .touch-drop-marker::before{width:11px;height:2px}
-  .touch-drop-marker::after{width:2px;height:11px}
+
 }
-@media print{.touch-drop-marker{display:none!important}}
+
+
+/* Invert the actual paper, not the surrounding editing interface.
+   The same print-time filter applies to native Print → Save as PDF. */
+#printPage.invert-document .paper-page{
+  filter:invert(1);
+  -webkit-print-color-adjust:exact;
+  print-color-adjust:exact;
+}
+#printPage.invert-document.pdf-export-neutral .paper-page{
+  filter:none!important;
+}
+@media print{
+  #printPage.invert-document .paper-page{
+    filter:invert(1)!important;
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
+  }
+  #printPage.invert-document.pdf-export-neutral .paper-page{
+    filter:none!important;
+  }
+}

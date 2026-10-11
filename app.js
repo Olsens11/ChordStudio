@@ -494,6 +494,8 @@ function startBlankSong(title="Untitled song",artist="",openEditor=true,navigate
   $("repeatSourceFooter").checked=false;
   $("repeatSongHeader").checked=false;
   $("showPageNumbers").checked=true;
+  $("invertDocument").checked=false;
+  window.ChordAppearance?.apply();
   $("chordEditor").value="";
   $("songLines").replaceChildren();
   resetImportedSongNodes();
@@ -563,6 +565,8 @@ function loadPage(data,{navigate=true}={}){
   $("repeatSourceFooter").checked=!!page.source;
   $("repeatSongHeader").checked=true;
   $("showPageNumbers").checked=true;
+  $("invertDocument").checked=false;
+  window.ChordAppearance?.apply();
   updateOriginalSourceLink();
   $("importDetails").open=false;
   $("songName").textContent=page.title;
