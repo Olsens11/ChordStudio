@@ -1,6 +1,6 @@
 # ChordStudio
 
-An independent, browser-based **chord-diagram and song-sheet formatter**.
+An independent, browser-based songwriting and chord-diagram studio for **original compositions** and imported chord sheets.
 
 **Repository:** https://github.com/Olsens11/ChordStudio  
 **Live site:** https://olsens11.github.io/ChordStudio/
@@ -22,6 +22,10 @@ To enable GitHub Pages: **Settings → Pages → Build and deployment → Deploy
 
 ## Starting a song
 
+**Write an original song:** Choose **Write my own song** in the Bring a song section. Enter a title and an optional artist/songwriter name, then select **Start writing**. ChordStudio opens a genuinely blank editor—no imported text or example diagrams are included. Type your lyrics and chords directly, then choose **Apply changes** to update the printable pages. Use **+ Create chord** in the organizer to build each diagram from scratch (dots, barres, finger numbers and high-fret codes). The first chord automatically makes the printable chord bank visible. Start with no chords if you prefer a lyrics-only sheet. You can **Save Project** and reopen it even before creating any chord diagrams. Use **File → New blank song…** to return to the new-song form and **Edit → Edit song title & artist…** to update the heading later. ChordStudio will ask before replacing existing song content when starting a new one.
+
+**Import an existing song:** The import path remains alongside original songwriting. To use the bookmarklet:
+
 1. Open ChordStudio and drag the yellow **↗ ChordStudio** link to the bookmarks bar (show it with `Ctrl+Shift+B`). This is the one-time import setup. Clicking the yellow link opens installation help with a **Copy bookmarklet code** option instead of trying to run the importer on ChordStudio itself. Browsers do not allow websites to create bookmarks directly; if dragging is unavailable, create a bookmark and replace its URL with the copied bookmarklet. The link has no decorative favicon.
 2. Visit a compatible chord-tab song page normally and click the bookmark. ChordStudio opens the song with its diagrams and text.
 3. After a successful import, the **Original song page** URL appears above the workspace options, with **Open original ↗** for returning to the source page. It is a reference link, not an import step.
@@ -36,7 +40,7 @@ Use **Open Project** in the toolbar, or **Open saved project…** on the welcome
 
 ## Editing the song before printing
 
-After importing a song, choose **Edit song text** above the preview. This opens a large in-page editor displaying chords and lyrics exactly as they appear in the print sheet, without showing raw tab markup.
+After importing a song—or starting an original—choose **Edit song text** in the Edit menu above the preview. This opens a large in-page editor displaying chords and lyrics exactly as they appear in the print sheet, without showing raw tab markup.
 
 - Edit the song text, correct chord names, or reposition chord labels by changing the spaces before them.
 - Select text and choose **Bold**, **Italic**, or **Underline**.
