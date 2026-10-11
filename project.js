@@ -209,13 +209,13 @@
         content:String(meta.content||""),
         source,
         applicature:originalCatalog
-      });
+      },{navigate:false});
     }else{
       // Authored-from-scratch projects deliberately have no imported catalog.
       // They can be reopened before the first custom chord has been added.
       window.ChordSong.startBlankSong(
         String(meta.title||"Untitled song").slice(0,200),
-        String(meta.artist||"").slice(0,200),false);
+        String(meta.artist||"").slice(0,200),false,false);
     }
     // Version-1 projects from before tuning support intentionally fall back
     // to an *unconfirmed* standard-tuning assumption.
@@ -270,6 +270,7 @@
       currentFilename=normalizeFilename(file.name.replace(/\\.chordstudio$/i,""));
       currentHandle=handle;
       window.ChordRecents?.onOpened({...data,projectFilename:currentFilename});
+      window.ChordWorkflow?.activate("project");
     }catch(e){message("Could not open project: "+e.message,true);}
   }
   async function openViaPicker(){
