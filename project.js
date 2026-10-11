@@ -106,8 +106,9 @@
   }
   let currentFilename=null,currentHandle=null,saveBusy=false,saveAsRequested=false;
   function normalizeFilename(input){
-    let name=String(input||"").trim().replace(/[\\/:*?"<>|\\x00-\\x1f]/g,"-");
-    name=name.replace(/\\.chordstudio$/i,"").replace(/\\.+$/,"").trim();
+    // Never alter ordinary letters; strip only filesystem-reserved characters.
+    let name=String(input||"").trim().replace(/[\\/:*?"<>|\u0000-\u001f]/g,"-");
+    name=name.replace(/\.chordstudio$/i,"").replace(/\.+$/,"").trim();
     if(!name||name.length>125)throw Error("Choose a filename of 1–125 characters.");
     return name+".chordstudio";
   }
