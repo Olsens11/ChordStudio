@@ -98,6 +98,8 @@
   }
   function init(){
     $("showPageGuides").addEventListener("change",showGuides);
+    for(const id of ["includeChords","includeSong","showDiagrams","showCodes","columns","fontSize","paperSize","songEditFont","songEditLeading"])
+      $(id)?.addEventListener("change",updateGuides);
     $("songEditor").addEventListener("input",recordChange);
     for(const id of ["undoSongText","undoSongTextMenu"])
       $(id).addEventListener("click",undoText);
