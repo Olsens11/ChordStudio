@@ -106,8 +106,8 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
     <div class="compose-actions">
       <button id="startOriginalSong" class="primary" type="button">Start writing <span aria-hidden="true">→</span></button>
       <div class="optional-credits">
-        <details><summary>Add arrangement credit</summary><label for="newSongArranged">Arranged by (optional)<input id="newSongArranged" type="text" maxlength="200" placeholder="Arranger's name"></label></details>
-        <details><summary>Add performer credit</summary><label for="newSongPerformed">As performed by (optional)<input id="newSongPerformed" type="text" maxlength="200" placeholder="Artist or band"></label></details>
+        <button id="addArrangementCredit" type="button" aria-haspopup="dialog" aria-controls="songDetailsDialog">Add arrangement credit</button>
+        <button id="addPerformerCredit" type="button" aria-haspopup="dialog" aria-controls="songDetailsDialog">Add performer credit</button>
       </div>
     </div>
   </section>
@@ -245,8 +245,6 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
          <button id="insertTextBtn" type="button">Text / emoji note</button>
          <button id="insertChordBtn" type="button">Chord sticker</button>
          <button id="insertLinkBtn" type="button">QR code / link…</button>
-         <div class="toolbar-menu-rule"></div>
-         <label class="toolbar-check" for="includeSourceFooter"><input type="checkbox" id="includeSourceFooter" disabled> Source URL footer</label>
        </div>
      </details>
      <details class="toolbar-menu" data-toolbar-menu>
@@ -264,8 +262,9 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
          <div class="toolbar-menu-rule"></div>
          <div class="toolbar-section-label">Page header &amp; footer</div>
          <label class="toolbar-check"><input id="repeatSongHeader" type="checkbox"> Repeat song header on every page</label>
+         <label class="toolbar-check"><input id="includeSourceFooter" type="checkbox" disabled> Include source URL footer</label>
          <label class="toolbar-check"><input id="repeatSourceFooter" type="checkbox" disabled> Repeat source footer on every page</label>
-         <label class="toolbar-check"><input id="showPageNumbers" type="checkbox"> Show page numbers</label>
+         <label class="toolbar-check"><input id="showPageNumbers" type="checkbox" checked> Show page numbers</label>
          <div class="toolbar-menu-rule"></div>
          <button type="button" id="toggleFullscreen" title="Toggle page fullscreen; F11 toggles browser fullscreen">Toggle fullscreen <span class="menu-keyhint">F11</span></button>
        </div>
@@ -370,12 +369,12 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
 </dialog>
 <dialog id="songDetailsDialog" class="song-details-dialog no-print" aria-labelledby="songDetailsHeading">
  <div class="song-details-header"><h3 id="songDetailsHeading">Song details &amp; credits</h3><button type="button" id="songDetailsClose" aria-label="Close">×</button></div>
- <p>These details appear at the top of your sheet and in saved projects.</p>
+ <p id="songDetailsDescription">These details appear at the top of your sheet and in saved projects.</p>
  <label for="songDetailsTitle">Song title (optional)<input id="songDetailsTitle" type="text" maxlength="200" placeholder="Untitled song"></label>
  <label for="songDetailsWritten">Written by (optional)<input id="songDetailsWritten" type="text" maxlength="200" placeholder="Songwriter's name"></label>
  <label for="songDetailsArtist">As performed by (optional)<input id="songDetailsArtist" type="text" maxlength="200" placeholder="Artist or band"></label>
  <label for="songDetailsArranged">Arranged by (optional)<input id="songDetailsArranged" type="text" maxlength="200" placeholder="Arranger's name"></label>
- <div class="song-details-actions"><button id="songDetailsCancel" type="button">Cancel</button><button id="songDetailsSave" class="primary" type="button">Apply details</button></div>
+ <div class="song-details-actions"><button id="songDetailsCancel" type="button">Cancel</button><button id="songDetailsSave" class="primary" type="button">Apply details</button><button id="songDetailsStart" class="primary" type="button" hidden>Start writing →</button></div>
  </dialog>
  <dialog id="linkDialog" class="song-details-dialog link-dialog no-print" aria-labelledby="linkHeading">
  <div class="song-details-header"><h3 id="linkHeading">Insert QR code / link</h3><button id="linkClose" type="button" aria-label="Close">×</button></div>
@@ -400,7 +399,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <p id="imageEditNotice" class="image-edit-notice" role="status"></p>
  <div class="image-edit-actions"><button id="imageEditCancel" type="button">Cancel</button><button class="primary" id="imageEditApply" type="button">Apply image</button></div>
 </dialog>
-<dialog id="chordBuilderDialog" class="chord-builder-dialog no-print" aria-labelledby="chordBuilderTitle">
+<dialog id="chordBuilderDialog" class="chord-builder-dialog no-print" tabindex="-1" aria-labelledby="chordBuilderTitle">
  <div class="chord-builder-head"><div><h3 id="chordBuilderTitle">Chord diagram builder</h3><p>Click a string and fret for dots. Drag between strings on the same fret to add a barre.</p></div><button id="chordBuilderClose" type="button" aria-label="Close chord builder">×</button></div>
  <div class="chord-builder-fields">
   <label class="builder-name-label">Chord name
@@ -417,7 +416,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
    <option value="auto">Auto (song key)</option><option value="sharp">Sharps ♯</option><option value="flat">Flats ♭</option>
  </select></label>
  <button id="builderReset" type="button" title="Reset drawing to an empty muted fretboard">↺ Reset drawing</button></div>
- <div class="chord-builder-workspace"><div><div id="builderGrid" class="builder-grid" role="group" aria-label="Interactive six-string guitar fretboard"></div><div id="builderStringNames" class="builder-string-names" aria-hidden="true"><span>E</span><span>A</span><span>D</span><span>G</span><span>B</span><span>e</span></div>
+ <div class="chord-builder-workspace"><div><div id="builderGrid" class="builder-grid" tabindex="-1" role="group" aria-label="Interactive six-string guitar fretboard"></div><div id="builderStringNames" class="builder-string-names" aria-hidden="true"><span>E</span><span>A</span><span>D</span><span>G</span><span>B</span><span>e</span></div>
  <section class="builder-finger-section" aria-label="Finger number per string">
   <div class="builder-finger-heading"><strong>Fingering (low → high)</strong><span>0 or – = no finger; 1 index · 2 middle · 3 ring · 4 pinky</span></div>
   <div id="builderFingerRow" class="builder-finger-row"></div>
@@ -451,9 +450,9 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <div class="chord-builder-actions"><button id="builderCancel" type="button">Cancel</button><button id="builderSave" class="primary" type="button">Save chord to organizer</button></div>
 </dialog>
 <footer class="no-print">Independent, open-source chord-sheet formatter. Not affiliated with the sites you import from. No song lyrics are bundled; import only material you are authorized to use.</footer>
-<link rel="stylesheet" href="layout.css?v=20261011-layout-credits-qr-2">
+<link rel="stylesheet" href="layout.css?v=20261011-credits-modal-focus-1">
 <script src="workflow.js?v=20261011-project-restore-1" defer></script>
-<script src="app.js?v=20261011-layout-credits-qr-2" defer></script>
+<script src="app.js?v=20261011-credits-modal-focus-1" defer></script>
 <script src="layout.js?v=20261011-layout-credits-qr-2" defer></script>
 <script src="project.js?v=20261011-layout-credits-qr-2" defer></script>
 <script src="toolbar.js?v=20261010-fullscreen-1" defer></script>
@@ -461,13 +460,13 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
 <script src="image.js?v=20261011-crop-2" defer></script>
 <script src="pdf.js?v=20261011-credits-insert-1" defer></script>
 <script src="emoji.js?v=20261010-menus-tuning-1" defer></script>
-<script src="chord-builder.js?v=20261011-key-1" defer></script>
+<script src="chord-builder.js?v=20261011-credits-modal-focus-1" defer></script>
 <script src="import-helper.js?v=20261011-credits-insert-1" defer></script>
-<script src="new-song.js?v=20261011-layout-credits-qr-2" defer></script>
+<script src="new-song.js?v=20261011-credits-modal-focus-1" defer></script>
 <script src="chord-theory.js?v=20261010-menus-tuning-1" defer></script>
 <script src="voicings.js?v=20261011-voicing-save-1" defer></script>
 <script src="song-key.js?v=20261011-key-import-fix-2" defer></script>
 <script src="recent-projects.js?v=20261011-activity-flow-1" defer></script>
 <script src="qrcode.min.js?v=1.0.0" defer></script>
-<script src="links.js?v=20261011-layout-credits-qr-2" defer></script>
+<script src="links.js?v=20261011-credits-modal-focus-1" defer></script>
 </body></html>
