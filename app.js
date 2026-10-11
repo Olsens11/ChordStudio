@@ -55,7 +55,7 @@ function parseEditor(){
 // Reconstructed 76 x 72 CSS-pixel small-print diagram geometry; frets/fingers
 // are stored high E to low E, while the compact id is low E to high E.
 function drawDiagram(ctx,v){
-  const ink="#111",gray="#777",left=v.showNoteNames?11:20,top=10,gap=v.showNoteNames?9:7,step=8,nut=2,base=Number(v.fret)||0;
+  const ink="#111",gray="#777",left=v.showNoteNames?12:20,top=10,gap=v.showNoteNames?13:7,step=8,nut=2,base=Number(v.fret)||0;
   const rel=f=>f-base+(base>0?1:0);
   const stringX=i=>left+gap*(5-i); // i=0 is high E, on the right
   ctx.fillStyle=ink;ctx.fillRect(left,top,5*gap+1,base?1:2);
@@ -89,13 +89,13 @@ function drawDiagram(ctx,v){
     // A 76px printed canvas has only 9px between strings in label mode.
     // Keep every pill within its own string column, even for accidentals.
     ctx.fillStyle=ink;
-    const width=8.35,height=8.4;
+    const width= v.showNoteNames?11.4:8.35,height=8.4;
     ctx.beginPath();
     if(ctx.roundRect)ctx.roundRect(x-width/2,y-height/2,width,height,2.1);
     else ctx.rect(x-width/2,y-height/2,width,height);
     ctx.fill();
     ctx.fillStyle="#fff";
-    ctx.font=(label.length>1?"bold 4.15px Arial":"bold 5.3px Arial");
+    ctx.font=(label.length>1?"bold 5.4px Arial":"bold 6.2px Arial");
     ctx.textAlign="center";ctx.textBaseline="middle";
     ctx.fillText(label,x,y+.25,width-1);
   };
@@ -110,11 +110,11 @@ function drawDiagram(ctx,v){
     }
     if(f>0&&finger>0)text(finger,x,top+43,"10px Arial");
   }
-  if(base>0)text(base+"fr",left+38,top,base>=10?"9px Arial":"10px Arial","left");
+  if(base>0)text(base+"fr",left+gap*5+4,top,base>=10?"8px Arial":"9px Arial","left");
 }
 function makeDiagramCanvas(v){
-  const canvas=document.createElement("canvas");canvas.width=152;canvas.height=144;
-  canvas.style.width="76px";canvas.style.height="72px";
+  const canvas=document.createElement("canvas");canvas.width=v.showNoteNames?192:152;canvas.height=144;
+  canvas.style.width=v.showNoteNames?"96px":"76px";canvas.style.height="72px";
   const ctx=canvas.getContext("2d");ctx.scale(2,2);drawDiagram(ctx,v);return canvas;
 }
 function diagramKey(item){
