@@ -447,6 +447,7 @@ function updateOriginalSourceLink(){
   $("openSource").disabled=!url;
 }
 function startBlankSong(title="Untitled song",artist="",openEditor=true){
+  window.ChordRecents?.newDocument();
   // An original composition is a new project, not an imported demo or source page.
   closeSongEditor();
   catalog={};original={};
@@ -493,6 +494,7 @@ function updateSongDetails(title,artist){
 }
 window.ChordSong={startBlankSong,updateSongDetails};
 function loadPage(data){
+  window.ChordRecents?.newDocument();
   if(!data||typeof data!=="object"||!data.applicature)throw Error("Missing chord data");
   const next={};
   for(const [name,variations] of Object.entries(data.applicature)){
