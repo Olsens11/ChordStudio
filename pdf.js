@@ -32,6 +32,8 @@
    window.ChordLayout?.refresh();
    setStatus("Preparing PDF export…");
    await ensureLibraries();
+   // Capture the actual printable geometry, not the small phone overview.
+   window.ChordMobilePages?.suspend(true);
    const pages=[...document.querySelectorAll("#printPage .paper-page")];
    if(!pages.length)throw Error("There are no printable pages.");
    if(pages.length>50)throw Error("This project has too many pages for direct PDF export.");
@@ -78,7 +80,10 @@
    setTimeout(()=>setStatus(""),9000);
   }catch(e){
    setStatus("PDF export failed: "+e.message+" — you can still use Print / PDF.");
-  }finally{busy=false;button.disabled=false;}
+  }finally{
+   window.ChordMobilePages?.suspend(false);
+   busy=false;button.disabled=false;
+  }
  }
  function print(){
   if(typeof applySongEdit==="function")applySongEdit(true);
