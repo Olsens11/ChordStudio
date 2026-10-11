@@ -102,13 +102,15 @@
   }
   function save(){
     try{
-      const contents=JSON.stringify(snapshot(),null,2);
+      const data=snapshot();
+      const contents=JSON.stringify(data,null,2);
       const blob=new Blob([contents],{type:"application/json"});
       const url=URL.createObjectURL(blob);
       const link=document.createElement("a");link.href=url;link.download=filename();
       document.body.append(link);link.click();link.remove();
       setTimeout(()=>URL.revokeObjectURL(url),3000);
-      message("Saved "+filename()+". Reopen it later using Open Project.");
+      window.ChordRecents?.onSaved(data);
+      message("Saved "+filename()+". You can also reopen it from File → Recent projects.");
     }catch(e){message("Could not save project: "+e.message,true);}
   }
   function load(data){
@@ -175,11 +177,19 @@
     if(!file)return;
     try{
       if(file.size>18*1024*1024)throw Error("The project file exceeds 18 MB. Use smaller images.");
-      load(JSON.parse(await file.text()));
+      const data=JSON.parse(await file.text());
+      load(data);
+      window.ChordRecents?.onOpened(data);
     }catch(e){message("Could not open project: "+e.message,true);}
   }
   function init(){
     $("saveProjectBtn").addEventListener("click",save);
+    $("quickSaveProject").addEventListener("click",save);
+    document.addEventListener("keydown",e=>{
+      if((e.ctrlKey||e.metaKey)&&!e.altKey&&e.key.toLowerCase()==="s"){
+        e.preventDefault();save();
+      }
+    },true);
     $("openProjectBtn").addEventListener("click",()=>$("projectFile").click());
     $("welcomeOpenProject").addEventListener("click",()=>$("projectFile").click());
     $("projectFile").addEventListener("change",async event=>{
