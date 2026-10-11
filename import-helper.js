@@ -2,6 +2,20 @@
 /* Alternative importer + bookmarklet setup guidance. */
 (function(){
  const $=id=>document.getElementById(id);
+ const devicePlatform=()=>{
+   const ua=navigator.userAgent||"";
+   if(/Android/i.test(ua))return "android";
+   if(/iPhone|iPad|iPod/i.test(ua)||(/Macintosh/i.test(ua)&&navigator.maxTouchPoints>1))return "ios";
+   return "desktop";
+ };
+ function selectPlatform(platform){
+   for(const button of document.querySelectorAll("[data-bookmark-platform]")){
+     button.setAttribute("aria-pressed",String(button.dataset.bookmarkPlatform===platform));
+   }
+   for(const guide of document.querySelectorAll("[data-bookmark-guide]")){
+     guide.hidden=guide.dataset.bookmarkGuide!==platform;
+   }
+ }
  function help(){
    $("importDetails").open=true;
    $("bookmarkHelp").hidden=false;
@@ -42,6 +56,18 @@
    }finally{$("importPaste").disabled=false;}
  }
  function init(){
+   const platform=devicePlatform();
+   selectPlatform(platform);
+   for(const button of document.querySelectorAll("[data-bookmark-platform]")){
+     button.addEventListener("click",()=>selectPlatform(button.dataset.bookmarkPlatform));
+   }
+   if(platform==="android"){
+     $("importStartHint").textContent="On Android Chrome, set up the ChordStudio bookmark once, then run it from the address bar on a song page.";
+     $("showImportHelp").textContent="How to import on Android";
+   }else if(platform==="ios"){
+     $("importStartHint").textContent="On iPhone or iPad, set up a Safari bookmarklet to import from a song's chord page.";
+     $("showImportHelp").textContent="How to import on iPhone / iPad";
+   }
    const bookmark=$("bookmarklet");
    bookmark.addEventListener("click",event=>{event.preventDefault();help();});
    bookmark.addEventListener("dragstart",event=>{
