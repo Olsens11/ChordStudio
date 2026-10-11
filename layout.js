@@ -91,9 +91,30 @@
     content.style.fontStyle=record.italic?"italic":"normal";
     content.style.textAlign=record.align||"left";
   }
+  function fitNoteToContents(record){
+    if(record.type!=="text"||record.autoSize===false)return;
+    const canvas=fitNoteToContents.canvas||(fitNoteToContents.canvas=document.createElement("canvas"));
+    const ctx=canvas.getContext("2d");
+    const size=Math.max(8,Number(record.fontSize)||16);
+    ctx.font=(record.italic?"italic ":"")+(record.bold?"700 ":"400 ")+size+"px Arial, sans-serif";
+    const lines=String(record.text||"").split("\n");
+    const padX=8,padY=6;
+    const desiredW=Math.max(18,Math.ceil(Math.max(0,...lines.map(line=>ctx.measureText(line).width)))+padX*2+2);
+    const desiredH=Math.max(24,Math.ceil(lines.length*size*1.2)+padY*2+2);
+    const paper=pageSize(),scale=stickerScale(record);
+    const nextW=Math.min(paper.innerWidth/scale,desiredW);
+    const nextH=Math.min(paper.innerHeight/scale,desiredH);
+    const oldW=(record.w||36)*scale,oldH=(record.h||30)*scale;
+    record.x=Math.max(0,Math.min(paper.innerWidth-nextW*scale,record.x+(oldW-nextW*scale)/2));
+    record.y=Math.max(0,Math.min(paper.innerHeight-nextH*scale,record.y+(oldH-nextH*scale)/2));
+    record.w=nextW;record.h=nextH;
+  }
   function updateNoteView(record){
     const el=$("printPage").querySelector('[data-sticker-id="'+record.id+'"] .note-content');
+    fitNoteToContents(record);
     if(el){el.textContent=record.text||"";noteStyle(el,record);}
+    refresh();
+    positionNoteEditor();
   }
   function applyNoteFormat(property,value){
     const record=noteRecord(activeNoteId);
@@ -108,12 +129,12 @@
     ev.preventDefault();ev.stopPropagation();
     const pages=[...$("printPage").querySelectorAll(".paper-page")];
     const inside=page.querySelector(".paper-inside"),rect=inside.getBoundingClientRect(),size=pageSize();
-    const w=190,h=85;
+    const w=36,h=33;
     const pageIndex=pages.indexOf(page);
     const point=pageGridPoint(ev.clientX-rect.left,ev.clientY-rect.top,
       w,h,inside,pageIndex,null,ev.ctrlKey&&ev.shiftKey);
     const {x,y}=point;
-    const note={id:nextId++,type:"text",name:"Note",text:"",page:pageIndex,x,y,w,h,scale:1,
+    const note={id:nextId++,type:"text",name:"Note",text:"",page:pageIndex,x,y,w,h,scale:1,autoSize:true,
       fontSize:16,bold:false,italic:false,align:"left",color:"#181818",background:"transparent"};
     save();stickers.push(note);
     setNotePlacementMode(false);refresh();
@@ -329,8 +350,9 @@
     stickers.forEach(record=>{
       while(record.page>=pages.length)pages.push(freshPage(pages.length+1));
       if(record.type==="text"||record.type==="image"){
-        record.w=Math.max(30,record.w||190);
-        record.h=Math.max(30,record.h||85);
+        const baseMin=record.type==="text"&&record.autoSize!==false?18:30;
+        record.w=Math.max(baseMin,record.w||190);
+        record.h=Math.max(baseMin,record.h||85);
         const maxFit=Math.min(MAX_SCALE,size.innerWidth/record.w,size.innerHeight/record.h);
         record.scale=Math.max(minimumScale(record),Math.min(stickerScale(record),maxFit));
       }else{
@@ -983,8 +1005,9 @@
       };
       if(isText){
         item.text=String(raw.text||"").slice(0,15000);
-        item.w=Math.max(NOTE_MIN_W,Math.min(2500,number(raw.w,190)));
-        item.h=Math.max(NOTE_MIN_H,Math.min(2500,number(raw.h,85)));
+        item.autoSize=raw.autoSize===true;
+        item.w=Math.max(item.autoSize?18:NOTE_MIN_W,Math.min(2500,number(raw.w,190)));
+        item.h=Math.max(item.autoSize?18:NOTE_MIN_H,Math.min(2500,number(raw.h,85)));
         item.fontSize=Math.max(8,Math.min(72,number(raw.fontSize,16)));
         item.bold=!!raw.bold;item.italic=!!raw.italic;
         item.align=["left","right","center"].includes(raw.align)?raw.align:"left";
