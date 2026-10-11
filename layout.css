@@ -1084,3 +1084,85 @@ body.has-document .intro{display:none}
  #previewToolbar .toolbar-primary{margin-left:auto}
  #previewToolbar .toolbar-menu-panel{max-width:calc(100vw - 34px)}
 }
+
+/* Mobile sticker palette: thumb-friendly, short, and anchored to the safe area.
+   Desktop continues to use the original floating side panel. */
+@media (max-width:700px), (pointer:coarse){
+  #stickerBoard.sticker-board{
+    position:fixed;z-index:75;
+    left:0;right:0;top:auto;bottom:0;
+    box-sizing:border-box;width:100%;max-width:none;
+    height:min(33dvh,320px);max-height:none;min-height:0;
+    padding:7px 11px calc(6px + env(safe-area-inset-bottom,0px));
+    border-radius:14px 14px 0 0;border-bottom:0;
+    box-shadow:0 -5px 25px #142d4b3e;
+    gap:4px;
+  }
+  #stickerBoard .sticker-board-head{
+    flex:none;height:25px;padding:0 2px;
+    font-size:13px;line-height:1;
+  }
+  #stickerBoard .sticker-board-head button{
+    width:29px;height:28px;flex:none;
+  }
+  #stickerBoard .sticker-board-actions{
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:8px;flex:none;
+  }
+  #stickerBoard #addTextNote,
+  #stickerBoard #trayImportImage{
+    width:100%;margin:0;min-width:0;height:33px;
+    padding:5px 7px;border:1px solid #86ace6;
+    border-radius:7px;background:#e9f3ff;
+    color:#174778;font:700 12px/1.2 system-ui,sans-serif;
+  }
+  #stickerBoard #addTextNote[aria-pressed="true"]{
+    background:#173d77;color:white;
+  }
+  #stickerBoard #trayHint{
+    margin:0;flex:none;font:10px/1.2 system-ui,sans-serif;
+  }
+  #stickerBoard .tray-toggles{
+    margin:0;display:flex;align-items:center;gap:14px;
+    flex:none;font-size:11px;line-height:1.1;
+  }
+  #stickerBoard .sticker-board-grid{
+    flex:1 1 auto;min-height:0;
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(91px,1fr));
+    gap:3px 5px;align-content:start;
+    overflow-x:hidden;overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+  #stickerBoardGrid .chord-card{
+    touch-action:pan-y;user-select:none;-webkit-user-select:none;
+    -webkit-touch-callout:none;
+    min-width:0;max-width:100%;min-height:90px;
+    padding:2px 1px;
+  }
+  #stickerBoardGrid .chord-card *{
+    touch-action:pan-y;user-select:none;-webkit-user-select:none;
+  }
+  #stickerBoardGrid .chord-card .chord-name{max-width:100%}
+  .chord-drag-ghost{pointer-events:none;transform-origin:top left}
+}
+
+@media (max-width:700px), (pointer:coarse){
+  /* Press-and-hold activates drag; short swipes remain scrollable. */
+  .paper-sticker,.paper-bank .chord-card{touch-action:pan-y}
+  .paper-sticker .sticker-resize,.paper-sticker .sticker-rotate{touch-action:none}
+  #stickerBoardGrid .chord-card.touch-hold-armed,
+  .paper-sticker.touch-hold-armed,.paper-bank .chord-card.touch-hold-armed{
+    outline:2px solid #326fc2;outline-offset:-1px;
+    background:#dfeeff;
+  }
+}
+/* A compact landscape palette leaves room for an actual chord row. */
+@media(max-height:520px) and (orientation:landscape) and (pointer:coarse){
+ #stickerBoard.sticker-board{padding:4px 9px 6px;gap:3px}
+ #stickerBoard .sticker-board-head{height:22px}
+ #stickerBoard #trayHint,#stickerBoard .tray-toggles{display:none}
+ #stickerBoard #addTextNote,#stickerBoard #trayImportImage{height:29px}
+ #stickerBoard .sticker-board-grid{min-height:48px}
+ #stickerBoardGrid .chord-card{min-height:73px}
+}

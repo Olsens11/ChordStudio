@@ -54,7 +54,8 @@
     for(const item of rendered){
       const card=document.createElement("div");card.className="chord-card";
       card.dataset.diagramKey=diagramKey(item);
-      card.title="Drag onto a page to place another "+item.name+" chord";
+      card.title=(matchMedia("(pointer:coarse), (max-width:700px)").matches
+        ?"Hold briefly, then drag onto a page to add ":"Drag onto a page to place another ")+item.name+" chord";
       card.setAttribute("aria-label","Drag "+item.name+" onto a page");
       fillChordCard(card,item,mode);grid.append(card);
     }
@@ -66,7 +67,12 @@
   function toggleStickerTray(open){
     $("stickerBoard").hidden=!open;
     $("toggleStickerBoard").setAttribute("aria-expanded",String(open));
-    $("toggleStickerBoard").textContent=open?"Hide sticker tray":"Open sticker tray";
+    if(open&&!placingNote&&matchMedia("(pointer:coarse), (max-width:700px)").matches)
+      $("trayHint").textContent="Hold a chord, then drag to the page · swipe to scroll";
+    const wide=$("toggleStickerBoard").querySelector(".toolbar-wide-label");
+    const narrow=$("toggleStickerBoard").querySelector(".toolbar-narrow-label");
+    if(wide)wide.textContent=open?"Hide sticker tray":"Open sticker tray";
+    if(narrow)narrow.textContent=open?"Close tray":"Stickers";
   }
   function noteRecord(id){
     return stickers.find(item=>item.id===id&&item.type==="text");
@@ -77,8 +83,10 @@
     $("addTextNote").setAttribute("aria-pressed",String(placingNote));
     $("addTextNote").textContent=placingNote?"✕ Cancel note":"✎ Add text / emoji";
     $("trayHint").textContent=placingNote
-      ?"Click anywhere on a white page to add a note."
-      :"Drag onto any page · sources stay here";
+      ?"Tap the page to add your note."
+      :matchMedia("(pointer:coarse), (max-width:700px)").matches
+        ?"Hold a chord, then drag to the page · swipe to scroll"
+        :"Drag onto any page · sources stay here";
   }
   function closeNoteEditor(){
     window.ChordEmoji?.close();
@@ -588,8 +596,20 @@
   function itemAtPointer(x,y){
     const target=document.elementFromPoint(x,y);
     if(!target)return {page:null,card:null};
+    let page=target.closest(".paper-page");
+    // In the mobile overview, pages intentionally ignore clicks so a tap
+    // zooms in to edit. Touch-dragging from the tray is different: find the
+    // paper under the finger geometrically, even though it has no hit target.
+    if(!page&&$("printPage").classList.contains("mobile-page-fit")){
+      const wrapper=target.closest("#printPage .paper-wrapper");
+      const candidate=wrapper?.querySelector(".paper-page");
+      if(candidate){
+        const rect=candidate.getBoundingClientRect();
+        if(x>=rect.left&&x<=rect.right&&y>=rect.top&&y<=rect.bottom)page=candidate;
+      }
+    }
     return {
-      page:target.closest(".paper-page"),
+      page,
       card:target.closest("#chordGrid .chord-card"),
       bankGrid:target.closest("#chordGrid"),
       trayCard:target.closest("#stickerBoardGrid .chord-card")
@@ -626,11 +646,14 @@
     return {x:axis(x,maxX,"x",w),y:axis(y,maxY,"y",h)};
   }
   function pointToPaper(ev,inside,record){
-    const rect=inside.getBoundingClientRect();
+    const rect=inside.getBoundingClientRect(),width=pageSize().innerWidth;
+    // CSS transforms change screen pixels, not saved print coordinates.
+    // Inverse-map the touch position into 96px/in paper units.
+    const factor=rect.width/width||1;
     const pageIndex=[...$("printPage").querySelectorAll(".paper-page")].indexOf(inside.closest(".paper-page"));
     const offsetX=record.type==="sticker"?record.offsetX:STICKER_W/2;
     const offsetY=record.type==="sticker"?record.offsetY:20;
-    return pageGridPoint(ev.clientX-rect.left-offsetX,ev.clientY-rect.top-offsetY,
+    return pageGridPoint((ev.clientX-rect.left)/factor-offsetX,(ev.clientY-rect.top)/factor-offsetY,
       stickerWidth(record),stickerHeight(record),inside,pageIndex,
       record.type==="sticker"?record.id:null,
       !!(record.ctrlKey&&record.shiftKey));
@@ -720,15 +743,18 @@
     // Apply the same edge clamping as the eventual drop. What the user sees
     // inside the page is exactly where the sticker will land.
     const page=itemAtPointer(state.x,state.y).page;
+    let factor=1;
     if(page){
       const inside=page.querySelector(".paper-inside");
       if(inside){
         const point=pointToPaper({clientX:state.x,clientY:state.y},inside,state);
         const rect=inside.getBoundingClientRect();
-        x=rect.left+point.x;
-        y=rect.top+point.y;
+        factor=rect.width/pageSize().innerWidth||1;
+        x=rect.left+point.x*factor;
+        y=rect.top+point.y*factor;
       }
     }
+    ghost.style.transform=factor===1?"none":"scale("+factor+")";
     ghost.style.left=x+"px";
     ghost.style.top=y+"px";
   }
@@ -851,8 +877,90 @@
     state.element.classList.add("rotating");
     state.element.dataset.angle=Math.round(next)+"°";
   }
+  const TOUCH_HOLD_MS=350,TOUCH_SCROLL_THRESHOLD=9;
+  let touchPending=null;
+  const mobileTouch=()=>matchMedia("(pointer:coarse), (max-width:700px)").matches;
+  function touchDragEvent(e,touch,id){
+    return {
+      target:touchPending?.element||e.target,
+      isPrimary:true,button:0,pointerId:id,pointerType:"long-touch",
+      clientX:touch.clientX,clientY:touch.clientY,
+      ctrlKey:false,shiftKey:false,altKey:false,
+      preventDefault:()=>{if(e.cancelable)e.preventDefault();},
+      stopPropagation:()=>e.stopPropagation()
+    };
+  }
+  function clearTouchHold(){
+    if(touchPending?.timer)clearTimeout(touchPending.timer);
+    touchPending?.element?.classList.remove("touch-hold-armed");
+    touchPending=null;
+  }
+  function touchHoldStart(e){
+    if(!mobileTouch()||placingNote||pointerDrag||e.touches.length!==1)return;
+    if(e.target.closest(".sticker-resize,.sticker-rotate,button,input,select,textarea,a"))return;
+    const target=e.target.closest("#stickerBoardGrid .chord-card,.paper-sticker,.paper-bank .chord-card");
+    if(!target)return;
+    clearTouchHold();
+    const touch=e.changedTouches[0];
+    const state={
+      identifier:touch.identifier,element:target,x:touch.clientX,y:touch.clientY,
+      pointerId:-1001,active:false,timer:null
+    };
+    touchPending=state;
+    state.timer=setTimeout(()=>{
+      if(touchPending!==state||!state.element.isConnected)return;
+      state.timer=null;
+      state.active=true;
+      state.element.classList.add("touch-hold-armed");
+      startPointerDrag({
+        target:state.element,isPrimary:true,button:0,pointerId:state.pointerId,
+        pointerType:"long-touch",clientX:state.x,clientY:state.y,
+        ctrlKey:false,shiftKey:false,altKey:false,
+        preventDefault(){},stopPropagation(){}
+      });
+      if(!pointerDrag)clearTouchHold();
+    },TOUCH_HOLD_MS);
+  }
+  function touchHoldMove(e){
+    const state=touchPending;if(!state)return;
+    const touch=[...e.changedTouches].find(t=>t.identifier===state.identifier);
+    if(!touch)return;
+    if(!state.active){
+      if(Math.hypot(touch.clientX-state.x,touch.clientY-state.y)>TOUCH_SCROLL_THRESHOLD)
+        clearTouchHold(); // Let an ordinary swipe scroll naturally.
+      return;
+    }
+    if(e.cancelable)e.preventDefault();
+    movePointerDrag(touchDragEvent(e,touch,state.pointerId));
+  }
+  function touchHoldEnd(e){
+    const state=touchPending;if(!state)return;
+    const touch=[...e.changedTouches].find(t=>t.identifier===state.identifier);
+    if(!touch)return;
+    if(state.active){
+      if(e.cancelable)e.preventDefault();
+      endPointerDrag(touchDragEvent(e,touch,state.pointerId));
+    }
+    clearTouchHold();
+  }
+  function touchHoldCancel(e){
+    const state=touchPending;if(!state)return;
+    if(state.active){
+      cancelPointerDrag({
+        pointerId:state.pointerId,preventDefault(){},
+        clientX:state.x,clientY:state.y
+      });
+    }
+    clearTouchHold();
+  }
   function startPointerDrag(ev){
     if(pointerDrag||!ev.isPrimary||ev.button!==0||placingNote)return;
+    // Mobile dragging from the tray or a placed sticker is handled separately
+    // by a 350ms touch hold. Quick swipes must remain ordinary scrolling.
+    if(ev.pointerType==="touch"&&
+      !ev.target.closest(".sticker-rotate,.sticker-resize")&&
+      ev.target.closest("#stickerBoardGrid .chord-card,.paper-sticker,.paper-bank .chord-card"))
+      return;
     const rotateHandle=ev.target.closest(".sticker-rotate");
     if(rotateHandle){beginRotate(ev,rotateHandle);return;}
     const handle=ev.target.closest(".sticker-resize");
@@ -1015,6 +1123,14 @@
   }
   function init(){
     document.addEventListener("pointerdown",startPointerDrag,true);
+    document.addEventListener("touchstart",touchHoldStart,{capture:true,passive:true});
+    document.addEventListener("touchmove",touchHoldMove,{capture:true,passive:false});
+    document.addEventListener("touchend",touchHoldEnd,{capture:true,passive:false});
+    document.addEventListener("touchcancel",touchHoldCancel,{capture:true,passive:true});
+    document.addEventListener("contextmenu",ev=>{
+      if(mobileTouch()&&ev.target.closest("#stickerBoardGrid .chord-card,.paper-sticker,.paper-bank .chord-card"))
+        ev.preventDefault();
+    },true);
     $("paperSize").addEventListener("change",refresh);
     for(const id of ["trayShowDiagrams","trayShowCodes"]){
       $(id).addEventListener("change",()=>{
@@ -1029,6 +1145,7 @@
     $("toggleStickerBoard").addEventListener("click",()=>toggleStickerTray($("stickerBoard").hidden));
     $("closeStickerBoard").addEventListener("click",()=>{setNotePlacementMode(false);toggleStickerTray(false);});
     $("addTextNote").addEventListener("click",()=>{
+      if(!placingNote)window.ChordMobilePages?.edit();
       closeNoteEditor();setNotePlacementMode(!placingNote);
     });
     document.addEventListener("click",clickToPlaceNote,true);

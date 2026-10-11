@@ -123,7 +123,10 @@ function imageFrom(dt){
   [...(dt?.items||[])].filter(i=>i.kind==="file").map(i=>i.getAsFile()).find(f=>f&&TYPES.test(f.type));
 }
 function init(){
- for(const id of ["importImageBtn","trayImportImage"])$(id).addEventListener("click",()=>$("imageFile").click());
+ for(const id of ["importImageBtn","trayImportImage"])$(id).addEventListener("click",()=>{
+   window.ChordMobilePages?.edit();
+   $("imageFile").click();
+ });
  $("imageFile").addEventListener("change",e=>{
   const file=e.target.files?.[0];e.target.value="";if(file)fromFile(file);
  });

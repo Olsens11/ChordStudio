@@ -69,7 +69,9 @@
  window.ChordMobilePages={
    suspend(value){suspended=!!value;apply();},
    isFitted:()=>root.classList.contains("mobile-page-fit"),
-   measure:dimensions
+   measure:dimensions,
+   edit(){if(mobile()&&wantedFit)switchMode(false);},
+   fit(){if(mobile())switchMode(true);}
  };
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
  else init();
