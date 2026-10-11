@@ -104,20 +104,86 @@
     return ((title.normalize("NFKD").replace(/[^\w .-]+/g,"").trim()
       .replace(/\s+/g,"-").slice(0,85))||"ChordStudio")+"-ChordStudio.chordstudio";
   }
-  function save(){
-    try{
-      const data=snapshot();
-      const contents=JSON.stringify(data,null,2);
-      const blob=new Blob([contents],{type:"application/json"});
-      const url=URL.createObjectURL(blob);
-      const link=document.createElement("a");link.href=url;link.download=filename();
-      document.body.append(link);link.click();link.remove();
-      setTimeout(()=>URL.revokeObjectURL(url),3000);
-      window.ChordRecents?.onSaved(data);
-      message("Saved "+filename()+". You can also reopen it from File → Recent projects.");
-    }catch(e){message("Could not save project: "+e.message,true);}
+  let currentFilename=null,currentHandle=null,saveBusy=false,saveAsRequested=false;
+  function normalizeFilename(input){
+    let name=String(input||"").trim().replace(/[\\/:*?"<>|\\x00-\\x1f]/g,"-");
+    name=name.replace(/\\.chordstudio$/i,"").replace(/\\.+$/,"").trim();
+    if(!name||name.length>125)throw Error("Choose a filename of 1–125 characters.");
+    return name+".chordstudio";
   }
+  function openSaveDialog(forceAs=false){
+    saveAsRequested=!!forceAs;
+    $("saveAsTitle").textContent=forceAs?"Save As":"Save project";
+    $("saveAsDescription").textContent=forceAs
+      ?"Choose a new filename. Save As creates a separate project copy."
+      :"Name this new project before its first save.";
+    $("saveAsName").value=currentFilename||filename();
+    $("saveAsError").hidden=true;$("saveAsError").textContent="";
+    if(!$("saveAsDialog").open)$("saveAsDialog").showModal();
+    $("saveAsName").focus();$("saveAsName").select();
+  }
+  function closeSaveDialog(){if($("saveAsDialog").open)$("saveAsDialog").close();}
+  function downloadProject(text,name){
+    const blob=new Blob([text],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement("a");link.href=url;link.download=name;
+    document.body.append(link);link.click();link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),3000);
+  }
+  async function writeProject(name,forceAs=false){
+    if(saveBusy)return;
+    saveBusy=true;
+    try{
+      const normalized=normalizeFilename(name),data=snapshot();
+      data.projectFilename=normalized;
+      const contents=JSON.stringify(data,null,2);
+      let nextHandle=forceAs?null:currentHandle;
+      if(!nextHandle&&typeof window.showSaveFilePicker==="function"&&(forceAs||!currentHandle&&currentFilename===null)){
+        try{
+          // Only a user gesture can select an actual overwrite-capable file.
+          nextHandle=await window.showSaveFilePicker({
+            suggestedName:normalized,
+            types:[{description:"ChordStudio project",accept:{"application/json":[".chordstudio"]}}]
+          });
+        }catch(e){
+          if(e.name==="AbortError")return;
+          // In restricted browsers, fall back to a safe non-overwriting download.
+          nextHandle=null;
+        }
+      }
+      if(nextHandle){
+        const stream=await nextHandle.createWritable();
+        await stream.write(contents);await stream.close();
+        currentHandle=nextHandle;
+        currentFilename=nextHandle.name||normalized;
+        message("Saved "+currentFilename+" to your chosen file.");
+      }else{
+        downloadProject(contents,normalized);
+        currentHandle=null;currentFilename=normalized;
+        message("Downloaded "+normalized+". Your browser may number copies; Save As chooses a different name.");
+      }
+      if(forceAs)window.ChordRecents?.newDocument();
+      window.ChordRecents?.onSaved(data);
+    }catch(e){message("Could not save project: "+e.message,true);}
+    finally{saveBusy=false;}
+  }
+  function save(){
+    if(!currentFilename){openSaveDialog();return;}
+    void writeProject(currentFilename,false);
+  }
+  function saveAs(){openSaveDialog(true);}
+  async function confirmSaveDialog(){
+    let name;
+    try{name=normalizeFilename($("saveAsName").value);}
+    catch(e){$("saveAsError").textContent=e.message;$("saveAsError").hidden=false;return;}
+    const forceAs=saveAsRequested;
+    // Do not change the current filename until the picker or download succeeds.
+    closeSaveDialog();
+    await writeProject(name,forceAs);
+  }
+  function clearFileAssociation(){currentFilename=null;currentHandle=null;}
   function load(data){
+    clearFileAssociation();
     if(!data||data.format!==FORMAT||data.version!==VERSION)
       throw Error("This is not a supported ChordStudio project (version 1).");
     const meta=data.page||{},opts=data.options;
@@ -186,31 +252,54 @@
     $("status").classList.add("good");
     message("Project opened. You can continue editing and print whenever you're ready.");
   }
-  async function openFile(file){
+  async function openFile(file,handle=null){
     if(!file)return;
     try{
       if(file.size>18*1024*1024)throw Error("The project file exceeds 18 MB. Use smaller images.");
       const data=JSON.parse(await file.text());
       load(data);
-      window.ChordRecents?.onOpened(data);
+      currentFilename=normalizeFilename(file.name.replace(/\\.chordstudio$/i,""));
+      currentHandle=handle;
+      window.ChordRecents?.onOpened({...data,projectFilename:currentFilename});
     }catch(e){message("Could not open project: "+e.message,true);}
+  }
+  async function openViaPicker(){
+    if(typeof window.showOpenFilePicker==="function"){
+      try{
+        const handles=await window.showOpenFilePicker({
+          multiple:false,types:[{description:"ChordStudio project",accept:{"application/json":[".chordstudio",".json"]}}]
+        });
+        if(handles?.[0])await openFile(await handles[0].getFile(),handles[0]);
+      }catch(e){if(e.name!=="AbortError")message("Could not open project: "+e.message,true);}
+    }else $("projectFile").click();
   }
   function init(){
     $("saveProjectBtn").addEventListener("click",save);
+    $("saveProjectAsBtn").addEventListener("click",saveAs);
     $("quickSaveProject").addEventListener("click",save);
-    document.addEventListener("keydown",e=>{
-      if((e.ctrlKey||e.metaKey)&&!e.altKey&&e.key.toLowerCase()==="s"){
-        e.preventDefault();save();
+    $("saveAsConfirm").addEventListener("click",confirmSaveDialog);
+    $("saveAsCancel").addEventListener("click",closeSaveDialog);
+    $("saveAsClose").addEventListener("click",closeSaveDialog);
+    $("saveAsDialog").addEventListener("cancel",event=>{event.preventDefault();closeSaveDialog();});
+    $("saveAsName").addEventListener("keydown",event=>{
+      if(event.key==="Enter"){event.preventDefault();confirmSaveDialog();}
+    });
+    document.addEventListener("keydown",event=>{
+      if(!(event.ctrlKey||event.metaKey)||event.altKey)return;
+      const key=event.key.toLowerCase();
+      if(key==="s"){
+        event.preventDefault();
+        if(event.shiftKey)saveAs();else save();
       }
     },true);
-    $("openProjectBtn").addEventListener("click",()=>$("projectFile").click());
-    $("welcomeOpenProject").addEventListener("click",()=>$("projectFile").click());
+    $("openProjectBtn").addEventListener("click",openViaPicker);
+    $("welcomeOpenProject").addEventListener("click",openViaPicker);
     $("projectFile").addEventListener("change",async event=>{
       const file=event.target.files?.[0];event.target.value="";
       await openFile(file);
     });
   }
-  window.ChordProject={snapshot,load,save,openFile};
+  window.ChordProject={snapshot,load,save,saveAs,openFile,clearFileAssociation};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
   else init();
 })();
