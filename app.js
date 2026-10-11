@@ -265,6 +265,15 @@ function renderDiagrams(){
     remove.setAttribute("aria-label","Remove "+item.name+" from the chord bank");
     remove.addEventListener("click",()=>removeDiagram(key,item.name));
     (card.querySelector(".diagram-art")||card).append(remove);
+    const edit=document.createElement("button");edit.type="button";
+    edit.className="diagram-edit no-print";edit.textContent="✎";
+    edit.title="Edit "+item.name+" chord diagram";
+    edit.setAttribute("aria-label",edit.title);
+    edit.addEventListener("pointerdown",event=>event.stopPropagation());
+    edit.addEventListener("click",event=>{
+      event.stopPropagation();window.ChordBuilder?.open(key);
+    });
+    card.append(edit);
     grid.append(card);
     rendered.push({...record,canvas:mode.diagram?card.querySelector("canvas"):null});
   }
