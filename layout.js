@@ -427,69 +427,62 @@
       record.type==="sticker"?record.id:null,
       !!(record.ctrlKey&&record.shiftKey));
   }
+  // Reordering should be predictable, not an animation storm. Keep every
+  // chord stationary until release and show exactly one insertion marker.
   function beginSortPreview(state){
     if(state.type!=="bank"||state.bankOrigin!=="top")return;
     const source=state.source;
     if(!source?.isConnected)return;
-    const slot=document.createElement("div");
-    slot.className="chord-reorder-slot";
-    const sourceSize=source.getBoundingClientRect();
-    slot.style.minHeight=Math.round(sourceSize.height)+"px";
-    slot.style.minWidth=Math.round(sourceSize.width)+"px";
-    source.replaceWith(slot);
-    $("chordGrid").classList.add("chord-bank-sorting");
-    state.sort={source,slot};
+    const grid=$("chordGrid");
+    const marker=document.createElement("div");
+    marker.className="chord-reorder-marker";
+    marker.setAttribute("aria-hidden","true");
+    grid.append(marker);
+    grid.classList.add("chord-bank-sorting");
+    source.classList.add("chord-sort-source");
+    state.sort={source,marker,destination:null};
   }
   function updateSortPreview(state){
     const sort=state.sort;if(!sort)return;
     const grid=$("chordGrid"),bounds=grid.getBoundingClientRect();
-    if(state.x<bounds.left-8||state.x>bounds.right+8||state.y<bounds.top-12||state.y>bounds.bottom+12)return;
-    const cards=[...grid.querySelectorAll(".chord-card")];
-    if(!cards.length)return;
+    const inside=state.x>=bounds.left-18&&state.x<=bounds.right+18
+      &&state.y>=bounds.top-18&&state.y<=bounds.bottom+18;
+    if(!inside){
+      sort.marker.hidden=true;sort.destination=null;
+      return;
+    }
+    const cards=[...grid.querySelectorAll(".chord-card")].filter(card=>card!==sort.source);
+    if(!cards.length){sort.marker.hidden=true;sort.destination=null;return;}
     let closest=null,min=Infinity;
     for(const card of cards){
       const r=card.getBoundingClientRect();
       const dx=state.x-(r.left+r.width/2),dy=state.y-(r.top+r.height/2);
-      const d=dx*dx+dy*dy*2;
+      const d=dx*dx+dy*dy*1.75;
       if(d<min){min=d;closest=card;}
     }
     if(!closest)return;
     const r=closest.getBoundingClientRect();
-    const after=state.x>r.left+r.width/2;
-    if((after?closest.nextElementSibling===sort.slot:closest.previousElementSibling===sort.slot))return;
-    const before=new Map(cards.map(card=>[card,card.getBoundingClientRect()]));
-    if(after)closest.after(sort.slot);else closest.before(sort.slot);
-    if(window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
-    for(const card of cards){
-      const a=before.get(card),b=card.getBoundingClientRect();
-      const dx=a.left-b.left,dy=a.top-b.top;
-      if(Math.abs(dx)>.5||Math.abs(dy)>.5){
-        card.getAnimations().forEach(animation=>animation.cancel());
-        card.animate([{transform:"translate("+dx+"px,"+dy+"px)"},{transform:"translate(0,0)"}],
-          {duration:170,easing:"ease-out"});
-      }
-    }
+    const after=state.x>=r.left+r.width/2;
+    const key=closest.dataset.diagramKey;
+    const previous=sort.destination;
+    if(previous?.key===key&&previous.after===after)return;
+    sort.destination={key,after};
+    const gridRect=grid.getBoundingClientRect();
+    const x=(after?r.right:r.left)-gridRect.left;
+    sort.marker.style.left=Math.round(x)+"px";
+    sort.marker.style.top=Math.round(r.top-gridRect.top)+"px";
+    sort.marker.style.height=Math.round(r.height)+"px";
+    sort.marker.hidden=false;
   }
   function sortDropDestination(state){
-    const slot=state.sort?.slot;
-    if(!slot||!slot.parentElement)return null;
-    return slot.nextElementSibling?.dataset.diagramKey
-      ?{key:slot.nextElementSibling.dataset.diagramKey,after:false}
-      :slot.previousElementSibling?.dataset.diagramKey
-      ?{key:slot.previousElementSibling.dataset.diagramKey,after:true}:null;
+    return state.sort?.destination||null;
   }
   function restoreSortPreview(state){
     if(!state?.sort)return;
-    const {slot,source}=state.sort,grid=$("chordGrid");
-    if(slot.isConnected)slot.replaceWith(source);
-    // A preview is only DOM movement; restore the committed order if canceled
-    // or if the same bank item was instead dropped onto a paper page.
-    const cards=new Map([...grid.querySelectorAll(".chord-card")].map(card=>[card.dataset.diagramKey,card]));
-    for(const item of rendered){
-      const card=cards.get(diagramKey(item));
-      if(card)grid.append(card);
-    }
-    grid.classList.remove("chord-bank-sorting");
+    const {marker,source}=state.sort;
+    marker.remove();
+    source.classList.remove("chord-sort-source");
+    $("chordGrid").classList.remove("chord-bank-sorting");
   }
   function showPointerFeedback(){
     clearPointerFeedback();
