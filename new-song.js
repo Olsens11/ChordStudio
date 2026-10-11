@@ -66,9 +66,13 @@
      close();
    });
    $("songDetailsDialog").addEventListener("cancel",ev=>{ev.preventDefault();close();});
-   $("songDetailsTitle").addEventListener("keydown",ev=>{
-     if(ev.key==="Enter"){ev.preventDefault();$("songDetailsSave").click();}
-   });
+   for(const id of ["songDetailsTitle","songDetailsWritten","songDetailsArtist","songDetailsArranged"]){
+     $(id).addEventListener("keydown",ev=>{
+       if(ev.key==="Enter"&&!ev.isComposing){
+         ev.preventDefault();$("songDetailsSave").click();
+       }
+     });
+   }
  }
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
  else init();
