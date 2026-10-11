@@ -522,3 +522,48 @@ body.chord-rotating,body.chord-rotating *{cursor:alias!important;user-select:non
   .builder-string-names{width:calc(100% - 30px)}
 }
 @media print{.chord-builder-dialog,.bookmark-help,#chordGrid .diagram-edit{display:none!important}}
+
+/* Original writing and importing are equal first-class entry choices. */
+.song-start-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:14px}
+.song-start-option{border:1px solid #cbdaee;border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0;background:#f8fbff}
+.song-start-option.compose-start{border-color:#a9c6ec;background:linear-gradient(150deg,#f1f7ff,#fff)}
+.song-start-option.import-start{background:#fbfcff}
+.song-start-top{display:flex;align-items:flex-start;gap:12px}
+.song-start-top .start-icon{flex:none;width:38px;height:38px;display:grid;place-items:center;border-radius:11px;background:#dcecff;color:#1c55a4;font-size:21px;font-weight:800}
+.song-start-top h3{margin:0 0 6px;font-size:18px;line-height:1.24;color:#173563}
+.song-start-top p{font-size:12px;line-height:1.55;margin:0;color:#5d7189}
+.compose-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:auto}
+.compose-fields label{font-size:11px;font-weight:750;margin:0;min-width:0}
+.compose-fields input{box-sizing:border-box;width:100%;min-width:0;margin-top:6px;border:1px solid #b8cae4;border-radius:7px;padding:9px 10px;font:13px system-ui,sans-serif}
+.compose-fields .field-optional{color:#72839c;font-size:10px;font-weight:500}
+.song-start-option #startOriginalSong{align-self:flex-start;min-width:154px;display:flex;align-items:center;justify-content:center;gap:9px;font-size:13px;margin-top:2px}
+.import-start-hint{font-size:12px;line-height:1.55;color:#526984;margin:auto 0 0}
+.bookmark-start-link{margin:0;display:flex;align-items:center}
+.song-start-option .bookmarklet{font-size:13px;padding:10px 16px}
+.song-start-option button.linklike{border:0;background:none;color:#1c61b1;padding:4px 0;font-size:12px;align-self:flex-start;text-decoration:underline}
+.song-start-option button.linklike:hover{color:#113d83}
+.import-howto{border-top:1px solid #e2eaf6;margin:10px 0;padding:12px 0 0}
+.import-howto>summary{font-size:12px;font-weight:700;color:#305582}
+.import-howto .how{margin-top:10px}
+.inline-import-reference{font-size:12px;color:#35649d}
+.song-start-hint[hidden]{display:none!important}
+.chord-bank-empty{grid-column:1/-1;display:block;margin:2px 0 0;background:#f3f8ff;border:1px dashed #b4c9e7;border-radius:8px;color:#3f628e;padding:14px;font:12px/1.45 system-ui,sans-serif;text-align:left}
+.sheet-title p:empty{display:none}
+.song-details-dialog{position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(490px,calc(100vw - 20px));
+ max-height:calc(100vh - 25px);overflow:auto;padding:21px;
+ background:#fff;border:1px solid #a9c3e5;border-radius:14px;color:#1f3656;box-shadow:0 24px 62px #0a233d7e}
+.song-details-dialog::backdrop{background:#0b254788;backdrop-filter:blur(2px)}
+.song-details-dialog[open]{display:block!important}
+.song-details-header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.song-details-header h3{margin:0;font-size:21px}
+.song-details-header button{border:none;background:#eff3f8;padding:4px 10px;font-size:20px}
+.song-details-dialog p{font-size:12px;line-height:1.5;color:#627792;margin:8px 0 17px}
+.song-details-dialog label{margin:12px 0;display:block;font-size:12px}
+.song-details-dialog input{width:100%;box-sizing:border-box;margin-top:6px;padding:10px;border:1px solid #bbcee7;border-radius:7px}
+.song-details-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:22px}
+@media(max-width:680px){
+ .song-start-choices{grid-template-columns:1fr}
+ .song-start-option{padding:14px}
+}
+@media(max-width:420px){.compose-fields{grid-template-columns:1fr}}
+@media print{.song-start-choices,.song-details-dialog{display:none!important}}
