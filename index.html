@@ -98,9 +98,27 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
 <section class="intro no-print"><p class="eyebrow">From chord data to a print-ready sheet</p><h1>Import a song. Get the chords and the whole song, ready to print.</h1><p>Preserve chord placement and the original fingering diagrams. Export the diagrams as one image for Google Docs or print an entire formatted song sheet.</p></section>
 <section class="card no-print import-card" id="importCard">
  <details class="activity-disclosure" id="importDetails" open><summary>Bring a song into ChordStudio</summary><div class="activity-body">
- <div class="how"><span class="step">1</span><div><strong>Add ChordStudio to your bookmarks bar</strong><div class="hint">Show bookmarks with Ctrl+Shift+B, then drag this yellow link onto the bar. This is a one-time setup.</div></div><a href="#" id="bookmarklet" class="bookmarklet" title="Drag to bookmarks bar, or click for setup steps">↗ ChordStudio</a></div>
+ <div class="song-start-choices" aria-label="Choose how to start">
+  <section class="song-start-option compose-start">
+    <div class="song-start-top"><span class="start-icon" aria-hidden="true">✎</span><div><h3>Write my own song</h3><p>Start with a blank sheet. Write lyrics and chords, then build your own diagrams.</p></div></div>
+    <div class="compose-fields"><label for="newSongTitle">Song title<input id="newSongTitle" type="text" placeholder="Untitled song" maxlength="200"></label>
+    <label for="newSongArtist">Written by <span class="field-optional">(optional)</span><input id="newSongArtist" type="text" placeholder="Artist or songwriter" maxlength="200"></label></div>
+    <button id="startOriginalSong" class="primary" type="button">Start writing <span aria-hidden="true">→</span></button>
+  </section>
+  <section class="song-start-option import-start">
+    <div class="song-start-top"><span class="start-icon" aria-hidden="true">↗</span><div><h3>Import an existing song</h3><p>Bring in chord diagrams and song text from a page you've found.</p></div></div>
+    <p class="import-start-hint">Add this link to your bookmarks bar, then click it while viewing a song's chord page.</p>
+    <div class="bookmark-start-link"><a href="#" id="bookmarklet" class="bookmarklet" title="Drag to bookmarks bar, or click for setup steps">↗ ChordStudio</a></div>
+    <button id="showImportHelp" class="linklike" type="button">How to import a song</button>
+  </section>
+</div>
+<div id="songStartHint" class="song-start-hint" hidden role="status"></div>
+<details id="importHowto" class="import-howto">
+  <summary>More ways to import a song</summary>
+ <div class="how"><span class="step">1</span><div><strong>Add ChordStudio to your bookmarks bar</strong><div class="hint">Show bookmarks with Ctrl+Shift+B, then drag this yellow link onto the bar. This is a one-time setup.</div></div><span class="inline-import-reference">Use the yellow ↗ ChordStudio link above.</span></div>
  <div id="bookmarkHelp" class="bookmark-help" hidden><strong>Bookmarklet setup</strong><p>Browsers prevent sites from creating bookmarks automatically. Drag the yellow ↗ ChordStudio link to your bookmarks bar (Ctrl+Shift+B shows it).</p><p>On touch devices or if dragging isn't practical, copy the bookmarklet and create a bookmark named ChordStudio, then replace its URL with the copied code.</p><button id="copyBookmarklet" type="button">Copy bookmarklet code</button><button id="closeBookmarkHelp" type="button">Close</button></div><div class="bookmark-placeholder" hidden></div>
  <div class="how import-followup"><span class="step">2</span><div><strong>Open a song's chord page normally</strong><div class="hint">When the page has loaded, click your ↗ ChordStudio bookmark. The song will open here, ready to customize.</div></div></div>
+ </details>
  <div class="continue-project"><div><strong>Coming back to an existing song?</strong><div class="hint">Open a saved .chordstudio project to pick up where you left off.</div></div><button id="welcomeOpenProject" type="button">Open saved project…</button></div>
  <details class="alt"><summary>Import saved page source, JSON, HTML or URL</summary><div class="fileinput"><input id="sourceFile" type="file" accept=".html,.htm,.json,.txt,text/html,text/plain,application/json"></div><textarea id="sourcePaste" placeholder="Paste a song URL, saved HTML, or JSON chord data"></textarea><button id="importPaste">Import</button> <a id="sourceOpenFromPaste" class="source-fallback-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Open song page ↗</a></details>
  </div></details>
@@ -140,6 +158,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
      <details class="toolbar-menu" data-toolbar-menu>
        <summary>File</summary>
        <div class="toolbar-menu-panel" role="group" aria-label="Project file actions">
+         <button id="fileNewSongBtn" type="button">New blank song…</button>
          <button id="openProjectBtn" type="button" title="Open a previously saved ChordStudio project">Open project…</button>
          <input id="projectFile" type="file" accept=".chordstudio,.json,application/json" hidden>
          <button id="saveProjectBtn" type="button">Save project</button>
@@ -153,6 +172,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
      <details class="toolbar-menu" data-toolbar-menu>
        <summary>Edit</summary>
        <div class="toolbar-menu-panel" role="group" aria-label="Song editing and sticker history">
+         <button id="editSongDetailsBtn" type="button">Edit song title &amp; artist…</button>
          <button id="editSongBtn" type="button">Edit song text…</button>
          <div class="toolbar-menu-rule"></div>
          <div class="toolbar-section-label">Song text <span class="menu-keyhint">While editing</span></div>
@@ -256,7 +276,14 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <p id="message" class="message no-print" aria-live="polite"></p>
  </section>
 </main>
-<dialog id="imageEditDialog" class="image-edit-dialog no-print" aria-labelledby="imageEditTitle">
+<dialog id="songDetailsDialog" class="song-details-dialog no-print" aria-labelledby="songDetailsHeading">
+ <div class="song-details-header"><h3 id="songDetailsHeading">Song details</h3><button type="button" id="songDetailsClose" aria-label="Close">×</button></div>
+ <p>These details appear at the top of your sheet and in saved projects.</p>
+ <label for="songDetailsTitle">Song title<input id="songDetailsTitle" type="text" maxlength="200" required></label>
+ <label for="songDetailsArtist">Artist or songwriter (optional)<input id="songDetailsArtist" type="text" maxlength="200"></label>
+ <div class="song-details-actions"><button id="songDetailsCancel" type="button">Cancel</button><button id="songDetailsSave" class="primary" type="button">Apply details</button></div>
+ </dialog>
+ <dialog id="imageEditDialog" class="image-edit-dialog no-print" aria-labelledby="imageEditTitle">
  <div class="image-edit-header"><div><h3 id="imageEditTitle">Edit image</h3><p id="imageEditSummary">Crop or rotate before placing</p></div><button type="button" id="imageEditClose" aria-label="Close image editor">×</button></div>
  <div class="image-edit-canvas-wrap"><canvas id="imageEditCanvas" width="640" height="410" aria-label="Image crop preview; drag to select the area to keep"></canvas></div>
  <p class="image-edit-help">Drag on the preview to select a crop area. Rotate or reset the crop as needed.</p>
@@ -289,4 +316,5 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
 <script src="emoji.js?v=20261011-emoji-2" defer></script>
 <script src="chord-builder.js?v=20261011-builder-2" defer></script>
 <script src="import-helper.js?v=20261011-import-2" defer></script>
+<script src="new-song.js?v=20261011-compose-1" defer></script>
 </body></html>
