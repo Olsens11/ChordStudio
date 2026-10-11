@@ -27,8 +27,38 @@
     const el=$("builderFeedback");el.textContent=text;el.classList.toggle("error",err);
   }
   function setCodeText(){$("builderCode").value=code();}
+  function showNameSuggestions(){
+    const host=$("builderSuggestedNames"),summary=$("builderAnalysis");
+    host.replaceChildren();
+    if(!window.ChordTheory){summary.textContent="Chord analysis is unavailable.";return;}
+    try{
+      const result=window.ChordTheory.analyze(state.frets);
+      if(!result.voices.length){summary.textContent="Select one or more sounding strings.";return;}
+      const bass=result.bass;
+      summary.textContent="Voicing: "+result.summary+" · Bass: "+bass.name+bass.octave+
+        " · Unique notes: "+result.notes.join(" – ");
+      if(!result.candidates.length){
+        const item=document.createElement("span");item.className="builder-unknown";
+        item.textContent="No exact standard chord-name match. Enter your own name.";
+        host.append(item);
+        return;
+      }
+      for(const [i,candidate] of result.candidates.entries()){
+        const button=document.createElement("button");button.type="button";
+        button.className="builder-suggestion";button.textContent=candidate.name;
+        button.title="Use "+candidate.name+" as chord name (same sounding notes)";
+        button.addEventListener("click",()=>{
+          $("builderName").value=candidate.name;
+          feedback("Selected "+candidate.name+". Naming is interpretive—confirm it fits the song.");
+        });
+        if(i===0)button.classList.add("top-suggestion");
+        host.append(button);
+      }
+    }catch(e){summary.textContent="Could not analyze the current frets: "+e.message;}
+  }
   function updatePreview(){
     const view=$("builderPreview");view.replaceChildren(makeDiagramCanvas(shape()));
+    showNameSuggestions();
     feedback("");
   }
   function removeBarresOnString(index){
