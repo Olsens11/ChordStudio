@@ -155,3 +155,51 @@
   .note-editor,.placing-note .paper-page{outline:none!important}
   .text-sticker .note-content:empty::after{display:none}
 }
+
+/* Workflow layout: import, chord organizer and printable paper are separate. */
+.activity-disclosure{margin:0;padding:0;border:0}
+.activity-disclosure>summary{list-style:none;display:flex;align-items:center;gap:8px;font-size:19px;font-weight:800;color:#1d355a;cursor:pointer;padding:0}
+.activity-disclosure>summary::-webkit-details-marker{display:none}
+.activity-disclosure>summary::before{content:"▾";display:inline-grid;place-items:center;width:25px;height:25px;border-radius:6px;background:#e8f0fa;color:#265aa2;font-size:17px;flex:none}
+.activity-disclosure:not([open])>summary::before{content:"▸"}
+.activity-disclosure .activity-body{padding-top:17px}
+.activity-disclosure .how{margin-bottom:10px}
+.activity-disclosure .hint{line-height:1.5}
+#organizer #chordSection{border:0;background:transparent;padding:6px 0 2px;margin:0}
+#organizer #chordSection .print-heading{display:none}
+.organizer-toolbar{display:flex;align-items:center;gap:13px;flex-wrap:wrap;padding:11px 12px;margin:13px 0 15px;border-radius:10px;background:#f2f6fd;border:1px solid #dce7f5}
+.organizer-toolbar .organizer-actions{display:flex;flex-wrap:wrap;gap:7px;margin-left:auto}
+.organizer-toolbar button{padding:8px 11px}
+.organizer-toolbar>label,.display-toggles label,.tray-toggles label{display:flex;align-items:center;gap:7px;margin:0}
+.organizer-toolbar select{width:auto;min-width:70px;padding:7px}
+.display-toggles,.tray-toggles{display:flex;align-items:center;gap:13px;flex-wrap:wrap}
+.tray-toggles{padding:7px 4px 10px;border-top:1px solid #d5e2f3;margin:0 0 6px}
+.tray-toggles label{font-size:11px;gap:4px;white-space:nowrap;font-weight:700}
+#chordGrid .chord-card.code-only{min-height:55px;padding-top:4px;padding-bottom:5px}
+#chordGrid .chord-card.code-only .diagram-remove{top:-7px;right:4px}
+.chord-card.code-only{min-height:53px!important}
+.chord-card .chord-code,.sticker-inner .chord-code{font:12px/1.4 "Courier New",ui-monospace,monospace;color:#33455d;white-space:nowrap;text-align:center;letter-spacing:-.35px}
+.chord-card .chord-code{margin-top:2px}
+.sticker-inner .chord-code{margin-top:2px}
+.chord-card.diagram-with-code{min-height:117px}
+.paper-bank .chord-card.code-only{min-height:53px!important}
+.sticker-board-grid .chord-card.code-only{min-height:53px!important}
+.sticker-board-grid .chord-card.diagram-with-code{min-height:118px}
+.paper-bank .chord-card.diagram-with-code{min-height:118px}
+.paper-sticker .sticker-inner{justify-content:flex-start}
+.sticker-inner:has(.chord-code):not(:has(.diagram-art)){height:54px}
+/* The controls stick within Output preview without pinning the large header. */
+.preview-heading h2{font-size:19px;margin:0 0 4px}
+.preview-heading .eyebrow{margin-bottom:4px}
+.preview-heading .muted{margin:0 0 12px}
+.preview-toolbar{position:sticky;top:0;z-index:58;padding:10px 11px;border-radius:10px;
+  background:#fff;box-shadow:0 3px 14px #182c4b2b;border:1px solid #d6e2f2;
+  display:flex;flex-direction:column;gap:7px}
+.preview-toolbar .actions{display:flex;gap:6px;flex-wrap:wrap}
+.preview-toolbar button{padding:7px 10px;font-size:12px}
+.preview-toolbar .layout-toolbar{margin:0;padding-top:6px;border-top:1px solid #e0e9f5;gap:7px 12px}
+.preview-toolbar .layout-toolbar select{min-width:75px;padding:5px}
+.preview-toolbar .layout-status{font-size:11px}
+#workspace>.options{margin:11px 0 15px;padding:11px 7px;border-top:0}
+@media(max-width:700px){.organizer-toolbar .organizer-actions{margin-left:0}.preview-toolbar{top:0;padding:8px}.preview-toolbar button{padding:6px 8px;font-size:11px}}
+@media print{#organizer,.import-card,.preview-heading,.preview-toolbar{display:none!important}}
