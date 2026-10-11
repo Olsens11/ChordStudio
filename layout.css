@@ -868,3 +868,53 @@ body.has-document .intro{display:none}
 .compose-actions .optional-credits button:hover{color:#123d76}
 .compose-actions .optional-credits button:focus-visible{outline:2px solid #3877cd;outline-offset:3px;border-radius:3px}
 .song-details-dialog #songDetailsStart[hidden]{display:none!important}
+/* One balanced credit link exactly below the songwriter field. */
+.compose-start .compose-fields,
+.compose-start .compose-actions{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  align-items:center;
+}
+.compose-start .compose-fields label{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  box-sizing:border-box;
+  padding:0;
+  margin:0;
+  text-align:left;
+  min-width:0;
+}
+.compose-start .compose-field-label{
+  display:block;
+  box-sizing:border-box;
+  padding-left:2px;
+  margin:0;
+  text-indent:0;
+}
+.compose-start .compose-actions #startOriginalSong{
+  justify-self:start;
+  align-self:center;
+  margin:0;
+}
+.compose-start #addCredits{
+  justify-self:stretch;
+  align-self:center;
+  text-align:center;
+  background:transparent;
+  border:0;
+  padding:5px 2px;
+  font:650 11px/1.35 system-ui,sans-serif;
+  color:#245b9b;
+  text-decoration:underline;
+  text-underline-offset:2px;
+  cursor:pointer;
+}
+.compose-start #addCredits:hover{color:#123d76}
+.compose-start #addCredits:focus-visible{outline:2px solid #3877cd;outline-offset:3px;border-radius:4px}
+.song-details-dialog #songDetailsSave[hidden]{display:none!important}
+@media(max-width:420px){
+  .compose-start .compose-fields{grid-template-columns:1fr}
+  .compose-start .compose-actions{grid-template-columns:154px minmax(0,1fr)}
+}
