@@ -145,7 +145,16 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
      <button id="confirmSongTuning" type="button" class="confirm-tuning">Confirm tuning</button>
      <span id="tuningSummary" class="tuning-summary">Standard tuning assumed. Confirm before using chord-name suggestions.</span>
    </div>
-   <div class="organizer-toolbar">
+   <div class="key-control" aria-label="Song key and transposition">
+     <div class="key-control-field"><label for="songKey">Song key <select id="songKey"><option value="">Unselected</option></select></label>
+       <button id="suggestSongKey" type="button">Suggest key</button>
+       <span id="keySummary" class="key-summary">Unselected — no key is assumed.</span></div>
+     <div class="key-control-field"><label for="transposeKey">Transpose to <select id="transposeKey"><option value="">Choose target key…</option></select></label>
+       <button id="previewTranspose" type="button">Preview transposition…</button>
+       <button id="undoTranspose" type="button" hidden>Undo transposition</button></div>
+     <p class="key-disclaimer">Key selection is optional and does not change chords. Transpose requires a preview and confirmation; songs with multiple keys can remain Unselected.</p>
+   </div>
+      <div class="organizer-toolbar">
       <div class="display-toggles"><label><input id="showDiagrams" type="checkbox" checked> Diagram</label><label><input id="showCodes" type="checkbox"> Fret codes</label></div>
       <label>Columns <select id="columns"><option>4</option><option>5</option><option selected>6</option><option>8</option><option>10</option></select></label>
       <div class="organizer-actions"><button id="copyBtn" type="button">Copy diagrams to clipboard</button><button id="downloadBtn" type="button">Download PNG</button></div>
@@ -298,6 +307,12 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <p id="message" class="message no-print" aria-live="polite"></p>
  </section>
 </main>
+<dialog id="transposeDialog" class="song-details-dialog transpose-dialog no-print" aria-labelledby="transposeHeading">
+ <div class="song-details-header"><h3 id="transposeHeading">Preview transposition</h3><button id="transposeClose" type="button" aria-label="Close">×</button></div>
+ <p id="transposeExplanation"></p><div id="transposeChanges" class="transpose-changes"></div>
+ <p class="transpose-warning">This changes chord names, the chord bank, matching song annotations and chord-only lines, and placed chord stickers. Original imported text remains available through Restore imported text. Songs with multiple keys and unusual spellings need review.</p>
+ <div class="song-details-actions"><button id="transposeCancel" type="button">Cancel</button><button id="transposeApply" type="button" class="primary">Apply transposition</button></div>
+</dialog>
 <dialog id="saveAsDialog" class="song-details-dialog no-print" aria-labelledby="saveAsTitle">
  <div class="song-details-header"><h3 id="saveAsTitle">Save As</h3><button id="saveAsClose" type="button" aria-label="Close Save As">×</button></div>
  <p id="saveAsDescription">Choose a filename for this ChordStudio project.</p>
@@ -343,7 +358,9 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
   </label>
   <label>Fret code (low string → high string) <input id="builderCode" type="text" placeholder="x 3 2 0 0 0" spellcheck="false"></label>
  </div>
- <div class="chord-builder-fields"><label>Top fret number <input id="builderBase" type="number" min="1" max="24" value="1"></label><label class="builder-note-label">Diagram labels <select id="builderDotMode"><option value="dots">Dots</option><option value="notes">Note names</option></select></label>
+ <div class="chord-builder-fields"><label>Top fret number <input id="builderBase" type="number" min="1" max="24" value="1"></label><label class="builder-note-label">Diagram labels <select id="builderDotMode"><option value="dots">Dots</option><option value="notes">Note names</option></select></label><label class="builder-spelling-label">Note spelling <select id="builderSpelling">
+   <option value="auto">Auto (song key)</option><option value="sharp">Sharps ♯</option><option value="flat">Flats ♭</option>
+ </select></label>
  <button id="builderReset" type="button" title="Reset drawing to an empty muted fretboard">↺ Reset drawing</button></div>
  <div class="chord-builder-workspace"><div><div id="builderGrid" class="builder-grid" role="group" aria-label="Interactive six-string guitar fretboard"></div><div id="builderStringNames" class="builder-string-names" aria-hidden="true"><span>E</span><span>A</span><span>D</span><span>G</span><span>B</span><span>e</span></div>
  <section class="builder-finger-section" aria-label="Finger number per string">
@@ -352,7 +369,8 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
   <div class="builder-finger-actions"><button id="builderAutoFingers" type="button">Suggest fingering</button><button id="builderClearFingers" type="button">Clear fingering</button></div>
  </section></div>
  <div class="builder-sidebar"><div class="builder-help">Tap the string status above a column to cycle between <strong>open</strong> and <strong>muted</strong>. Click a cell for a fret dot, or drag horizontally across cells for a barre. Use finger labels when needed.</div>
- <div id="builderBarres" class="builder-barres"></div><div class="builder-live"><strong>Diagram preview</strong><div id="builderPreview"></div><span id="builderFeedback" role="status"></span></div>
+ <div id="builderBarres" class="builder-barres"></div>
+ <div id="builderNoteSpellings" class="builder-note-spellings" hidden></div><div class="builder-live"><strong>Diagram preview</strong><div id="builderPreview"></div><span id="builderFeedback" role="status"></span></div>
  <div class="builder-tuning-confirm">
      <label for="builderTuning">Confirm tuning for chord naming <select id="builderTuning">
        <option value="standard">Standard · E A D G B E</option>
@@ -392,5 +410,6 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
 <script src="new-song.js?v=20261010-menus-tuning-1" defer></script>
 <script src="chord-theory.js?v=20261010-menus-tuning-1" defer></script>
 <script src="voicings.js?v=20261011-voicing-save-1" defer></script>
+<script src="song-key.js?v=20261011-song-key-1" defer></script>
 <script src="recent-projects.js?v=20261010-menus-tuning-1" defer></script>
 </body></html>
