@@ -273,7 +273,9 @@
     const isText=record.type==="text";
     const isImage=record.type==="image";
     const el=document.createElement("div");el.className="paper-sticker"+(isText?" text-sticker":isImage?" image-sticker":"");
-    el.dataset.stickerId=record.id;el.draggable=false;el.tabIndex=0;
+    el.dataset.stickerId=record.id;
+    if(isText&&record.autoSize===true)el.dataset.autoSize="true";
+    el.draggable=false;el.tabIndex=0;
     el.setAttribute("aria-label",isText?"Text note. Click to edit, drag to move, corner to resize. Shift click to duplicate.":isImage?"Image sticker. Drag to move, corner to resize. Shift click to duplicate.":"Placed "+record.name+" diagram. Shift click to duplicate, drag to move, corner to resize.");
     el.title=isText?"Click to edit note · drag to move · corner resizes · Shift+click copies":
       "Drag to move · Shift+click copies · Ctrl+Shift snaps to 5px grid · corner resizes";
