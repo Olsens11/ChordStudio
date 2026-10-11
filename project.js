@@ -95,6 +95,9 @@
         includeChords:$("includeChords").checked,
         includeSong:$("includeSong").checked,
         includeSourceFooter:$("includeSourceFooter").checked,
+        repeatSourceFooter:$("repeatSourceFooter").checked,
+        repeatSongHeader:$("repeatSongHeader").checked,
+        showPageNumbers:$("showPageNumbers").checked,
         showCodes:$("showCodes").checked,
         showDiagrams:$("showDiagrams").checked,
         columns:$("columns").value,
@@ -229,6 +232,9 @@
     $("artistName").textContent=page.performedBy;
     $("songName").textContent=page.title;
     $("includeSourceFooter").checked=opts.includeSourceFooter===true&&!!source;
+    $("repeatSourceFooter").checked=opts.repeatSourceFooter===true&&!!source&&$("includeSourceFooter").checked;
+    $("repeatSongHeader").checked=opts.repeatSongHeader===true;
+    $("showPageNumbers").checked=opts.showPageNumbers===true;
     updateOriginalSourceLink();
     // Version-1 projects from before tuning support intentionally fall back
     // to an *unconfirmed* standard-tuning assumption.
