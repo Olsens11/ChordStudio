@@ -123,9 +123,33 @@
       }
     }catch(e){summary.textContent="Could not analyze the current frets: "+e.message;}
   }
-  function updatePreview(){
+  function noteSpellingControls(){
+    const host=$("builderNoteSpellings");if(!host)return;
+    host.replaceChildren();
+    const tuning=window.ChordTheory.getTuning();
+    const pitches=[...new Set(state.frets.map((f,i)=>f<0?null:((tuning.midi[i]+f)%12+12)%12)
+      .filter(n=>n!==null))].filter(pc=>[1,3,6,8,10].includes(pc));
+    host.hidden=$("builderDotMode").value!=="notes"||!pitches.length;
+    if(host.hidden)return;
+    const hint=document.createElement("span");hint.textContent="Individual spellings (click to switch ♯ / ♭): ";
+    host.append(hint);
+    const sharp=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+    const flat=["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
+    for(const pc of pitches){
+      const button=document.createElement("button");button.type="button";
+      button.textContent=window.ChordKey?.noteName(pc,state.noteSpellings)||sharp[pc];
+      button.title="Toggle "+sharp[pc]+" / "+flat[pc]+" on this chord";
+      button.addEventListener("click",()=>{
+        const now=window.ChordKey?.noteName(pc,state.noteSpellings)||sharp[pc];
+        state.noteSpellings[pc]=now===sharp[pc]?flat[pc]:sharp[pc];
+        draw();
+      });
+      host.append(button);
+    }
+  }
+    function updatePreview(){
     const view=$("builderPreview");view.replaceChildren(makeDiagramCanvas(shape()));
-    showNameSuggestions();
+    noteSpellingControls();showNameSuggestions();
     feedback("");
   }
   function removeBarresOnString(index){
@@ -226,7 +250,7 @@
     state.editKey=key;state.oldName=null;state.start=null;
     state.barres=[];state.fingers=[0,0,0,0,0,0];
     state.frets=[-1,-1,-1,-1,-1,-1];state.noteSpellings={};
-    clearSuggestions();$("builderDotMode").value="dots";
+    clearSuggestions();$("builderDotMode").value="dots";$("builderSpelling").value="auto";
     $("builderName").value="";
     $("builderBase").value="1";
     if(key){
@@ -313,6 +337,8 @@
     });
     $("builderBase").addEventListener("change",draw);
     $("builderDotMode").addEventListener("change",draw);
+    $("builderSpelling").addEventListener("change",draw);
+    document.addEventListener("chordstudio:keychange",()=>{if($("chordBuilderDialog").open)draw();});
     $("builderReset").addEventListener("click",resetDrawing);
     $("builderAutoFingers").addEventListener("click",()=>{
       autoFingers();draw();feedback("Suggested fingers. Adjust them in the six-string row if needed.");
