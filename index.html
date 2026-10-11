@@ -127,6 +127,23 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <details class="activity-disclosure" id="organizerDetails" open><summary>Chord bank organizer</summary>
   <div class="activity-body">
    <p class="hint">Arrange, remove, and choose the fretboard detail you want. Drag a chord onto a page to place a copy.</p>
+   <div class="tuning-control" aria-label="Guitar tuning for chord analysis">
+     <label for="songTuning">Guitar tuning <select id="songTuning">
+       <option value="standard">Standard · E A D G B E</option>
+       <option value="drop-d">Drop D · D A D G B E</option>
+       <option value="dadgad">DADGAD · D A D G A D</option>
+       <option value="open-g">Open G · D G D G B D</option>
+       <option value="open-d">Open D · D A D F# A D</option>
+       <option value="open-e">Open E · E B E G# B E</option>
+       <option value="half-step">Half step down · Eb Ab Db Gb Bb Eb</option>
+       <option value="whole-step">Whole step down · D G C F A D</option>
+       <option value="custom">Custom six-string tuning…</option>
+     </select></label>
+     <label class="custom-tuning-field" id="customTuningWrap" hidden for="customTuning">Low string → high string
+       <input id="customTuning" type="text" value="E2 A2 D3 G3 B3 E4" placeholder="D2 A2 D3 G3 A3 D4" spellcheck="false">
+     </label>
+     <span id="tuningSummary" class="tuning-summary">Standard tuning assumed. Confirm before using chord-name suggestions.</span>
+   </div>
    <div class="organizer-toolbar">
       <div class="display-toggles"><label><input id="showDiagrams" type="checkbox" checked> Diagram</label><label><input id="showCodes" type="checkbox"> Fret codes</label></div>
       <label>Columns <select id="columns"><option>4</option><option>5</option><option selected>6</option><option>8</option><option>10</option></select></label>
@@ -311,10 +328,26 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <div class="chord-builder-workspace"><div><div id="builderGrid" class="builder-grid" role="group" aria-label="Interactive six-string guitar fretboard"></div><div id="builderStringNames" class="builder-string-names" aria-hidden="true"><span>E</span><span>A</span><span>D</span><span>G</span><span>B</span><span>e</span></div></div>
  <div class="builder-sidebar"><div class="builder-help">Tap the string status above a column to cycle between <strong>open</strong> and <strong>muted</strong>. Click a cell for a fret dot, or drag horizontally across cells for a barre. Use finger labels when needed.</div>
  <div id="builderBarres" class="builder-barres"></div><div class="builder-live"><strong>Diagram preview</strong><div id="builderPreview"></div><span id="builderFeedback" role="status"></span></div>
- <section class="chord-name-suggestions" aria-label="Chord name suggestions">
+ <div class="builder-tuning-confirm">
+     <label for="builderTuning">Confirm tuning for chord naming <select id="builderTuning">
+       <option value="standard">Standard · E A D G B E</option>
+       <option value="drop-d">Drop D · D A D G B E</option>
+       <option value="dadgad">DADGAD · D A D G A D</option>
+       <option value="open-g">Open G · D G D G B D</option>
+       <option value="open-d">Open D · D A D F# A D</option>
+       <option value="open-e">Open E · E B E G# B E</option>
+       <option value="half-step">Half step down</option>
+       <option value="whole-step">Whole step down</option>
+       <option value="custom">Custom tuning…</option>
+     </select></label>
+     <label id="builderCustomTuningWrap" hidden>Low → high notes with octaves
+       <input id="builderCustomTuning" type="text" placeholder="D2 A2 D3 G3 A3 D4" spellcheck="false">
+     </label>
+   </div>
+   <section class="chord-name-suggestions" aria-label="Chord name suggestions">
    <strong>Possible chord names</strong><p id="builderAnalysis" class="builder-analysis">Select string and fret positions to analyze their notes.</p>
    <div id="builderSuggestedNames" class="builder-suggestions"></div>
-   <small>Names describe the sounding notes in standard tuning. Musical context can change which name is best.</small>
+   <small id="builderTheoryDisclaimer">Names are suggestions for the selected tuning, not definitive harmonic labels. Check the musical context.</small>
  </section></div></div>
  <div class="chord-builder-actions"><button id="builderCancel" type="button">Cancel</button><button id="builderSave" class="primary" type="button">Save chord to organizer</button></div>
 </dialog>
