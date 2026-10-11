@@ -203,3 +203,100 @@
 #workspace>.options{margin:11px 0 15px;padding:11px 7px;border-top:0}
 @media(max-width:700px){.organizer-toolbar .organizer-actions{margin-left:0}.preview-toolbar{top:0;padding:8px}.preview-toolbar button{padding:6px 8px;font-size:11px}}
 @media print{#organizer,.import-card,.preview-heading,.preview-toolbar{display:none!important}}
+
+/* Calm chord sorting: a single anchored insertion line, with no card
+   relocation or bouncing animations until the pointer is released. */
+#chordGrid{position:relative}
+#chordGrid.chord-bank-sorting{outline:1px solid #e0e8f3;outline-offset:5px}
+#chordGrid.chord-bank-sorting .chord-card{transition:none!important;animation:none!important}
+#chordGrid .chord-sort-source{opacity:.46}
+#chordGrid .chord-reorder-marker{
+  position:absolute;width:0;z-index:5;pointer-events:none;
+  border-left:3px solid #2569c4;box-sizing:content-box;
+  filter:drop-shadow(0 0 1px #fff);
+  transition:left .09s ease-out,top .09s ease-out;
+}
+#chordGrid .chord-reorder-marker[hidden]{display:none!important}
+#chordGrid .chord-reorder-marker::before{
+  content:"Drop here";position:absolute;left:6px;top:-18px;
+  white-space:nowrap;background:#1d58aa;color:white;border-radius:4px;
+  font:700 10px/1.3 system-ui,sans-serif;padding:2px 5px;
+}
+#chordGrid .chord-reorder-marker::after{
+  content:"";position:absolute;left:-6px;bottom:-5px;
+  background:#2569c4;width:9px;height:9px;border-radius:50%;
+}
+@media(prefers-reduced-motion:reduce){
+ #chordGrid .chord-reorder-marker{transition:none}
+}
+
+/* Compact, single-row editor-style toolbar. Menus remain attached to the
+   sticky toolbar so File/Edit/View are available on lower printed pages. */
+#previewToolbar.preview-toolbar{
+ display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;
+ gap:10px;min-height:45px;padding:5px 8px;top:0;
+ border-radius:8px;box-shadow:0 2px 9px #132b4d2a;
+}
+.preview-toolbar .toolbar-menus{display:flex;align-items:center;gap:2px;flex:none}
+.preview-toolbar .toolbar-menu{border:0;padding:0;margin:0;position:relative}
+.preview-toolbar .toolbar-menu>summary{
+ display:flex;align-items:center;gap:5px;list-style:none;cursor:pointer;
+ padding:7px 11px;border-radius:6px;color:#274060;
+ font:650 13px/1.1 system-ui,sans-serif;
+}
+.preview-toolbar .toolbar-menu>summary::-webkit-details-marker{display:none}
+.preview-toolbar .toolbar-menu>summary::after{content:"▾";font-size:9px;opacity:.68}
+.preview-toolbar .toolbar-menu>summary:hover,
+.preview-toolbar .toolbar-menu[open]>summary,
+.preview-toolbar .toolbar-menu>summary:focus-visible{
+ background:#e8f1ff;color:#174986;outline:none
+}
+.preview-toolbar .toolbar-menu-panel{
+ position:absolute;left:0;top:calc(100% + 6px);
+ min-width:225px;max-width:min(325px,90vw);display:flex;flex-direction:column;
+ padding:7px;background:white;border:1px solid #bfd0e9;
+ border-radius:10px;box-shadow:0 10px 28px #132b4d3b;
+ z-index:150;gap:2px;
+}
+.preview-toolbar .toolbar-menu-panel>button{
+ display:block;width:100%;padding:9px 12px;
+ font-size:12px;line-height:1.3;font-weight:600;
+ text-align:left;border:none;border-radius:6px;background:transparent
+}
+.preview-toolbar .toolbar-menu-panel>button:hover:not(:disabled){
+ background:#eaf2ff;color:#1853a0
+}
+.preview-toolbar .toolbar-menu-rule{border-top:1px solid #e5ecf5;margin:5px 3px}
+.preview-toolbar .toolbar-menu-panel .toolbar-check{
+ display:flex;align-items:center;gap:9px;margin:0;padding:9px 10px;
+ font:600 12px/1.2 system-ui,sans-serif;border-radius:6px;cursor:pointer
+}
+.preview-toolbar .toolbar-menu-panel .toolbar-check:hover{background:#f0f5fc}
+.preview-toolbar .toolbar-select{
+ display:flex;flex-direction:column;gap:6px;margin:3px 5px 6px;padding:5px;
+ font:600 12px/1.2 system-ui,sans-serif
+}
+.preview-toolbar .toolbar-select select{width:100%;min-width:170px;padding:7px;font-size:12px}
+.preview-toolbar .toolbar-spacer{flex:1;min-width:4px}
+.preview-toolbar .toolbar-metrics{
+ display:flex;align-items:center;gap:9px;white-space:nowrap;flex:none;
+ color:#667892;font-size:10.5px
+}
+.preview-toolbar .toolbar-primary{display:flex;align-items:center;flex:none;gap:6px}
+.preview-toolbar .toolbar-primary button{
+ padding:7px 11px;border-radius:7px;white-space:nowrap;
+ font:700 12px/1.15 system-ui,sans-serif
+}
+.preview-toolbar #toggleStickerBoard{
+ border-color:#80a9e1;background:#eff6ff;color:#174a89
+}
+.preview-toolbar #toggleStickerBoard:hover{background:#dcecff}
+@media(max-width:980px){.preview-toolbar .toolbar-metrics{display:none}}
+@media(max-width:575px){
+ #previewToolbar.preview-toolbar{gap:2px;padding:4px}
+ .preview-toolbar .toolbar-menu>summary{padding:7px 6px;font-size:12px}
+ .preview-toolbar .toolbar-primary{gap:3px}
+ .preview-toolbar .toolbar-primary button{padding:7px 6px;font-size:11px}
+ .preview-toolbar .toolbar-menu-panel{min-width:200px}
+}
+@media print{#previewToolbar{display:none!important}}
