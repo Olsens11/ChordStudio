@@ -14,8 +14,11 @@
    if(hasUnsavedSheet()&&!window.confirm(
      "Start a new song? This replaces the current sheet. Save your project first if you want to keep your work."))return;
    const title=$("newSongTitle").value.trim()||"Untitled song";
-   const artist=$("newSongArtist").value.trim();
-   window.ChordSong.startBlankSong(title,artist,true);
+   const writtenBy=$("newSongArtist").value.trim();
+   const arrangedBy=$("newSongArranged").value.trim();
+   const performedBy=$("newSongPerformed").value.trim();
+   window.ChordSong.startBlankSong(title,"",true,true,{writtenBy,arrangedBy,performedBy});
+   if(!title||title==="Untitled song")message("Your song is ready. Add a title or credits anytime from Edit → Song details & credits.");
  }
  function details(){
    if(!page){
@@ -23,14 +26,16 @@
      window.ChordSong.updateSongDetails(title||"Untitled song",$("artistName").textContent);
    }
    $("songDetailsTitle").value=page?.title||"Untitled song";
-   $("songDetailsArtist").value=page?.artist||"";
+   $("songDetailsArtist").value=page?.performedBy??page?.artist??"";
+   $("songDetailsWritten").value=page?.writtenBy||"";
+   $("songDetailsArranged").value=page?.arrangedBy||"";
    $("songDetailsDialog").showModal();
    $("songDetailsTitle").focus();
  }
  function close(){if($("songDetailsDialog").open)$("songDetailsDialog").close();}
  function init(){
    $("startOriginalSong").addEventListener("click",create);
-   for(const id of ["newSongTitle","newSongArtist"]){
+   for(const id of ["newSongTitle","newSongArtist","newSongArranged","newSongPerformed"]){
      $(id).addEventListener("keydown",event=>{
        if(event.key==="Enter"){event.preventDefault();create();}
      });
@@ -38,7 +43,8 @@
    $("fileNewSongBtn").addEventListener("click",()=>{
      if(hasUnsavedSheet()&&!window.confirm(
        "Create a new document? Save the current project first if you want to keep it."))return;
-     $("newSongTitle").value="";$("newSongArtist").value="";
+     for(const id of ["newSongTitle","newSongArtist","newSongArranged","newSongPerformed"])$(id).value="";
+     document.querySelectorAll(".optional-credits details").forEach(detail=>detail.open=false);
      window.ChordSong.startBlankSong("Untitled song","",true);
    });
    document.addEventListener("keydown",event=>{
@@ -52,7 +58,11 @@
    $("songDetailsClose").addEventListener("click",close);
    $("songDetailsCancel").addEventListener("click",close);
    $("songDetailsSave").addEventListener("click",()=>{
-     window.ChordSong.updateSongDetails($("songDetailsTitle").value,$("songDetailsArtist").value);
+     window.ChordSong.updateSongDetails($("songDetailsTitle").value,{
+       writtenBy:$("songDetailsWritten").value,
+       performedBy:$("songDetailsArtist").value,
+       arrangedBy:$("songDetailsArranged").value
+     });
      close();
    });
    $("songDetailsDialog").addEventListener("cancel",ev=>{ev.preventDefault();close();});
