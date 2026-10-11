@@ -469,8 +469,10 @@ function updateOriginalSourceLink(){
   $("songUrl").value=url;
   $("originalSourceRow").hidden=!url;
   $("openSource").disabled=!url;
+  $("includeSourceFooter").disabled=!url;
+  if(!url)$("includeSourceFooter").checked=false;
 }
-function startBlankSong(title="Untitled song",artist="",openEditor=true,navigate=true){
+function startBlankSong(title="Untitled song",artist="",openEditor=true,navigate=true,credits={}){
   window.ChordRecents?.newDocument();
   window.ChordProject?.clearFileAssociation();
   window.ChordTheory?.setTuning("standard",null,false);
@@ -479,10 +481,14 @@ function startBlankSong(title="Untitled song",artist="",openEditor=true,navigate
   closeSongEditor();
   catalog={};original={};
   page={title:String(title||"Untitled song").trim().slice(0,200)||"Untitled song",
-    artist:String(artist||"").trim().slice(0,200),content:"",source:""};
+    artist:String(credits.performedBy??artist??"").trim().slice(0,200),content:"",source:"",
+    writtenBy:String(credits.writtenBy||"").trim().slice(0,200),
+    arrangedBy:String(credits.arrangedBy||"").trim().slice(0,200),
+    performedBy:String(credits.performedBy??artist??"").trim().slice(0,200)};
   $("songName").textContent=page.title;
   $("artistName").textContent=page.artist;
   $("sourceCredit").textContent="";
+  $("includeSourceFooter").checked=false;
   $("chordEditor").value="";
   $("songLines").replaceChildren();
   resetImportedSongNodes();
@@ -508,16 +514,19 @@ function startBlankSong(title="Untitled song",artist="",openEditor=true,navigate
     message("Your blank song is ready. Write lyrics, then use + Create chord to build its diagram bank.");
   }
 }
-function updateSongDetails(title,artist){
-  if(!page){
-    page={title:"Untitled song",artist:"",content:"",source:""};
-  }
-  page.title=String(title||"Untitled song").trim().slice(0,200)||"Untitled song";
-  page.artist=String(artist||"").trim().slice(0,200);
+function updateSongDetails(title,credits={}){
+  if(!page)page={title:"Untitled song",artist:"",content:"",source:""};
+  const values=typeof credits==="string"?{performedBy:credits}:credits;
+  const clean=value=>String(value||"").trim().slice(0,200);
+  page.title=clean(title)||"Untitled song";
+  page.writtenBy=clean(values.writtenBy??page.writtenBy);
+  page.arrangedBy=clean(values.arrangedBy??page.arrangedBy);
+  page.performedBy=clean(values.performedBy??page.performedBy??page.artist);
+  page.artist=page.performedBy; // backward-compatible imported performer metadata
   $("songName").textContent=page.title;
   $("artistName").textContent=page.artist;
   window.ChordLayout?.refresh();
-  message("Song title and artist updated.");
+  message("Song title and credits updated.");
 }
 window.ChordSong={startBlankSong,updateSongDetails};
 function loadPage(data,{navigate=true}={}){
@@ -541,7 +550,9 @@ function loadPage(data,{navigate=true}={}){
   page={title:decodeEntities(data.song_name||data.songName||"Untitled song"),
     artist:decodeEntities(data.artist_name||data.artistName||""),
     content:typeof data.content==="string"?data.content:"",
-    source:validSourceUrl(data.source)};
+    source:validSourceUrl(data.source),writtenBy:"",arrangedBy:"",
+    performedBy:decodeEntities(data.artist_name||data.artistName||"")};
+  $("includeSourceFooter").checked=false;
   updateOriginalSourceLink();
   $("importDetails").open=false;
   $("songName").textContent=page.title;
@@ -634,9 +645,25 @@ function init(){
     catch(e){message("Import failed: "+e.message,true);}
   });
   $("sourceFile").addEventListener("change",async e=>{
-    try{const file=e.target.files?.[0];if(file)loadPage(normalizeSource(await file.text()));}
-    catch(e){message("File import failed: "+e.message,true);}
-    e.target.value="";
+    try{
+      const file=e.target.files?.[0];if(!file)return;
+      if(file.size>18*1024*1024)throw Error("File exceeds the 18 MB limit.");
+      const content=await file.text();
+      let parsed=null;
+      if(!content.trimStart().startsWith("<")){try{parsed=JSON.parse(content);}catch{}}
+      const imported=parsed?.format==="chordstudio-project"?null:normalizeSource(content);
+      const populated=page&&(
+        $("songLines").textContent.trim()||
+        Object.keys(catalog).length||
+        window.ChordLayout?.stickers()?.length);
+      if(populated&&!window.confirm(
+        "Replace the current song sheet? Save your project first if you want to keep your changes."))return;
+      if(parsed?.format==="chordstudio-project"){
+        await window.ChordProject.openFile(file);return;
+      }
+      loadPage(imported);
+    }catch(error){message("File import failed: "+error.message,true);}
+    finally{e.target.value="";}
   });
   $("undoChordBtn").addEventListener("click",undoDiagramChange);
   $("redoChordBtn").addEventListener("click",redoDiagramChange);
