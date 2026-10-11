@@ -642,14 +642,26 @@ function init(){
   $("songEditor").addEventListener("input",schedulePageGuides);
   window.addEventListener("resize",schedulePageGuides);
   $("editSongBtn").addEventListener("click",openSongEditor);
-  $("applySongEdit").addEventListener("click",()=>applySongEdit());
-  $("applyPrintSong").addEventListener("click",()=>{applySongEdit(true);window.print();});
-  $("cancelSongEdit").addEventListener("click",cancelSongEditor);
+  $("applySongEdit").addEventListener("click",()=>{
+    if(applySongEdit())window.ChordWorkflow?.focusPaper();
+  });
+  $("applyPrintSong").addEventListener("click",()=>{
+    if(!applySongEdit(true))return;
+    // Return to page 1 even when the user closes the native print dialog.
+    window.ChordWorkflow?.focusPaper();
+    window.addEventListener("afterprint",()=>window.ChordWorkflow?.focusPaper(),{once:true});
+    window.print();
+  });
+  $("cancelSongEdit").addEventListener("click",()=>{
+    if($("songEditorPanel").hidden)return;
+    cancelSongEditor();
+    window.ChordWorkflow?.focusPaper();
+  });
   $("restoreSongEdit").addEventListener("click",restoreImportedSong);
   $("songEditor").addEventListener("paste",pasteSongText);
   $("songEditor").addEventListener("keydown",event=>{
-    if(event.key==="Escape"){event.preventDefault();cancelSongEditor();}
-    if((event.ctrlKey||event.metaKey)&&event.key==="Enter"){event.preventDefault();applySongEdit();}
+    if(event.key==="Escape"){event.preventDefault();$("cancelSongEdit").click();}
+    if((event.ctrlKey||event.metaKey)&&event.key==="Enter"){event.preventDefault();$("applySongEdit").click();}
   });
   for(const button of document.querySelectorAll("[data-song-format]")){
     button.addEventListener("mousedown",event=>event.preventDefault());
