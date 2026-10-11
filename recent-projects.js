@@ -79,6 +79,7 @@
          try{
            window.ChordProject.load(structuredClone(item.data));
            currentId=item.id;close();
+           window.ChordWorkflow?.activate("project");
          }catch(e){message("Could not reopen recent project: "+e.message,true);}
        });
        const forget=document.createElement("button");forget.type="button";
