@@ -285,7 +285,11 @@ function renderDiagrams(){
   $("undoChordBtn").disabled=!chordUndo.length;
   $("redoChordBtn").disabled=!chordRedo.length;
   $("restoreAllChordsBtn").disabled=!removedDiagrams.size;
-  if(items.length&&!rendered.length){
+  if(!items.length){
+    const empty=document.createElement("p");empty.className="chord-bank-empty";
+    empty.textContent="No diagrams yet. Choose + Create chord to build your first one.";
+    grid.append(empty);
+  }else if(!rendered.length){
     const empty=document.createElement("p");empty.className="muted";
     empty.textContent="All chords removed. Use Restore all chords above to bring them back.";
     grid.append(empty);
@@ -442,6 +446,52 @@ function updateOriginalSourceLink(){
   $("originalSourceRow").hidden=!url;
   $("openSource").disabled=!url;
 }
+function startBlankSong(title="Untitled song",artist="",openEditor=true){
+  // An original composition is a new project, not an imported demo or source page.
+  closeSongEditor();
+  catalog={};original={};
+  page={title:String(title||"Untitled song").trim().slice(0,200)||"Untitled song",
+    artist:String(artist||"").trim().slice(0,200),content:"",source:""};
+  $("songName").textContent=page.title;
+  $("artistName").textContent=page.artist;
+  $("sourceCredit").textContent="";
+  $("chordEditor").value="";
+  $("songLines").replaceChildren();
+  resetImportedSongNodes();
+  resetDiagramHistory();
+  $("includeSong").checked=true;
+  $("includeChords").checked=false;
+  $("showDiagrams").checked=true;
+  $("showCodes").checked=false;
+  $("importDetails").open=false;
+  $("organizerDetails").open=true;
+  window.ChordLayout?.reset();
+  updateOriginalSourceLink();
+  $("status").textContent="Original song · Add lyrics and build chords whenever you're ready.";
+  $("status").classList.add("good");
+  renderDiagrams();
+  if(openEditor){
+    // A real line element gives the blank contenteditable editor a printable,
+    // correctly paginated starting point, without placeholder text in the song.
+    const first=document.createElement("div");
+    first.className="song-line";first.textContent="";
+    $("songLines").append(first);
+    openSongEditor();
+    message("Your blank song is ready. Write lyrics, then use + Create chord to build its diagram bank.");
+  }
+}
+function updateSongDetails(title,artist){
+  if(!page){
+    page={title:"Untitled song",artist:"",content:"",source:""};
+  }
+  page.title=String(title||"Untitled song").trim().slice(0,200)||"Untitled song";
+  page.artist=String(artist||"").trim().slice(0,200);
+  $("songName").textContent=page.title;
+  $("artistName").textContent=page.artist;
+  window.ChordLayout?.refresh();
+  message("Song title and artist updated.");
+}
+window.ChordSong={startBlankSong,updateSongDetails};
 function loadPage(data){
   if(!data||typeof data!=="object"||!data.applicature)throw Error("Missing chord data");
   const next={};
