@@ -55,11 +55,11 @@ function parseEditor(){
 // Reconstructed 76 x 72 CSS-pixel small-print diagram geometry; frets/fingers
 // are stored high E to low E, while the compact id is low E to high E.
 function drawDiagram(ctx,v){
-  const ink="#111",gray="#777",left=20,top=10,gap=7,step=8,nut=2,base=Number(v.fret)||0;
+  const ink="#111",gray="#777",left=v.showNoteNames?11:20,top=10,gap=v.showNoteNames?9:7,step=8,nut=2,base=Number(v.fret)||0;
   const rel=f=>f-base+(base>0?1:0);
   const stringX=i=>left+gap*(5-i); // i=0 is high E, on the right
-  ctx.fillStyle=ink;ctx.fillRect(left,top,36,base?1:2);
-  for(let f=1;f<=5;f++)ctx.fillRect(left,top+nut+f*step-1,36,1);
+  ctx.fillStyle=ink;ctx.fillRect(left,top,5*gap+1,base?1:2);
+  for(let f=1;f<=5;f++)ctx.fillRect(left,top+nut+f*step-1,5*gap+1,1);
   for(let i=0;i<6;i++){
     ctx.fillStyle=v.frets[i]<0?gray:ink;
     ctx.fillRect(stringX(i),top,1,41);
@@ -79,21 +79,34 @@ function drawDiagram(ctx,v){
     if(ctx.roundRect)ctx.roundRect(x,y,width,3,1.5);else ctx.rect(x,y,width,3);
     ctx.fill();
   }
+  const soundingName=(i,f)=>{
+    const pitches=Array.isArray(v.tuningMidi)&&v.tuningMidi.length===6?v.tuningMidi:[40,45,50,55,59,64];
+    const pc=((pitches[5-i]+f)%12+12)%12;
+    return v.noteSpellings?.[pc]||window.ChordKey?.noteName?.(pc)||
+      ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"][pc];
+  };
+  const notePill=(label,x,y)=>{
+    // A 76px printed canvas has only 9px between strings in label mode.
+    // Keep every pill within its own string column, even for accidentals.
+    ctx.fillStyle=ink;
+    const width=8.35,height=8.4;
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(x-width/2,y-height/2,width,height,2.1);
+    else ctx.rect(x-width/2,y-height/2,width,height);
+    ctx.fill();
+    ctx.fillStyle="#fff";
+    ctx.font=(label.length>1?"bold 4.15px Arial":"bold 5.3px Arial");
+    ctx.textAlign="center";ctx.textBaseline="middle";
+    ctx.fillText(label,x,y+.25,width-1);
+  };
   for(let i=0;i<6;i++){
     const f=v.frets[i],finger=v.fingers?.[i]||0,r=rel(f),x=stringX(i);
     if(f<0){text("×",x,top-2,"10px Arial","center","bottom");continue;}
+    if(f===0&&v.showNoteNames)notePill(soundingName(i,0),x,top-5);
     if(f>0 && r>=1 && r<=5 && (finger>0||v.showAllFrets)){
       const y=top+nut+(r-1)*step+3.5;
-      if(v.showNoteNames){
-        const pitches=Array.isArray(v.tuningMidi)&&v.tuningMidi.length===6?v.tuningMidi:[40,45,50,55,59,64];
-        const pitch=pitches[5-i]+f;
-        const label=["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"][((pitch%12)+12)%12];
-        ctx.fillStyle=ink;
-        if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x-(label.length>1?5.8:4.1),y-4.7,label.length>1?11.6:8.2,9.4,2);ctx.fill();}
-        else{ctx.fillRect(x-5.8,y-4.7,11.6,9.4);}
-        ctx.fillStyle="#fff";ctx.font="6px Arial";ctx.textAlign="center";
-        ctx.textBaseline="middle";ctx.fillText(label,x,y);
-      }else{ctx.fillStyle=ink;ctx.beginPath();ctx.arc(x,y,2.7,0,Math.PI*2);ctx.fill();}
+      if(v.showNoteNames)notePill(soundingName(i,f),x,y);
+      else{ctx.fillStyle=ink;ctx.beginPath();ctx.arc(x,y,2.7,0,Math.PI*2);ctx.fill();}
     }
     if(f>0&&finger>0)text(finger,x,top+43,"10px Arial");
   }
