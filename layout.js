@@ -53,6 +53,7 @@
       :"Drag onto any page · sources stay here";
   }
   function closeNoteEditor(){
+    window.ChordEmoji?.close();
     activeNoteId=null;noteTextHistorySaved=false;
     $("noteEditor").hidden=true;
   }
@@ -266,7 +267,7 @@
       content.textContent=record.text||"";
       noteStyle(content,record);inner.append(content);el.append(rotatableArtwork(inner,record.rotation));
       el.addEventListener("click",ev=>{
-        if(!ev.shiftKey&&!ev.ctrlKey&&!ev.altKey&&ev.target.closest(".paper-sticker")===el){
+        if(!ev.shiftKey&&!ev.ctrlKey&&!ev.altKey&&!ev.target.closest(".sticker-delete,.sticker-resize,.sticker-rotate")&&ev.target.closest(".paper-sticker")===el){
           openNoteEditor(record.id);
         }
       });
@@ -668,6 +669,7 @@
     if(Math.abs(next-record.rotation)<.05)return;
     record.rotation=next;state.started=true;
     state.element.querySelector(".sticker-rotatable").style.transform="rotate("+next+"deg)";
+    state.element.classList.add("rotating");
   }
   function startPointerDrag(ev){
     if(pointerDrag||!ev.isPrimary||ev.button!==0||placingNote)return;
