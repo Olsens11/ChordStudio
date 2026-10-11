@@ -101,3 +101,12 @@ This is a *whole-song pitch shift*, not a harmonic reanalysis. A song with key c
 - **Insert at cursor**, capo tools, print-format presets, more nuanced key/modulation detection, and local unsaved-draft recovery are possible next steps.
 
 **Local recent projects:** Save/Save As writes a portable .chordstudio file through the browser's supported file system or download flow and keeps a browser-local snapshot in IndexedDB. File → Recent projects can reopen one of the last eight saved or opened projects on the same device, or remove those local copies. A local recent entry is not a cloud backup and can disappear when browser site data is cleared; keep downloaded files. The toolbar's Save icon performs the same save action.
+
+
+## Activity-focused navigation
+
+ChordStudio starts with only **Bring a song into ChordStudio** expanded. Both **Chord bank organizer** and **Output preview** are collapsed. Each of the three is independently expandable without closing the other sections.
+
+Creating a song or importing source data collapses the upper sections, opens Output preview and guides the user to the editor/preview. Opening a saved or recent project instead takes the user directly to page 1 beneath the sticky editing toolbar. The introductory headline disappears while a document is active. Manually opening or closing a section does not force changes to other sections.
+
+The **How to import a song** link reveals the complete bookmarklet setup instructions in the import card; alternate saved HTML/JSON/URL import remains a distinct advanced option.
