@@ -458,6 +458,7 @@ function updateOriginalSourceLink(){
 }
 function startBlankSong(title="Untitled song",artist="",openEditor=true){
   window.ChordRecents?.newDocument();
+  window.ChordProject?.clearFileAssociation();
   window.ChordTheory?.setTuning("standard",null,false);
   // An original composition is a new project, not an imported demo or source page.
   closeSongEditor();
@@ -506,6 +507,7 @@ function updateSongDetails(title,artist){
 window.ChordSong={startBlankSong,updateSongDetails};
 function loadPage(data){
   window.ChordRecents?.newDocument();
+  window.ChordProject?.clearFileAssociation();
   window.ChordTheory?.setTuning("standard",null,false);
   if(!data||typeof data!=="object"||!data.applicature)throw Error("Missing chord data");
   const next={};
