@@ -27,15 +27,26 @@
     const el=$("builderFeedback");el.textContent=text;el.classList.toggle("error",err);
   }
   function setCodeText(){$("builderCode").value=code();}
+  function updateStringLabels(){
+    const tuning=window.ChordTheory?.getTuning();
+    if(!tuning)return;
+    const label=document.getElementById("builderStringNames");
+    if(!label)return;
+    const names=tuning.midi.map(midi=>window.ChordTheory.noteName(midi));
+    [...label.children].forEach((node,i)=>{node.textContent=names[i];});
+  }
   function showNameSuggestions(){
+    updateStringLabels();
     const host=$("builderSuggestedNames"),summary=$("builderAnalysis");
     host.replaceChildren();
     if(!window.ChordTheory){summary.textContent="Chord analysis is unavailable.";return;}
     try{
-      const result=window.ChordTheory.analyze(state.frets);
+      const selected=window.ChordTheory.getTuning();
+      if(!selected.confirmed)summary.textContent="Standard tuning assumed; confirm the tuning before relying on these names.";
+      const result=window.ChordTheory.analyze(state.frets,selected);
       if(!result.voices.length){summary.textContent="Select one or more sounding strings.";return;}
       const bass=result.bass;
-      summary.textContent="Voicing: "+result.summary+" · Bass: "+bass.name+bass.octave+
+      summary.textContent=(selected.confirmed?"":"Tuning not yet confirmed · ")+"Voicing: "+result.summary+" · Bass: "+bass.name+bass.octave+
         " · Unique notes: "+result.notes.join(" – ");
       if(!result.candidates.length){
         const item=document.createElement("span");item.className="builder-unknown";
@@ -240,6 +251,7 @@
     });
     $("builderBase").addEventListener("change",draw);
     $("builderShowDots").addEventListener("change",updatePreview);
+    document.addEventListener("chordstudio:tuningchange",()=>{if($("chordBuilderDialog").open)updatePreview();});
   }
   window.ChordBuilder={open};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
