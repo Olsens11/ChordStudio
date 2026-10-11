@@ -920,3 +920,93 @@ body.has-document .intro{display:none}
   .compose-start .compose-fields{grid-template-columns:1fr}
   .compose-start .compose-actions{grid-template-columns:154px minmax(0,1fr)}
 }
+
+/* Matched song-entry card compositions: one content rail and one vertical rhythm.
+   The icon/title row is the visual label; everything below shares the card inset. */
+.song-start-choices .song-start-option{
+  display:grid;
+  grid-template-rows:minmax(36px,auto) minmax(36px,auto) minmax(61px,1fr) minmax(40px,auto);
+  align-content:stretch;
+  row-gap:9px;
+  padding:18px;
+}
+.song-start-choices .song-start-top{
+  align-items:center;
+  gap:11px;
+}
+.song-start-choices .song-start-top .start-icon{
+  width:36px;
+  height:36px;
+  border-radius:10px;
+  font-size:20px;
+}
+.song-start-choices .song-start-top h3{margin:0;font-size:18px;line-height:1.18}
+.song-start-choices .song-start-description{
+  margin:0;
+  font-size:12px;
+  line-height:1.5;
+  color:#5d7189;
+}
+.song-start-choices .compose-fields{
+  margin:0;
+  align-self:center;
+  justify-self:stretch;
+  width:100%;
+  align-items:end;
+}
+.song-start-choices .compose-actions{
+  align-self:center;
+  justify-self:stretch;
+  width:100%;
+  min-height:40px;
+}
+.song-start-choices .import-start-hint{
+  margin:0;
+  align-self:center;
+  justify-self:stretch;
+  font-size:12px;
+  line-height:1.5;
+}
+.song-start-choices .bookmark-start-link{
+  display:grid;
+  grid-template-columns:max-content minmax(0,1fr);
+  gap:10px;
+  align-self:center;
+  justify-self:stretch;
+  align-items:center;
+  width:100%;
+  min-height:40px;
+}
+.song-start-choices .bookmark-start-link .linklike{
+  min-width:0;
+  max-width:none;
+  text-align:left;
+  line-height:1.35;
+}
+@media(max-width:680px){
+  .song-start-choices .song-start-option{
+    grid-template-rows:minmax(36px,auto) auto auto auto;
+    row-gap:10px;
+    padding:14px;
+  }
+}
+@media(max-width:390px){
+  .song-start-choices .bookmark-start-link{
+    grid-template-columns:1fr;
+    justify-items:start;
+    row-gap:5px;
+  }
+}
+/* Stack before the two-card composition loses its spacing discipline. */
+@media(max-width:860px){
+  .song-start-choices{grid-template-columns:1fr}
+  .song-start-choices .song-start-option{
+    grid-template-rows:minmax(36px,auto) auto auto auto;
+    row-gap:10px;
+    padding:14px;
+  }
+}
+@media(max-width:390px){
+  .song-start-choices .compose-actions{grid-template-columns:1fr;justify-items:start;row-gap:6px}
+  .song-start-choices #addCredits{justify-self:start;text-align:left}
+}
