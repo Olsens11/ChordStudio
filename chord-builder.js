@@ -1,7 +1,7 @@
 "use strict";
 (function(){
   const $=id=>document.getElementById(id);
-  const state={editKey:null,oldName:null,frets:[-1,-1,-1,-1,-1,-1],fingers:[0,0,0,0,0,0],base:1,barres:[],start:null,voicings:[],voicingIndex:-1,voicingName:""};
+  const state={editKey:null,oldName:null,frets:[-1,-1,-1,-1,-1,-1],fingers:[0,0,0,0,0,0],base:1,barres:[],start:null,voicings:[],voicingIndex:-1,voicingName:"",noteSpellings:{}};
   // UI arrays use low E → high e. Existing chord shapes are high e → low E.
   const names=["E","A","D","G","B","e"];
   const code=()=>state.frets.map(f=>f<0?"x":String(f)).map(String)
@@ -22,6 +22,7 @@
         finger:b.finger
       })),
       showAllFrets:true,showNoteNames:$("builderDotMode").value==="notes",
+      noteSpellings:{...state.noteSpellings},
       tuningMidi:[...(window.ChordTheory?.getTuning().midi||[40,45,50,55,59,64])]};
   }
   function feedback(text,err=false){
@@ -137,7 +138,12 @@
     const status=document.createElement("div");status.className="builder-status-row";
     for(let string=0;string<6;string++){
       const button=document.createElement("button");button.type="button";
-      const fret=state.frets[string];button.textContent=fret<0?"×":fret===0?"○":"●";
+      const fret=state.frets[string];
+      const pitch=window.ChordTheory?.getTuning().midi[string]||[40,45,50,55,59,64][string];
+      const name=window.ChordKey?.noteName?.(pitch,state.noteSpellings)||window.ChordTheory.noteName(pitch);
+      const showNotes=$("builderDotMode").value==="notes";
+      button.classList.toggle("note-label",showNotes&&fret===0);
+      button.textContent=fret<0?"×":fret===0?(showNotes?name:"○"):"●";
       button.title=names[string]+" string: "+(fret<0?"muted":fret===0?"open":"fret "+fret)+". Click for mute/open.";
       button.setAttribute("aria-label",button.title);
       button.addEventListener("click",()=>{
@@ -163,7 +169,7 @@
         const barre=state.barres.find(b=>b.fret===fret&&string>=b.from&&string<=b.to);
         button.classList.toggle("marked",pressed);
         button.classList.toggle("barre-marked",!!barre);
-        button.textContent=pressed&&$("builderDotMode").value==="notes"?window.ChordTheory.noteName(window.ChordTheory.getTuning().midi[string]+fret):pressed?"●":"";
+        button.textContent=pressed&&$("builderDotMode").value==="notes"?(window.ChordKey?.noteName?.(window.ChordTheory.getTuning().midi[string]+fret,state.noteSpellings)||window.ChordTheory.noteName(window.ChordTheory.getTuning().midi[string]+fret)):pressed?"●":"";
         button.title=names[string]+" string, fret "+fret+(pressed?", finger "+(state.fingers[string]||"unassigned"):"");
         button.setAttribute("aria-label",button.title);
         button.addEventListener("pointerdown",ev=>{
@@ -219,7 +225,7 @@
   function open(key=null){
     state.editKey=key;state.oldName=null;state.start=null;
     state.barres=[];state.fingers=[0,0,0,0,0,0];
-    state.frets=[-1,-1,-1,-1,-1,-1];
+    state.frets=[-1,-1,-1,-1,-1,-1];state.noteSpellings={};
     clearSuggestions();$("builderDotMode").value="dots";
     $("builderName").value="";
     $("builderBase").value="1";
@@ -236,6 +242,7 @@
       $("builderName").value=match.name;
       $("builderBase").value=String(Math.max(1,Number(match.source.fret)||1));
       $("builderDotMode").value=match.source.showNoteNames===true?"notes":"dots";
+      state.noteSpellings={...(match.source.noteSpellings||{})};
     }
     setCodeText();draw();
     $("chordBuilderTitle").textContent=key?"Edit chord diagram":"Create chord diagram";
