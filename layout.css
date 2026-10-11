@@ -632,3 +632,9 @@ body.chord-rotating,body.chord-rotating *{cursor:alias!important;user-select:non
   .preview-toolbar .toolbar-primary{gap:2px}
   .preview-toolbar .toolbar-menu>summary{padding:7px 5px}
 }
+
+.confirm-tuning{border:1px solid #83a9d7;background:#eaf4ff;
+ color:#184e8d;font:700 11px/1.2 system-ui,sans-serif;
+ padding:8px 10px;border-radius:7px;cursor:pointer}
+.confirm-tuning:hover{background:#d9ebff}
+.confirm-tuning[hidden]{display:none!important}
