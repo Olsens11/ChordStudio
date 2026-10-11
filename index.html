@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ChordStudio — Printable chord diagrams and songs</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg?v=cs-20261010-1">
-<meta name="description" content="Create chord diagrams and print-ready song sheets from supported chord-tab pages.">
+<meta name="description" content="Write your own song or import a chord page, build custom guitar diagrams, and prepare printable song sheets.">
 <style>
 :root{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#16233b;background:#f1f4f9;font-synthesis:none}
 *{box-sizing:border-box}body{margin:0}a{color:#235bc4}button,input,textarea,select{font:inherit}
@@ -95,7 +95,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
 <body>
 <header class="no-print"><div class="brand">Chord<span>Studio</span></div><div class="tag">Printable songs & accurate fretboard diagrams</div><a href="https://github.com/Olsens11/ChordStudio" target="_blank" rel="noopener noreferrer">Source on GitHub ↗</a></header>
 <main>
-<section class="intro no-print"><p class="eyebrow">From chord data to a print-ready sheet</p><h1>Import a song. Get the chords and the whole song, ready to print.</h1><p>Preserve chord placement and the original fingering diagrams. Export the diagrams as one image for Google Docs or print an entire formatted song sheet.</p></section>
+<section class="intro no-print"><p class="eyebrow">Your music, your arrangement</p><h1>Write a song or bring one in. Make it your own.</h1><p>Start with your own lyrics and custom chords, or import an existing song. Arrange diagrams, add notes, and create a print-ready song sheet.</p></section>
 <section class="card no-print import-card" id="importCard">
  <details class="activity-disclosure" id="importDetails" open><summary>Bring a song into ChordStudio</summary><div class="activity-body">
  <div class="song-start-choices" aria-label="Choose how to start">
@@ -116,7 +116,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
 <details id="importHowto" class="import-howto">
   <summary>More ways to import a song</summary>
  <div class="how"><span class="step">1</span><div><strong>Add ChordStudio to your bookmarks bar</strong><div class="hint">Show bookmarks with Ctrl+Shift+B, then drag this yellow link onto the bar. This is a one-time setup.</div></div><span class="inline-import-reference">Use the yellow ↗ ChordStudio link above.</span></div>
- <div id="bookmarkHelp" class="bookmark-help" hidden><strong>Bookmarklet setup</strong><p>Browsers prevent sites from creating bookmarks automatically. Drag the yellow ↗ ChordStudio link to your bookmarks bar (Ctrl+Shift+B shows it).</p><p>On touch devices or if dragging isn't practical, copy the bookmarklet and create a bookmark named ChordStudio, then replace its URL with the copied code.</p><button id="copyBookmarklet" type="button">Copy bookmarklet code</button><button id="closeBookmarkHelp" type="button">Close</button></div><div class="bookmark-placeholder" hidden></div>
+ <div id="bookmarkHelp" class="bookmark-help" hidden><strong>Bookmarklet setup</strong><p>Browsers prevent sites from creating bookmarks automatically. Drag the yellow ↗ ChordStudio link to your bookmarks bar (Ctrl+Shift+B shows it).</p><p>On touch devices or if dragging isn't practical, copy the bookmarklet and create a bookmark named ChordStudio, then replace its URL with the copied code.</p><button id="copyBookmarklet" type="button">Copy bookmarklet code</button><button id="closeBookmarkHelp" type="button">Close</button></div>
  <div class="how import-followup"><span class="step">2</span><div><strong>Open a song's chord page normally</strong><div class="hint">When the page has loaded, click your ↗ ChordStudio bookmark. The song will open here, ready to customize.</div></div></div>
  </details>
  <div class="continue-project"><div><strong>Coming back to an existing song?</strong><div class="hint">Open a saved .chordstudio project to pick up where you left off.</div></div><button id="welcomeOpenProject" type="button">Open saved project…</button></div>
