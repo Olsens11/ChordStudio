@@ -73,7 +73,7 @@
     placingNote=!!enabled;
     document.body.classList.toggle("placing-note",placingNote);
     $("addTextNote").setAttribute("aria-pressed",String(placingNote));
-    $("addTextNote").textContent=placingNote?"✕ Cancel note":"✎ Add text note";
+    $("addTextNote").textContent=placingNote?"✕ Cancel note":"✎ Add text / emoji";
     $("trayHint").textContent=placingNote
       ?"Click anywhere on a white page to add a note."
       :"Drag onto any page · sources stay here";
@@ -128,13 +128,13 @@
     const desiredW=Math.max(18,Math.ceil(Math.max(0,...lines.map(line=>ctx.measureText(line).width)))+padX*2+2);
     const desiredH=Math.max(24,Math.ceil(lines.length*size*1.2)+padY*2+2);
     const paper=pageSize(),scale=stickerScale(record);
-    const nextW=Math.min(NOTE_PAD_X*2+(paper.innerWidth-NOTE_PAD_X*2)/scale,desiredW);
-    const nextH=Math.min(NOTE_PAD_Y*2+(paper.innerHeight-NOTE_PAD_Y*2)/scale,desiredH);
-    const oldW=stickerWidth(record),oldH=stickerHeight(record);
+    // Text input must never move the sticker. Grow towards the lower right
+    // from its user-chosen anchor; resizing/moving are separate gestures.
+    const availableW=Math.max(NOTE_PAD_X*2+1,paper.innerWidth-record.x);
+    const availableH=Math.max(NOTE_PAD_Y*2+1,paper.innerHeight-record.y);
+    const nextW=Math.min(NOTE_PAD_X*2+(availableW-NOTE_PAD_X*2)/scale,desiredW);
+    const nextH=Math.min(NOTE_PAD_Y*2+(availableH-NOTE_PAD_Y*2)/scale,desiredH);
     record.w=nextW;record.h=nextH;
-    const newW=stickerWidth(record),newH=stickerHeight(record);
-    record.x=Math.max(0,Math.min(paper.innerWidth-newW,record.x+(oldW-newW)/2));
-    record.y=Math.max(0,Math.min(paper.innerHeight-newH,record.y+(oldH-newH)/2));
   }
   function fillPageNote(){
     const record=noteRecord(activeNoteId);
