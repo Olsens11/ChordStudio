@@ -106,16 +106,17 @@
      const slash=tail.match(/^(.*?)\/([A-G])([#b♯♭]?)$/);
      if(slash){
        tail=slash[1];
-       bass="/"+spell(mod(rootPc(slash[2]+slash[3].replace("♯","#").replace("♭","b"))+semitones),targetKey);
+       bass="/"+spell(mod(rootPc(slash[2]+slash[3].replace("♯","#").replace("♭","b"))+semitones),targetKey,semitones<0);
      }
    }
    if(!/^[a-zA-Z0-9()+#b°øΔ-]*$/.test(tail))
      throw Error("Unsupported chord notation: "+raw);
-   return spell(mod(root+semitones),targetKey)+tail+bass;
+   return spell(mod(root+semitones),targetKey,semitones<0)+tail+bass;
  }
- function spell(pc,key){
-   const flat=(/b/.test(key.name)||["F major","D minor","G minor","C minor","F minor"].includes(key.name))
-     &&!key.name.startsWith("G#");
+ function spell(pc,key,defaultFlats=false){
+   const name=key?.name||"";
+   const flat=key?( /b/.test(name)||["F major","D minor","G minor","C minor","F minor"].includes(name))
+     &&!name.startsWith("G#"):defaultFlats;
    return (flat?FLAT:SHARP)[pc];
  }
  function asShape(option){
@@ -126,16 +127,55 @@
       showAllFrets:true,showNoteNames:false,
       tuningMidi:[...window.ChordTheory.getTuning().midi]};
  }
+ function sourceShiftedShape(name,shift){
+   // A bass pedal such as D/E may not belong to a textbook triad. When
+   // a voicing generator cannot model it, shift the actual imported grip
+   // chromatically. This preserves every sounding interval and inversion.
+   const source=catalog?.[name]?.[0];
+   if(!source||!Array.isArray(source.frets)||source.frets.length!==6)return null;
+   const original=[...source.frets].reverse();
+   const offsets=[shift,shift+12,shift-12].filter(offset=>
+     original.every(f=>f<0||f+offset>=0&&f+offset<=24));
+   if(!offsets.length)return null;
+   offsets.sort((a,b)=>{
+     const cost=o=>Math.max(...original.filter(f=>f>=0).map(f=>f+o),0)+Math.abs(o-shift)*2;
+     return cost(a)-cost(b);
+   });
+   const offset=offsets[0],frets=original.map(f=>f<0?-1:f+offset);
+   const positions=frets.filter(f=>f>0),min=Math.min(...positions,Infinity);
+   const finger=window.ChordVoicings.estimateFingering(frets);
+   const shape=asShape({frets,base:min>=5?min:1,fingers:finger});
+   shape.showNoteNames=source.showNoteNames===true;
+   return {shape,method:"Shifted original grip"+(offset!==shift?" with octave adjustment":"")};
+ }
+ function feedback(text,problem=false){
+   const el=$("transposeFeedback");
+   if(!el)return;
+   el.hidden=!text;el.textContent=text||"";
+   el.classList.toggle("error",problem);
+ }
  function diagramKeyFor(name,frets){return name+"\u001f"+frets.join(",");}
- function prepare(){
-   const from=keyById(selected),to=keyById($("transposeKey").value);
-   if(!from)throw Error("Select and confirm the song's current key first.");
-   if(!to)throw Error("Choose a target key.");
-   if(source==="imported"||source==="suggested")
-     throw Error("Confirm the imported or suggested current key before transposing.");
-   let shift=mod(to.root-from.root);
-   if(shift>6)shift-=12;
-   if(!shift)throw Error("These keys have the same tonic. Changing major/minor alone is not a pitch transposition.");
+ function prepare(kind="key"){
+   const from=keyById(selected);
+   let to=null,shift=0;
+   if(kind==="steps"){
+     shift=Number($("transposeSteps").value);
+     if(!Number.isInteger(shift)||shift<-12||shift>12||shift===0)
+       throw Error("Choose a nonzero number of semitones, from −12 to +12.");
+     if(from)to=keyList.find(k=>k.mode===from.mode&&k.root===mod(from.root+shift))||null;
+   }else{
+     to=keyById($("transposeKey").value);
+     if(!from)throw Error("Select the song's current key, or use Shift by semitones without a key.");
+     if(!to)throw Error("Choose a target key.");
+     if(source==="imported"||source==="suggested")
+       throw Error("Confirm the imported key with the Confirm key button first.");
+     if(from.mode!==to.mode)
+       throw Error("Pitch transposition preserves major/minor mode. Choose a target "+
+         (from.mode==="maj"?"major":"minor")+" key or use semitone steps.");
+     shift=mod(to.root-from.root);
+     if(shift>6)shift-=12;
+     if(!shift)throw Error("These keys have the same tonic. Choose a different target.");
+   }
    applySongEdit(true);
    const items=parseEditor().items,layout=window.ChordLayout.exportProjectLayout();
    const names=new Set(items.map(x=>x.name));
@@ -151,19 +191,27 @@
      }else if(tokens.length===1&&names.has(tokens[0]))names.add(tokens[0]);
    }
    if(!names.size)throw Error("No chord symbols to transpose.");
-   const replacements=new Map(),shapes=new Map(),issues=[];
+   const replacements=new Map(),shapes=new Map(),methods=new Map(),issues=[];
    for(const name of names){
      try{
        const renamed=shiftName(name,shift,to);
-       const result=window.ChordVoicings.suggest(renamed,window.ChordTheory.getTuning(),6);
-       if(!result.options.length)throw Error("no playable matching voicing in supported fret range");
-       replacements.set(name,renamed);shapes.set(name,asShape(result.options[0]));
+       let shape=null,method="Generated voicing";
+       try{
+         const result=window.ChordVoicings.suggest(renamed,window.ChordTheory.getTuning(),6);
+         if(result.options.length)shape=asShape(result.options[0]);
+       }catch(e){ /* Exact formulas do not cover every slash/pedal chord. */ }
+       if(!shape){
+         const original=sourceShiftedShape(name,shift);
+         if(original){shape=original.shape;method=original.method;}
+       }
+       if(!shape)throw Error("no supported playable voicing or safely shifted source grip");
+       replacements.set(name,renamed);shapes.set(name,shape);methods.set(name,method);
      }catch(e){issues.push(name+" ("+e.message+")");}
    }
    if(issues.length)throw Error("Cannot safely transpose every chord. Unsupported: "+
      issues.slice(0,6).join("; ")+(issues.length>6?" and "+(issues.length-6)+" more":"")+
      ". Nothing was changed.");
-   return {from,to,shift,items,layout,replacements,shapes};
+   return {from,to,shift,items,layout,replacements,shapes,methods,kind};
  }
  function makeTransposedSong(plan){
    const parent=document.createElement("div");
@@ -186,12 +234,21 @@
    }
    return [...parent.childNodes];
  }
- function previewTranspose(){
+ function previewTranspose(kind="key"){
+   feedback("");
    try{
-     prepared=prepare();
-     $("transposeExplanation").textContent=prepared.from.name+" → "+prepared.to.name+
+     prepared=prepare(kind);
+     const names=prepared.from&&prepared.to?
+       prepared.from.name+" → "+prepared.to.name:
+       prepared.from?prepared.from.name+" → "+(prepared.to?.name||"unchanged key label"):
+       "Key unselected";
+     const fallbacks=[...prepared.methods].filter(([,method])=>method!=="Generated voicing");
+     $("transposeExplanation").textContent=names+
        " · "+Math.abs(prepared.shift)+" semitone"+(Math.abs(prepared.shift)===1?"":"s")+
-       (prepared.shift>0?" up":" down")+". Suggested voicings use the selected guitar tuning.";
+       (prepared.shift>0?" up":" down")+". "+
+       (fallbacks.length?fallbacks.length+" chord(s) use chromatically shifted existing grips; review their playability. ":
+       "New voicings use the selected guitar tuning. ")+
+       "Nothing changes until you apply.";
      const host=$("transposeChanges");host.replaceChildren();
      const list=document.createElement("div");list.className="transpose-pairs";
      for(const [oldName,newName] of prepared.replacements){
@@ -199,11 +256,15 @@
        const old=document.createElement("span");old.textContent=oldName;
        const arrow=document.createElement("span");arrow.textContent=" → ";
        const newer=document.createElement("strong");newer.textContent=newName;
-       el.append(old,arrow,newer);list.append(el);
+       el.append(old,arrow,newer);
+       if(prepared.methods.get(oldName)!=="Generated voicing"){
+         const note=document.createElement("small");note.textContent=" · shifted grip";el.append(note);
+       }
+       list.append(el);
      }
      host.append(list);$("transposeApply").disabled=false;
      $("transposeDialog").showModal();
-   }catch(e){prepared=null;message("Transpose preview: "+e.message,true);}
+   }catch(e){prepared=null;feedback(e.message,true);message("Transpose preview: "+e.message,true);}
  }
  function applyTranspose(){
    if(!prepared)return;
@@ -246,10 +307,14 @@
      renderDiagrams();window.ChordLayout.importProjectLayout(updatedLayout);
      $("songSection").hidden=!$("includeSong").checked||!$("songLines").textContent.trim();
      window.ChordLayout.refresh();
-     backup=before;setKey(p.to.id,"transposed");$("transposeKey").value="";
+     backup=before;
+     if(p.to)setKey(p.to.id,"transposed");
+     else if(!p.from)setKey("");
+     $("transposeKey").value="";$("transposeSteps").value="0";
+     feedback("Transposition applied. Save As to keep both versions.");
      $("undoTranspose").hidden=false;
      prepared=null;$("transposeDialog").close();
-     message("Transposed "+p.replacements.size+" chord names to "+p.to.name+
+     message("Transposed "+p.replacements.size+" chord names "+(p.to?"to "+p.to.name:"by "+p.shift+" semitones")+
        ". Review the result and Save As to preserve your original version.");
    }catch(e){message("Transposition failed: "+e.message+
      ". If a partial change is visible, reopen the saved project.",true);}
@@ -273,7 +338,17 @@
    $("confirmSongKey").addEventListener("click",()=>{
      if(selected){setKey(selected,"confirmed");message("Confirmed "+keyById(selected).name+" as the song key.");}
    });
-   $("previewTranspose").addEventListener("click",previewTranspose);
+   const steps=$("transposeSteps");
+   for(let n=-12;n<=12;n++){
+     if(!n)continue;
+     const option=document.createElement("option");
+     option.value=String(n);option.textContent=(n>0?"+":"")+n+" semitone"+(Math.abs(n)===1?"":"s");
+     steps.append(option);
+   }
+   $("previewTranspose").addEventListener("click",()=>previewTranspose("key"));
+   $("previewTransposeSteps").addEventListener("click",()=>previewTranspose("steps"));
+   $("transposeKey").addEventListener("change",()=>feedback(""));
+   steps.addEventListener("change",()=>feedback(""));
    $("transposeApply").addEventListener("click",applyTranspose);
    $("transposeClose").addEventListener("click",closeDialog);
    $("transposeCancel").addEventListener("click",closeDialog);
