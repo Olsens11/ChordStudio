@@ -337,3 +337,44 @@
  background:transparent;user-select:none
 }
 @media print{.image-placement-hint,.page-guides{display:none!important}}
+
+/* Image placement errors are closable and self-expire. */
+.image-placement-hint{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.image-placement-hint.error-notice{background:#fff5f3;border-color:#e7a79f;color:#8c2926}
+.image-placement-hint #imagePlacementDismiss{
+ padding:1px;flex:none;display:grid;place-items:center;width:26px;height:26px;
+ font:700 19px/1 system-ui,sans-serif;color:inherit;border:0;background:transparent;border-radius:5px
+}
+.image-placement-hint #imagePlacementDismiss:hover{background:#00000010}
+.pdf-export-status{position:sticky;top:51px;z-index:59;margin:8px 0;padding:9px 13px;
+ border-radius:8px;border:1px solid #aac7e9;background:#eff7ff;color:#174478;
+ font:700 12px/1.45 system-ui,sans-serif}
+.pdf-export-status[hidden]{display:none!important}
+.sticker-board #trayImportImage{
+ width:100%;padding:8px 10px;margin:0 0 10px;border:1px solid #b1c5e1;
+ background:#fff;color:#1d4c84;border-radius:7px;font:700 12px/1.3 system-ui,sans-serif
+}
+.sticker-board #trayImportImage:hover{background:#e9f4ff}
+.image-edit-dialog{
+ position:fixed;inset:0;margin:auto;box-sizing:border-box;border-radius:15px;
+ border:1px solid #b6c9e1;background:#fff;color:#243b5c;
+ width:min(760px,calc(100vw - 24px));max-height:calc(100vh - 20px);overflow:auto;
+ box-shadow:0 24px 60px #10243a77;padding:17px 20px;z-index:1000;
+}
+.image-edit-dialog::backdrop{background:#10253baa;backdrop-filter:blur(2px)}
+.image-edit-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.image-edit-header h3{font-size:20px;margin:0 0 5px}
+.image-edit-header p{font:12px/1.4 system-ui,sans-serif;margin:0;color:#58728d}
+.image-edit-header button{padding:1px 7px;font-size:23px;border:0;background:#e7eef8}
+.image-edit-canvas-wrap{display:grid;place-items:center;margin:15px 0 8px;
+ border:1px solid #bed0e7;border-radius:9px;background:#f1f4f8;
+ overflow:hidden;min-height:170px}
+#imageEditCanvas{display:block;max-width:100%;height:auto;touch-action:none;cursor:crosshair}
+.image-edit-help{font:12px/1.45 system-ui,sans-serif;color:#576b81}
+.image-edit-controls,.image-edit-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.image-edit-controls button,.image-edit-actions button{padding:9px 12px}
+.image-edit-actions{justify-content:flex-end;border-top:1px solid #e4ebf5;padding-top:14px}
+.image-edit-notice{min-height:19px;color:#385f8d;font:12px/1.5 system-ui,sans-serif;margin:10px 0 0}
+.image-edit-dialog[open]{display:block!important}
+@media(max-width:580px){.image-edit-dialog{padding:12px}.image-edit-controls button{padding:7px}}
+@media print{.image-edit-dialog,.pdf-export-status{display:none!important}}
