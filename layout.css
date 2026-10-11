@@ -714,3 +714,7 @@ body.chord-rotating,body.chord-rotating *{cursor:alias!important;user-select:non
  .chord-builder-fields label:has(#builderCode){flex:1 1 180px}
  .key-control-field select{min-width:150px}
 }
+
+/* Named-note canvases are 96px wide; render at a 2x preview scale
+   without forcing their original 76px aspect ratio. */
+#builderPreview canvas{width:auto!important;height:144px!important;max-width:100%}
