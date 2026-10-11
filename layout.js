@@ -433,6 +433,9 @@
     if(!source?.isConnected)return;
     const slot=document.createElement("div");
     slot.className="chord-reorder-slot";
+    const sourceSize=source.getBoundingClientRect();
+    slot.style.minHeight=Math.round(sourceSize.height)+"px";
+    slot.style.minWidth=Math.round(sourceSize.width)+"px";
     source.replaceWith(slot);
     $("chordGrid").classList.add("chord-bank-sorting");
     state.sort={source,slot};
