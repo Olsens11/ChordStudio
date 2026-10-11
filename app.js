@@ -471,6 +471,8 @@ function updateOriginalSourceLink(){
   $("openSource").disabled=!url;
   $("includeSourceFooter").disabled=!url;
   if(!url)$("includeSourceFooter").checked=false;
+  $("repeatSourceFooter").disabled=!url||!$("includeSourceFooter").checked;
+  if(!url)$("repeatSourceFooter").checked=false;
 }
 function startBlankSong(title="Untitled song",artist="",openEditor=true,navigate=true,credits={}){
   window.ChordRecents?.newDocument();
@@ -489,6 +491,9 @@ function startBlankSong(title="Untitled song",artist="",openEditor=true,navigate
   $("artistName").textContent=page.artist;
   $("sourceCredit").textContent="";
   $("includeSourceFooter").checked=false;
+  $("repeatSourceFooter").checked=false;
+  $("repeatSongHeader").checked=false;
+  $("showPageNumbers").checked=false;
   $("chordEditor").value="";
   $("songLines").replaceChildren();
   resetImportedSongNodes();
@@ -553,6 +558,9 @@ function loadPage(data,{navigate=true}={}){
     source:validSourceUrl(data.source),writtenBy:"",arrangedBy:"",
     performedBy:decodeEntities(data.artist_name||data.artistName||"")};
   $("includeSourceFooter").checked=false;
+  $("repeatSourceFooter").checked=false;
+  $("repeatSongHeader").checked=false;
+  $("showPageNumbers").checked=false;
   updateOriginalSourceLink();
   $("importDetails").open=false;
   $("songName").textContent=page.title;
