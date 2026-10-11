@@ -19,6 +19,9 @@
  }
  function apply(){
    $("printPage").classList.toggle("invert-document",Boolean($("invertDocument").checked));
+   // Some mobile browsers recomposite filtered content asynchronously.
+   // Preserve fit/edit mode while re-measuring the available page width.
+   window.ChordMobilePages?.refresh?.();
    updateFilename();
  }
  function init(){

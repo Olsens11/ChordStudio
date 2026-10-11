@@ -1176,23 +1176,38 @@ body.has-document .intro{display:none}
 }
 
 
-/* Invert the actual paper, not the surrounding editing interface.
-   The same print-time filter applies to native Print → Save as PDF. */
+/* Keep color inversion OFF the scaled .paper-page itself. On Android Chrome,
+   combining filter:invert() and transform:scale() on that same element can
+   promote it to a separate compositing layer and disturb visual page fitting.
+   The inner artwork is inverted independently; the fixed-size outer sheet
+   gets its dark background without any filter or layout change. */
 #printPage.invert-document .paper-page{
-  filter:invert(1);
+  background:#000;
   -webkit-print-color-adjust:exact;
   print-color-adjust:exact;
 }
+#printPage.invert-document .paper-inside{filter:invert(1)}
+/* Direct PDF export inverts the captured pixels once using canvas.
+   Neutralize both dark background and inner filter during that capture. */
 #printPage.invert-document.pdf-export-neutral .paper-page{
+  background:#fff!important;
+}
+#printPage.invert-document.pdf-export-neutral .paper-inside{
   filter:none!important;
 }
 @media print{
   #printPage.invert-document .paper-page{
-    filter:invert(1)!important;
+    background:#000!important;
     -webkit-print-color-adjust:exact!important;
     print-color-adjust:exact!important;
   }
+  #printPage.invert-document .paper-inside{
+    filter:invert(1)!important;
+  }
   #printPage.invert-document.pdf-export-neutral .paper-page{
+    background:#fff!important;
+  }
+  #printPage.invert-document.pdf-export-neutral .paper-inside{
     filter:none!important;
   }
 }
