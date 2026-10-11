@@ -166,7 +166,7 @@
   async function openFile(file){
     if(!file)return;
     try{
-      if(file.size>6*1024*1024)throw Error("The project file exceeds 6 MB.");
+      if(file.size>18*1024*1024)throw Error("The project file exceeds 18 MB. Use smaller images.");
       load(JSON.parse(await file.text()));
     }catch(e){message("Could not open project: "+e.message,true);}
   }
