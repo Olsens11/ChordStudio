@@ -57,7 +57,10 @@
           fingers:Array.isArray(v.fingers)&&v.fingers.length===6?v.fingers.map(Number):[0,0,0,0,0,0],
           fret:Number(v.fret)||0,
           listCapos:Array.isArray(v.listCapos)?v.listCapos:[],
-          showAllFrets:!!v.showAllFrets
+          showAllFrets:!!v.showAllFrets,
+          showNoteNames:v.showNoteNames===true,
+          tuningMidi:Array.isArray(v.tuningMidi)&&v.tuningMidi.length===6
+            &&v.tuningMidi.every(Number.isInteger)?[...v.tuningMidi]:null
         }));
       if(!result[name].length)delete result[name];
     }
