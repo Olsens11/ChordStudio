@@ -2,8 +2,10 @@
 (function(){
   const $=id=>document.getElementById(id);
   const STICKER_W=104,STICKER_H=107,MIN_SCALE=.4,MAX_SCALE=3.5;
+  const imageMinScale=record=>Math.min(1,18/Math.max(record.w||190,record.h||85));
+  const minimumScale=record=>record.type==="image"||record.noteType==="image"?imageMinScale(record):MIN_SCALE;
   const chordHeight=record=>record.showDiagram===false?54:record.showCode===true?127:STICKER_H;
-  const stickerScale=record=>Math.max(MIN_SCALE,Number(record.scale)||1);
+  const stickerScale=record=>Math.max(minimumScale(record),Number(record.scale)||1);
   const stickerWidth=record=>(record.type==="text"||record.noteType==="text"||record.type==="image"||record.noteType==="image")?(record.w||190)*stickerScale(record):STICKER_W*stickerScale(record);
   const stickerHeight=record=>(record.type==="text"||record.noteType==="text"||record.type==="image"||record.noteType==="image")?(record.h||85)*stickerScale(record):chordHeight(record)*stickerScale(record);
   const NOTE_MIN_W=85,NOTE_MIN_H=36;
@@ -238,6 +240,13 @@
     return img;
   }
   let lastImageDragAt=0;
+  function rotatableArtwork(content,rotation=0){
+    const wrap=document.createElement("div");
+    wrap.className="sticker-rotatable";
+    wrap.style.transform="rotate("+(Number(rotation)||0)+"deg)";
+    wrap.append(content);
+    return wrap;
+  }
   function stickerElement(record){
     const isText=record.type==="text";
     const isImage=record.type==="image";
@@ -255,22 +264,22 @@
       inner.style.transform="scale("+stickerScale(record)+")";
       const content=document.createElement("div");content.className="note-content";
       content.textContent=record.text||"";
-      noteStyle(content,record);inner.append(content);el.append(inner);
+      noteStyle(content,record);inner.append(content);el.append(rotatableArtwork(inner,record.rotation));
       el.addEventListener("click",ev=>{
         if(!ev.shiftKey&&!ev.ctrlKey&&!ev.altKey&&ev.target.closest(".paper-sticker")===el){
           openNoteEditor(record.id);
         }
       });
     }else if(isImage){
-      el.append(imageStickerArtwork(record));
+      el.append(rotatableArtwork(imageStickerArtwork(record),record.rotation));
       el.addEventListener("click",ev=>{
         if(ev.shiftKey||ev.ctrlKey||ev.altKey||
-          ev.target.closest(".sticker-delete,.sticker-resize")||
+          ev.target.closest(".sticker-delete,.sticker-resize,.sticker-rotate")||
           performance.now()-lastImageDragAt<500)return;
         window.ChordImages?.editSticker(record.id);
       });
     }else{
-      el.append(chordStickerArtwork(record));
+      el.append(rotatableArtwork(chordStickerArtwork(record),record.rotation));
     }
     const remove=document.createElement("button");remove.className="sticker-delete no-print";
     remove.type="button";remove.title="Remove placed "+(isText?"note":"diagram");
@@ -285,7 +294,13 @@
     resize.type="button";resize.draggable=false;
     resize.title=isText?"Drag corner to resize note":"Drag corner to resize, preserving aspect ratio";
     resize.setAttribute("aria-label","Resize placed "+(isText?"note":record.name+" diagram"));
-    el.append(remove,resize);
+    const rotate=document.createElement("button");
+    rotate.type="button";rotate.className="sticker-rotate no-print";
+    rotate.draggable=false;rotate.textContent="↻";
+    rotate.title="Drag to rotate by any angle · Shift snaps to 15°";
+    rotate.setAttribute("aria-label","Rotate sticker");
+    rotate.addEventListener("mousedown",event=>event.stopPropagation());
+    el.append(remove,resize,rotate);
     el.addEventListener("keydown",ev=>{
       if(ev.key==="Delete"||ev.key==="Backspace"){
         ev.preventDefault();save();stickers=stickers.filter(item=>item.id!==record.id);
@@ -294,6 +309,10 @@
         ev.preventDefault();openNoteEditor(record.id,{focus:true});
       }else if(ev.key==="Enter"&&isImage){
         ev.preventDefault();window.ChordImages?.editSticker(record.id);
+      }else if(ev.altKey&&ev.key.toLowerCase()==="r"){
+        ev.preventDefault();save();
+        record.rotation=((Number(record.rotation)||0)+(ev.shiftKey?-15:15)+360)%360;
+        refresh();
       }else if(ev.altKey&&["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(ev.key)){
         ev.preventDefault();save();const size=pageSize(),delta=ev.shiftKey?20:5;
         record.x=Math.max(0,Math.min(size.innerWidth-stickerWidth(record),record.x+(ev.key==="ArrowLeft"?-delta:ev.key==="ArrowRight"?delta:0)));
@@ -312,7 +331,7 @@
         record.w=Math.max(30,record.w||190);
         record.h=Math.max(30,record.h||85);
         const maxFit=Math.min(MAX_SCALE,size.innerWidth/record.w,size.innerHeight/record.h);
-        record.scale=Math.max(.2,Math.min(stickerScale(record),maxFit));
+        record.scale=Math.max(minimumScale(record),Math.min(stickerScale(record),maxFit));
       }else{
         const maxFit=Math.max(MIN_SCALE,Math.min(MAX_SCALE,size.innerWidth/STICKER_W,size.innerHeight/STICKER_H));
         record.scale=Math.min(stickerScale(record),maxFit);
@@ -381,7 +400,7 @@
     el.style.width=stickerWidth(state)+"px";
     el.style.height=stickerHeight(state)+"px";
     if(state.noteType==="image"){
-      el.append(imageStickerArtwork(state));
+      el.append(rotatableArtwork(imageStickerArtwork(state),state.rotation));
     }else if(state.noteType==="text"){
       const inner=document.createElement("div");inner.className="note-inner";
       inner.style.width=(state.w||190)+"px";
@@ -389,9 +408,9 @@
       inner.style.transform="scale("+stickerScale(state)+")";
       const content=document.createElement("div");content.className="note-content";
       content.textContent=state.text||"";noteStyle(content,state);
-      inner.append(content);el.append(inner);
+      inner.append(content);el.append(rotatableArtwork(inner,state.rotation));
     }else{
-      el.append(chordStickerArtwork(state));
+      el.append(rotatableArtwork(chordStickerArtwork(state),state.rotation));
     }
     document.body.append(el);
     return el;
@@ -599,7 +618,7 @@
       const delta=Math.abs(dx)>=Math.abs(dy)?dx:dy;
       const maxFit=Math.min(MAX_SCALE,(size.innerWidth-record.x)/baseW,
         (size.innerHeight-record.y)/baseH);
-      const minFit=Math.min(MIN_SCALE,maxFit);
+      const minFit=Math.min(minimumScale(record),maxFit);
       const next=Math.max(minFit,Math.min(maxFit,Math.round((state.initialScale+delta)*1000)/1000));
       if(Math.abs(next-stickerScale(record))<.001)return;
       state.started=true;record.scale=next;
@@ -622,8 +641,38 @@
     state.element.querySelector(".sticker-inner").style.transform="scale("+next+")";
     state.element.classList.add("resizing");
   }
+  function beginRotate(ev,handle){
+    const sticker=handle.closest(".paper-sticker");
+    const record=stickers.find(x=>x.id===Number(sticker?.dataset.stickerId));
+    if(!record)return;
+    ev.preventDefault();ev.stopPropagation();
+    const rect=sticker.getBoundingClientRect();
+    const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+    const startAngle=Math.atan2(ev.clientY-cy,ev.clientX-cx)*180/Math.PI;
+    pointerDrag={type:"rotate",id:record.id,pointerId:ev.pointerId,
+      element:sticker,cx,cy,startAngle,initialAngle:Number(record.rotation)||0,
+      before:stickers.map(item=>structuredClone(item)),started:false};
+    document.addEventListener("pointermove",movePointerDrag,{capture:true,passive:false});
+    document.addEventListener("pointerup",endPointerDrag,true);
+    document.addEventListener("pointercancel",cancelPointerDrag,true);
+    document.body.classList.add("chord-resizing");
+  }
+  function moveRotate(ev,state){
+    const record=stickers.find(x=>x.id===state.id);if(!record)return;
+    ev.preventDefault();
+    const now=Math.atan2(ev.clientY-state.cy,ev.clientX-state.cx)*180/Math.PI;
+    let delta=now-state.startAngle;
+    if(delta>180)delta-=360;if(delta< -180)delta+=360;
+    const raw=state.initialAngle+delta;
+    const next=((ev.shiftKey?Math.round(raw/15)*15:Math.round(raw*10)/10)%360+360)%360;
+    if(Math.abs(next-record.rotation)<.05)return;
+    record.rotation=next;state.started=true;
+    state.element.querySelector(".sticker-rotatable").style.transform="rotate("+next+"deg)";
+  }
   function startPointerDrag(ev){
     if(pointerDrag||!ev.isPrimary||ev.button!==0||placingNote)return;
+    const rotateHandle=ev.target.closest(".sticker-rotate");
+    if(rotateHandle){beginRotate(ev,rotateHandle);return;}
     const handle=ev.target.closest(".sticker-resize");
     if(handle){beginResize(ev,handle);return;}
     if(ev.target.closest("button,input,select,textarea,a"))return;
@@ -640,7 +689,7 @@
         noteType:record.type==="text"?"text":record.type==="image"?"image":"diagram",w:record.w,h:record.h,src:record.src,
         text:record.text,fontSize:record.fontSize,bold:record.bold,italic:record.italic,
         showDiagram:record.showDiagram!==false,showCode:record.showCode===true,code:record.code,
-        align:record.align,color:record.color,background:record.background,
+        align:record.align,color:record.color,background:record.background,rotation:record.rotation||0,
         offsetX:ev.clientX-box.left,offsetY:ev.clientY-box.top};
       if(record.type==="text")closeNoteEditor();
     }else{
@@ -660,6 +709,7 @@
   function movePointerDrag(ev){
     const state=pointerDrag;
     if(!state||ev.pointerId!==state.pointerId)return;
+    if(state.type==="rotate"){moveRotate(ev,state);return;}
     if(state.type==="resize"){moveResize(ev,state);return;}
     state.x=ev.clientX;state.y=ev.clientY;state.ctrlKey=ev.ctrlKey;state.shiftKey=ev.shiftKey;
     if(!state.started&&Math.hypot(state.x-state.startX,state.y-state.startY)<6)return;
@@ -677,6 +727,15 @@
   function endPointerDrag(ev){
     const state=pointerDrag;
     if(!state||ev.pointerId!==state.pointerId)return;
+    if(state.type==="rotate"){
+      ev.preventDefault();
+      const record=stickers.find(x=>x.id===state.id);
+      if(record&&state.started){
+        history.push(state.before);if(history.length>60)history.shift();
+        redo=[];message("Sticker rotated to "+Math.round(record.rotation)+"°. Undo restores its previous angle.");
+      }
+      endPointerCleanup();refresh();return;
+    }
     if(state.type==="resize"){
       ev.preventDefault();
       const record=stickers.find(item=>item.id===state.id);
@@ -748,6 +807,11 @@
   }
   function cancelPointerDrag(ev){
     if(!pointerDrag||ev.pointerId!==pointerDrag.pointerId)return;
+    if(pointerDrag.type==="rotate"){
+      const record=stickers.find(x=>x.id===pointerDrag.id);
+      if(record)record.rotation=pointerDrag.initialAngle;
+      endPointerCleanup();refresh();return;
+    }
     if(pointerDrag.type==="resize"){
       const record=stickers.find(item=>item.id===pointerDrag.id);
       if(record)record.scale=pointerDrag.initialScale;
@@ -911,7 +975,8 @@
         id,type:isText?"text":isImage?"image":"diagram",
         name:String(raw.name|| (isText?"Note":"Chord")).slice(0,100),
         page:Math.max(0,Math.min(100,Math.floor(number(raw.page,0)))),
-        x:number(raw.x,0),y:number(raw.y,0),scale:Math.max(.2,Math.min(MAX_SCALE,number(raw.scale,1)))
+        x:number(raw.x,0),y:number(raw.y,0),scale:Math.max(isImage?0.001:.2,Math.min(MAX_SCALE,number(raw.scale,1))),
+        rotation:((number(raw.rotation,0)%360)+360)%360
       };
       if(isText){
         item.text=String(raw.text||"").slice(0,15000);
