@@ -83,7 +83,17 @@ function drawDiagram(ctx,v){
     const f=v.frets[i],finger=v.fingers?.[i]||0,r=rel(f),x=stringX(i);
     if(f<0){text("×",x,top-2,"10px Arial","center","bottom");continue;}
     if(f>0 && r>=1 && r<=5 && (finger>0||v.showAllFrets)){
-      ctx.fillStyle=ink;ctx.beginPath();ctx.arc(x,top+nut+(r-1)*step+3.5,2.7,0,Math.PI*2);ctx.fill();
+      const y=top+nut+(r-1)*step+3.5;
+      if(v.showNoteNames){
+        const pitches=Array.isArray(v.tuningMidi)&&v.tuningMidi.length===6?v.tuningMidi:[40,45,50,55,59,64];
+        const pitch=pitches[5-i]+f;
+        const label=["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"][((pitch%12)+12)%12];
+        ctx.fillStyle=ink;
+        if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x-(label.length>1?5.8:4.1),y-4.7,label.length>1?11.6:8.2,9.4,2);ctx.fill();}
+        else{ctx.fillRect(x-5.8,y-4.7,11.6,9.4);}
+        ctx.fillStyle="#fff";ctx.font="6px Arial";ctx.textAlign="center";
+        ctx.textBaseline="middle";ctx.fillText(label,x,y);
+      }else{ctx.fillStyle=ink;ctx.beginPath();ctx.arc(x,y,2.7,0,Math.PI*2);ctx.fill();}
     }
     if(f>0&&finger>0)text(finger,x,top+43,"10px Arial");
   }
