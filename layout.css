@@ -799,3 +799,43 @@ body.has-document .intro{display:none}
     max-height:none!important;padding:0!important;visibility:visible!important;overflow:visible!important
   }
 }
+/* First-class songwriting credits, compact bookmark onboarding and insert tools. */
+.optional-credits{display:flex;gap:12px;flex-wrap:wrap}
+.optional-credits details{flex:1 1 154px;font-size:11px;color:#245b9b}
+.optional-credits summary{cursor:pointer;font-weight:650}
+.optional-credits label{display:block;margin-top:9px;color:#405a7a;font-weight:650}
+.optional-credits input{box-sizing:border-box;width:100%;margin-top:5px;padding:8px;border:1px solid #b8cae4;border-radius:7px;font:12px system-ui,sans-serif}
+.bookmark-start-link{gap:12px;flex-wrap:wrap}
+.bookmark-start-link .linklike{max-width:240px;text-align:left;line-height:1.4}
+.bookmark-drag-ghost{position:fixed;left:8px;top:8px;z-index:999999;display:inline-block;background:rgba(252,228,149,.85);border:1px solid #ddb85c;border-radius:7px;color:#40300f;font:800 13px/1.4 system-ui,sans-serif;padding:6px 10px;white-space:nowrap;pointer-events:none}
+.advanced-import{margin-top:15px}
+.advanced-import>label{display:block;margin-top:13px;font-size:12px;font-weight:700;color:#344e75}
+.advanced-import .fileinput{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.advanced-import .fileinput .hint{margin:0}
+.advanced-import .hint{font-size:12px;line-height:1.5}
+.advanced-import textarea{display:block;width:100%;box-sizing:border-box}
+.advanced-import #importPaste{margin-top:6px}
+.paper-head{height:64px;min-height:64px;max-height:64px;box-sizing:border-box;margin:0 0 14px;padding:3px 0 6px;border-bottom:1px solid #ddd;display:flex;align-items:center;gap:15px;min-width:0;font-family:Arial,sans-serif}
+.paper-head h2{flex:1 1 auto;min-width:0;margin:0;max-height:57px;overflow:hidden;overflow-wrap:anywhere;line-height:1.08;font-size:25px;font-weight:700}
+.paper-head-credits{flex:0 1 auto;max-width:44%;min-width:0;text-align:right;align-self:center;overflow:hidden}
+.paper-head-credits p{font:11px/1.35 Arial,sans-serif;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;margin:0;color:#555}
+.paper-inside.has-source-footer .paper-main{height:calc(100% - 46px)}
+.paper-source-footer{position:absolute;left:0;right:0;bottom:0;height:40px;display:flex;align-items:start;gap:4px;padding:7px 0 0;box-sizing:border-box;border-top:1px solid #e5e5e5;font:10px/1.2 Arial,sans-serif;color:#666;overflow:hidden;z-index:6}
+.paper-source-footer span{flex:none}
+.paper-source-footer a{overflow-wrap:anywhere;max-height:26px;overflow:hidden;color:#526784;text-decoration:underline}
+.paper-sticker.link-sticker .sticker-rotatable,.chord-drag-ghost .sticker-link-art{width:100%;height:100%}
+.sticker-link-art{display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;width:100%;height:100%;box-sizing:border-box;padding:4px;color:#2358a0;text-decoration:underline;font:12px/1.3 Arial,sans-serif;text-align:center;pointer-events:none;overflow:hidden}
+.sticker-link-qr{width:126px;max-width:100%;aspect-ratio:1;object-fit:contain;display:block;image-rendering:pixelated}
+.sticker-link-caption{width:100%;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#2358a0;font-weight:600}
+.paper-sticker.link-sticker{border-radius:4px}
+.link-dialog .link-options{padding:8px 12px;border:1px solid #dae4f1;border-radius:8px}
+.link-dialog .link-options legend{font-size:12px;font-weight:700;color:#28486c}
+.link-dialog .link-options label{margin:8px 0;display:flex;align-items:center;gap:9px}
+.link-dialog .link-options input[type=radio]{width:auto;flex:none;margin:0}
+.link-dialog #linkCaptionRow[hidden],.link-dialog #linkOpen[hidden],.link-dialog #linkError[hidden]{display:none!important}
+.link-dialog .link-error{color:#ab2424}
+@media print{.paper-head-credits p{color:#555!important}.paper-source-footer a{color:#526784!important}}
+
+/* Only the bookmark label is visible under the pointer while dragging. */
+.bookmark-drag-ghost{background:transparent;border:0;padding:0;opacity:.72;text-shadow:0 1px 2px #fff}
+.toolbar-check:has(input:disabled){opacity:.55}
