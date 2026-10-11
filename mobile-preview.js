@@ -38,7 +38,7 @@
    $("mobilePageModeBtn").setAttribute("aria-pressed",String(fit));
    $("mobilePageHint").textContent=fit
      ?"Whole-page view · tap a page or switch to full size to edit."
-     :"Full-size editing · swipe sideways to navigate the page.";
+     :"Hold to move · pinch to resize · twist to rotate stickers.";
  }
  function schedule(){if(pending)return;pending=true;requestAnimationFrame(apply);}
  function switchMode(fit){

@@ -718,7 +718,9 @@
   function showPointerFeedback(){
     clearPointerFeedback();
     if(!pointerDrag?.started)return;
-    const target=itemAtPointer(pointerDrag.x,pointerDrag.y);
+    const target=pointerDrag.previewDrop?.page
+      ?{page:pointerDrag.previewDrop.page}
+      :itemAtPointer(pointerDrag.x,pointerDrag.y-pointerDrag.liftY);
     pointerDrag.ghost.classList.toggle("grid-snapping",!!(pointerDrag.ctrlKey&&pointerDrag.shiftKey));
     if(target.page){
       target.page.classList.add("page-drop-active");
@@ -735,28 +737,49 @@
   }
   function moveGhost(){
     if(!pointerDrag?.ghost)return;
-    const state=pointerDrag;
-    const ghost=state.ghost;
+    const state=pointerDrag,ghost=state.ghost;
     const offsetX=state.type==="sticker"?state.offsetX:STICKER_W/2;
     const offsetY=state.type==="sticker"?state.offsetY:20;
-    let x=state.x-offsetX,y=state.y-offsetY;
-    // Apply the same edge clamping as the eventual drop. What the user sees
-    // inside the page is exactly where the sticker will land.
-    const page=itemAtPointer(state.x,state.y).page;
-    let factor=1;
+    // Keep the actual drop coordinate attached to the elevated preview.
+    // Never place it underneath the touch after release.
+    const dropX=state.x;
+    let dropY=state.y-state.liftY;
+    let x=dropX-offsetX,y=dropY-offsetY,factor=1;
+    state.previewDrop=null;
+    // If the finger is on the page but the elevated preview would pass
+    // above its edge, pin the visible preview to the page boundary instead
+    // of treating the release as an invalid drop.
+    const fingerPage=state.lifted?itemAtPointer(state.x,state.y).page:null;
+    if(fingerPage){
+      const paper= fingerPage.querySelector(".paper-inside");
+      const box=paper?.getBoundingClientRect();
+      if(box){
+        const paperScale=box.width/pageSize().innerWidth||1;
+        dropY=Math.max(dropY,box.top+offsetY*paperScale);
+      }
+    }
+    const page=itemAtPointer(dropX,dropY).page||fingerPage;
     if(page){
       const inside=page.querySelector(".paper-inside");
       if(inside){
-        const point=pointToPaper({clientX:state.x,clientY:state.y},inside,state);
+        const point=pointToPaper({clientX:dropX,clientY:dropY},inside,state);
         const rect=inside.getBoundingClientRect();
         factor=rect.width/pageSize().innerWidth||1;
         x=rect.left+point.x*factor;
         y=rect.top+point.y*factor;
+        state.previewDrop={page,point,
+          pageIndex:[...$("printPage").querySelectorAll(".paper-page")].indexOf(page)};
       }
     }
     ghost.style.transform=factor===1?"none":"scale("+factor+")";
-    ghost.style.left=x+"px";
-    ghost.style.top=y+"px";
+    ghost.style.left=x+"px";ghost.style.top=y+"px";
+    if(state.marker){
+      state.marker.hidden=!state.previewDrop;
+      if(state.previewDrop){
+        state.marker.style.left=x+stickerWidth(state)*factor/2+"px";
+        state.marker.style.top=y+stickerHeight(state)*factor/2+"px";
+      }
+    }
   }
   function scrollDuringDrag(){
     scrollFrame=0;
@@ -878,7 +901,7 @@
     state.element.dataset.angle=Math.round(next)+"°";
   }
   const TOUCH_HOLD_MS=350,TOUCH_SCROLL_THRESHOLD=9;
-  let touchPending=null;
+  let touchPending=null,pinchGesture=null;
   const mobileTouch=()=>matchMedia("(pointer:coarse), (max-width:700px)").matches;
   function touchDragEvent(e,touch,id){
     return {
@@ -895,8 +918,111 @@
     touchPending?.element?.classList.remove("touch-hold-armed");
     touchPending=null;
   }
+  // Two fingertips on the SAME placed sticker manipulate its original
+  // printable model. Nothing is committed until the last gesture ends.
+  function startPinch(e){
+    if(!mobileTouch()||placingNote||e.touches.length!==2||pinchGesture)return false;
+    const touches=[...e.touches];
+    const first=touches[0],second=touches[1];
+    const stickerAt=touch=>{
+      const el=document.elementFromPoint(touch.clientX,touch.clientY);
+      return el?.closest(".paper-sticker")||null;
+    };
+    let sticker=stickerAt(first)||stickerAt(second);
+    // A second fingertip may land just outside a small sticker. Permit a
+    // generous margin ONLY if the first finger started on that sticker.
+    const origin=touchPending?.element?.closest(".paper-sticker");
+    if(origin)sticker=origin;
+    if(!sticker)return false;
+    const bbox=sticker.getBoundingClientRect(),pad=35;
+    const near=t=>t.clientX>=bbox.left-pad&&t.clientX<=bbox.right+pad&&
+      t.clientY>=bbox.top-pad&&t.clientY<=bbox.bottom+pad;
+    if(!touches.every(near))return false;
+    const record=stickers.find(x=>x.id===Number(sticker.dataset.stickerId));
+    if(!record)return false;
+    if(pointerDrag){
+      // The same sticker may already be in one-finger hold-to-move mode.
+      // Its position has not been committed, so abandon that move safely.
+      endPointerCleanup();
+    }
+    clearTouchHold();
+    const inside=sticker.closest(".paper-inside");
+    if(!inside)return false;
+    const factor=inside.getBoundingClientRect().width/pageSize().innerWidth||1;
+    const dx=second.clientX-first.clientX,dy=second.clientY-first.clientY;
+    const initial=structuredClone(record);
+    pinchGesture={
+      id:record.id,element:sticker,
+      initial,starting:stickers.map(x=>structuredClone(x)),
+      originalDistance:Math.max(1,Math.hypot(dx,dy)),
+      originalAngle:Math.atan2(dy,dx)*180/Math.PI,
+      midX:(first.clientX+second.clientX)/2,
+      midY:(first.clientY+second.clientY)/2,
+      factor,changed:false
+    };
+    sticker.classList.add("pinch-transforming");
+    return true;
+  }
+  function pinchMove(e){
+    const state=pinchGesture;
+    if(!state||e.touches.length!==2)return false;
+    const record=stickers.find(x=>x.id===state.id);
+    if(!record)return false;
+    const [a,b]=[...e.touches],dx=b.clientX-a.clientX,dy=b.clientY-a.clientY;
+    const midpointX=(a.clientX+b.clientX)/2,midpointY=(a.clientY+b.clientY)/2;
+    const size=pageSize(),original=state.initial;
+    const baseW=record.type==="text"?noteRenderedWidth({...record,scale:1},1)
+      :record.type==="image"||record.type==="link"?record.w:STICKER_W;
+    const baseH=record.type==="text"?noteRenderedHeight({...record,scale:1},1)
+      :record.type==="image"||record.type==="link"?record.h:chordHeight(record);
+    const maxScale=record.type==="text"?maxTextScale(record)
+      :Math.min(record.type==="link"?MAX_LINK_SCALE:MAX_SCALE,
+        size.innerWidth/Math.max(1,baseW),size.innerHeight/Math.max(1,baseH));
+    const minScale=Math.min(minimumScale(record),maxScale);
+    const desired=stickerScale(original)*Math.hypot(dx,dy)/state.originalDistance;
+    const scale=Math.round(Math.max(minScale,Math.min(maxScale,desired))*1000)/1000;
+    const startCenterX=original.x+stickerWidth(original)/2;
+    const startCenterY=original.y+stickerHeight(original)/2;
+    const centerX=startCenterX+(midpointX-state.midX)/state.factor;
+    const centerY=startCenterY+(midpointY-state.midY)/state.factor;
+    record.scale=scale;
+    record.x=Math.round(Math.max(0,Math.min(size.innerWidth-stickerWidth(record),
+      centerX-stickerWidth(record)/2))*100)/100;
+    record.y=Math.round(Math.max(0,Math.min(size.innerHeight-stickerHeight(record),
+      centerY-stickerHeight(record)/2))*100)/100;
+    const degree=(Math.atan2(dy,dx)*180/Math.PI-state.originalAngle+540)%360-180;
+    record.rotation=((Math.round((Number(original.rotation||0)+degree)*10)/10)%360+360)%360;
+    const el=state.element;
+    el.style.left=record.x+"px";el.style.top=record.y+"px";
+    el.style.width=stickerWidth(record)+"px";el.style.height=stickerHeight(record)+"px";
+    const inner=el.querySelector(".sticker-inner,.note-inner,.sticker-link-art");
+    if(inner)inner.style.transform="scale("+scale+")";
+    const rotatable=el.querySelector(".sticker-rotatable");
+    if(rotatable)rotatable.style.transform="rotate("+record.rotation+"deg)";
+    state.changed=state.changed||Math.abs(scale-stickerScale(original))>.002
+      ||Math.abs(record.x-original.x)>.5||Math.abs(record.y-original.y)>.5
+      ||Math.abs(((record.rotation-(original.rotation||0)+540)%360)-180)>.25;
+    return true;
+  }
+  function finishPinch(cancel=false){
+    const state=pinchGesture;if(!state)return;
+    const record=stickers.find(x=>x.id===state.id);
+    if(cancel&&record)Object.assign(record,structuredClone(state.initial));
+    if(!cancel&&record&&state.changed){
+      history.push(state.starting);if(history.length>60)history.shift();redo=[];
+      message("Sticker resized and rotated. Undo restores its previous size and position.");
+    }
+    state.element.classList.remove("pinch-transforming");
+    pinchGesture=null;
+    refresh();
+  }
   function touchHoldStart(e){
-    if(!mobileTouch()||placingNote||pointerDrag||e.touches.length!==1)return;
+    if(!mobileTouch()||placingNote)return;
+    if(e.touches.length===2){
+      if(startPinch(e)&&e.cancelable)e.preventDefault();
+      return;
+    }
+    if(pinchGesture||pointerDrag||e.touches.length!==1)return;
     if(e.target.closest(".sticker-resize,.sticker-rotate,button,input,select,textarea,a"))return;
     const target=e.target.closest("#stickerBoardGrid .chord-card,.paper-sticker,.paper-bank .chord-card");
     if(!target)return;
@@ -922,6 +1048,10 @@
     },TOUCH_HOLD_MS);
   }
   function touchHoldMove(e){
+    if(pinchGesture){
+      if(pinchMove(e)&&e.cancelable)e.preventDefault();
+      return;
+    }
     const state=touchPending;if(!state)return;
     const touch=[...e.changedTouches].find(t=>t.identifier===state.identifier);
     if(!touch)return;
@@ -934,6 +1064,13 @@
     movePointerDrag(touchDragEvent(e,touch,state.pointerId));
   }
   function touchHoldEnd(e){
+    if(pinchGesture){
+      if(e.touches.length<2){
+        if(e.cancelable)e.preventDefault();
+        finishPinch(false);
+      }
+      return;
+    }
     const state=touchPending;if(!state)return;
     const touch=[...e.changedTouches].find(t=>t.identifier===state.identifier);
     if(!touch)return;
@@ -944,6 +1081,7 @@
     clearTouchHold();
   }
   function touchHoldCancel(e){
+    if(pinchGesture){finishPinch(true);return;}
     const state=touchPending;if(!state)return;
     if(state.active){
       cancelPointerDrag({
@@ -992,7 +1130,9 @@
         code:fretCode(item.arr),
         bankOrigin:source.closest("#chordGrid")?"top":source.closest("#stickerBoardGrid")?"tray":"paper",source};
     }
-    pointerDrag={...model,pointerId:ev.pointerId,x:ev.clientX,y:ev.clientY,startX:ev.clientX,startY:ev.clientY,ctrlKey:ev.ctrlKey,shiftKey:ev.shiftKey,started:false,ghost:null};
+    pointerDrag={...model,pointerId:ev.pointerId,x:ev.clientX,y:ev.clientY,startX:ev.clientX,startY:ev.clientY,ctrlKey:ev.ctrlKey,shiftKey:ev.shiftKey,started:false,ghost:null,
+      lifted:ev.pointerType==="long-touch",liftY:ev.pointerType==="long-touch"?90:0,
+      marker:null,previewDrop:null};
     document.addEventListener("pointermove",movePointerDrag,{capture:true,passive:false});
     document.addEventListener("pointerup",endPointerDrag,true);
     document.addEventListener("pointercancel",cancelPointerDrag,true);
@@ -1008,6 +1148,12 @@
     if(!state.started){
       state.started=true;
       state.ghost=makeGhost(state);
+      if(state.lifted){
+        state.marker=document.createElement("span");
+        state.marker.className="touch-drop-marker";
+        state.marker.setAttribute("aria-hidden","true");
+        document.body.append(state.marker);
+      }
       beginSortPreview(state);
       document.body.classList.add("chord-pointer-dragging");
       scrollFrame=requestAnimationFrame(scrollDuringDrag);
@@ -1042,13 +1188,16 @@
     if(state.started){
       ev.preventDefault();
       if(state.noteType==="image"||state.noteType==="link")lastImageDragAt=performance.now();
-      const hit=itemAtPointer(ev.clientX,ev.clientY);
+      // Recalculate from the FINAL lifted preview location, not the finger.
+      moveGhost();
+      const preview=state.previewDrop;
+      const hit=preview?{page:preview.page}:itemAtPointer(ev.clientX,ev.clientY-state.liftY);
       if(hit.page){
         state.ctrlKey=ev.ctrlKey;state.shiftKey=ev.shiftKey;
         const inside=hit.page.querySelector(".paper-inside");
-        const pageIndex=[...$("printPage").querySelectorAll(".paper-page")].indexOf(hit.page);
+        const pageIndex=preview?.pageIndex??[...$("printPage").querySelectorAll(".paper-page")].indexOf(hit.page);
         if(inside&&pageIndex>=0){
-          const point=pointToPaper(ev,inside,state);
+          const point=preview?.point??pointToPaper(ev,inside,state);
           if(state.type==="sticker"){
             const record=stickers.find(x=>x.id===state.id);
             if(record){
@@ -1116,6 +1265,7 @@
     document.removeEventListener("pointercancel",cancelPointerDrag,true);
     if(scrollFrame){cancelAnimationFrame(scrollFrame);scrollFrame=0;}
     pointerDrag?.ghost?.remove();
+    pointerDrag?.marker?.remove();
     restoreSortPreview(pointerDrag);
     pointerDrag=null;
     document.body.classList.remove("chord-pointer-dragging","chord-resizing","chord-rotating");

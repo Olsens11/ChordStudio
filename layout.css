@@ -1166,3 +1166,24 @@ body.has-document .intro{display:none}
  #stickerBoard .sticker-board-grid{min-height:48px}
  #stickerBoardGrid .chord-card{min-height:73px}
 }
+@media (max-width:700px), (pointer:coarse){
+  .paper-sticker.pinch-transforming{
+    outline:2px dashed #286dcc!important;outline-offset:3px;
+    z-index:12!important;touch-action:none!important;
+  }
+  .chord-drag-ghost{opacity:.92;filter:drop-shadow(0 3px 5px #13345b66)}
+  .touch-drop-marker{
+    position:fixed;z-index:100001;width:20px;height:20px;
+    margin:-10px 0 0 -10px;border:2px solid #fff;border-radius:50%;
+    background:#216bd4cc;box-shadow:0 0 0 2px #216bd4,0 2px 7px #001e4d77;
+    pointer-events:none;
+  }
+  .touch-drop-marker[hidden]{display:none!important}
+  .touch-drop-marker::before,.touch-drop-marker::after{
+    content:"";position:absolute;background:#fff;left:50%;top:50%;
+    transform:translate(-50%,-50%)
+  }
+  .touch-drop-marker::before{width:11px;height:2px}
+  .touch-drop-marker::after{width:2px;height:11px}
+}
+@media print{.touch-drop-marker{display:none!important}}
