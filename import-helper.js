@@ -44,6 +44,18 @@
  function init(){
    const bookmark=$("bookmarklet");
    bookmark.addEventListener("click",event=>{event.preventDefault();help();});
+   bookmark.addEventListener("dragstart",event=>{
+     // Chromium's default drag preview often captures surrounding card content.
+     // Keep the real javascript: bookmark target; only replace the visual ghost.
+     const ghost=document.createElement("span");
+     ghost.textContent="↗ ChordStudio";
+     ghost.className="bookmark-drag-ghost";
+     document.body.append(ghost);
+     if(event.dataTransfer?.setDragImage){
+       event.dataTransfer.setDragImage(ghost,ghost.offsetWidth/2,ghost.offsetHeight/2);
+     }
+     requestAnimationFrame(()=>ghost.remove());
+   });
    $("showImportHelp").addEventListener("click",()=>{
      help();
      $("bookmarkHelp").scrollIntoView({behavior:"smooth",block:"nearest"});
