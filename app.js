@@ -448,6 +448,7 @@ function loadPage(data){
     content:typeof data.content==="string"?data.content:"",
     source:validSourceUrl(data.source)};
   updateOriginalSourceLink();
+  $("importDetails").open=false;
   $("songName").textContent=page.title;
   $("artistName").textContent=page.artist;
   $("sourceCredit").textContent="Chord tab imported for personal formatting";
