@@ -142,6 +142,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
      <label class="custom-tuning-field" id="customTuningWrap" hidden for="customTuning">Low string → high string
        <input id="customTuning" type="text" value="E2 A2 D3 G3 B3 E4" placeholder="D2 A2 D3 G3 A3 D4" spellcheck="false">
      </label>
+     <button id="confirmSongTuning" type="button" class="confirm-tuning">Confirm tuning</button>
      <span id="tuningSummary" class="tuning-summary">Standard tuning assumed. Confirm before using chord-name suggestions.</span>
    </div>
    <div class="organizer-toolbar">
@@ -344,7 +345,8 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
        <input id="builderCustomTuning" type="text" placeholder="D2 A2 D3 G3 A3 D4" spellcheck="false">
      </label>
    </div>
-   <section class="chord-name-suggestions" aria-label="Chord name suggestions">
+   <button id="confirmBuilderTuning" type="button" class="confirm-tuning">Confirm tuning for naming</button>
+      <section class="chord-name-suggestions" aria-label="Chord name suggestions">
    <strong>Possible chord names</strong><p id="builderAnalysis" class="builder-analysis">Select string and fret positions to analyze their notes.</p>
    <div id="builderSuggestedNames" class="builder-suggestions"></div>
    <small id="builderTheoryDisclaimer">Names are suggestions for the selected tuning, not definitive harmonic labels. Check the musical context.</small>
