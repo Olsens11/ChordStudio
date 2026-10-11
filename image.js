@@ -10,8 +10,10 @@
   function pagePoint(page,x,y,center=false){
     const pages=[...document.querySelectorAll("#printPage .paper-page")];
     const r=page.querySelector(".paper-inside").getBoundingClientRect();
-    return {page:pages.indexOf(page),x:Math.round(x-r.left-(center?pending.width/2:0)),
-      y:Math.round(y-r.top-(center?pending.height/2:0))};
+    const scale=center?Math.min(1,240/pending.width,180/pending.height,
+      r.width/pending.width,r.height/pending.height):1;
+    return {page:pages.indexOf(page),x:Math.round(x-r.left-(center?pending.width*scale/2:0)),
+      y:Math.round(y-r.top-(center?pending.height*scale/2:0))};
   }
   function readFile(file){
     return new Promise((resolve,reject)=>{
