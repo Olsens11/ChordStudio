@@ -141,6 +141,11 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
          <button id="openProjectBtn" type="button" title="Open a previously saved ChordStudio project">Open project…</button>
          <input id="projectFile" type="file" accept=".chordstudio,.json,application/json" hidden>
          <button id="saveProjectBtn" type="button">Save project</button>
+         <div class="toolbar-menu-rule"></div>
+         <button id="importImageBtn" type="button">Import image…</button>
+         <input id="imageFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+         <button id="filePrintBtn" type="button">Print…</button>
+         <button id="exportPdfBtn" type="button">Export as PDF…</button>
        </div>
      </details>
      <details class="toolbar-menu" data-toolbar-menu>
@@ -148,6 +153,11 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
        <div class="toolbar-menu-panel" role="group" aria-label="Song editing and sticker history">
          <button id="editSongBtn" type="button">Edit song text…</button>
          <div class="toolbar-menu-rule"></div>
+         <div class="toolbar-section-label">Song text <span class="menu-keyhint">While editing</span></div>
+         <button id="undoSongTextMenu" type="button" disabled>↶ Undo text <span class="menu-keyhint">Ctrl+Z</span></button>
+         <button id="redoSongTextMenu" type="button" disabled>↷ Redo text <span class="menu-keyhint">Ctrl+Shift+Z</span></button>
+         <div class="toolbar-menu-rule"></div>
+         <div class="toolbar-section-label">Stickers &amp; images</div>
          <button id="undoPlacement" type="button" disabled>↶ Undo sticker change</button>
          <button id="redoPlacement" type="button" disabled>↷ Redo sticker change</button>
          <button id="clearPlacements" type="button" disabled>Clear placed items</button>
@@ -170,6 +180,10 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
        </div>
      </details>
    </nav>
+   <div id="songUndoRedo" class="toolbar-edit-shortcuts" hidden>
+     <button id="undoSongText" type="button" title="Undo song text (Ctrl+Z)" disabled aria-label="Undo text">↶</button>
+     <button id="redoSongText" type="button" title="Redo song text (Ctrl+Shift+Z)" disabled aria-label="Redo text">↷</button>
+   </div>
    <div class="toolbar-spacer"></div>
    <div class="toolbar-metrics" aria-live="polite">
      <span id="layoutStatus" class="layout-status"></span>
