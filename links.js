@@ -15,7 +15,7 @@
     const found=id==null?null:window.ChordLayout.stickers().find(item=>item.id===id&&item.type==="link");
     $("linkHeading").textContent=found?"Edit QR code / link":"Insert QR code / link";
     $("linkUrl").value=found?.url||"";
-    $("linkCaption").value=found?.caption||"Open link";
+    $("linkCaption").value=found?.caption||"Watch this performance";
     document.querySelector('input[name="linkStyle"][value="'+(found?.linkStyle||"both")+'"]').checked=true;
     $("linkConfirm").textContent=found?"Apply changes":"Insert sticker";
     $("linkOpen").hidden=!found;
@@ -53,7 +53,7 @@
       }finally{host.remove();}
     }
     if(mode!=="qr"){
-      const text=String(caption||"Open link").trim()||"Open link";
+      const text=String(caption||"Watch this performance").trim()||"Watch this performance";
       const maxWidth=w-12,maxLines=mode==="text"?2:2;
       let lines=[],font=13;
       // Use actual canvas metrics to fit up to two complete lines before
@@ -108,6 +108,13 @@
   function init(){
     $("insertLinkBtn").addEventListener("click",()=>open());
     $("linkConfirm").addEventListener("click",apply);
+    for(const id of ["linkUrl","linkCaption"]){
+      $(id).addEventListener("keydown",event=>{
+        if(event.key==="Enter"&&!event.isComposing){
+          event.preventDefault();apply();
+        }
+      });
+    }
     $("linkOpen").addEventListener("click",()=>{
       const url=valid($("linkUrl").value);
       if(url)window.open(url,"_blank","noopener,noreferrer");
