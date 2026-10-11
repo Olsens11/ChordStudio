@@ -160,6 +160,7 @@
       const base=Number($("builderBase").value)||1;
       if(frets.some(f=>f>0&&f<base))throw Error("A fretted note is below the top fret. Lower the top fret number.");
       if(frets.some(f=>f>0&&f>base+4))throw Error("Some fretted notes are outside the five displayed frets. Adjust the top fret or fret code.");
+      const wasEmpty=!state.editKey&&parseEditor().items.length===0;
       const key=name+"\u001f"+frets.join(",");
       const oldKey=state.editKey;
       const lines=$("chordEditor").value.split(/\r?\n/);
@@ -186,6 +187,7 @@
       catalog[name]=catalog[name].filter(v=>!isMatch(v,frets));
       catalog[name].unshift(shape());
       $("chordEditor").value=lines.filter(Boolean).join("\n");
+      if(wasEmpty&&!page?.source)$("includeChords").checked=true;
       close();renderDiagrams();
       message((oldKey?"Updated ":"Created ")+name+" chord. It is available in the organizer, tray, and saved project.");
     }catch(e){feedback(e.message,true);}
