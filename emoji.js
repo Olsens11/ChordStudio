@@ -25,7 +25,7 @@
   }
   function position(){
     const panel=$("emojiPickerPopover"),editor=$("noteEditor");
-    const r=editor.getBoundingClientRect(),w=342,h=Math.min(470,window.innerHeight-20);
+    const r=editor.getBoundingClientRect(),w=Math.min(446,window.innerWidth-16),h=Math.min(470,window.innerHeight-20);
     const x=r.right+w+8<=window.innerWidth? r.right+8:
       r.left-w-8>=8?r.left-w-8:Math.max(8,window.innerWidth-w-8);
     panel.style.left=Math.round(x)+"px";
