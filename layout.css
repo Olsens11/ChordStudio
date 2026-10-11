@@ -378,3 +378,59 @@
 .image-edit-dialog[open]{display:block!important}
 @media(max-width:580px){.image-edit-dialog{padding:12px}.image-edit-controls button{padding:7px}}
 @media print{.image-edit-dialog,.pdf-export-status{display:none!important}}
+
+/* Free-angle rotation applies to artwork only, not the sticker's drag/resize
+   controls. Rotated text, chords and images remain printable and draggable. */
+.paper-sticker .sticker-rotatable,.chord-drag-ghost .sticker-rotatable{
+  position:absolute;inset:0;box-sizing:border-box;
+  transform-origin:center center;pointer-events:none;
+  background:transparent;
+}
+.paper-sticker .sticker-rotate{
+  position:absolute;left:50%;top:-31px;transform:translateX(-50%);
+  width:23px;height:23px;padding:0;border:1px solid #4284cf;
+  border-radius:50%;background:#eaf4ff;color:#1253a7;
+  font:bold 20px/20px Arial,sans-serif;box-shadow:0 1px 5px #071c3f35;
+  z-index:8;cursor:alias;touch-action:none;opacity:0;
+}
+.paper-sticker .sticker-rotate::after{
+  content:"";position:absolute;width:1px;height:6px;background:#4284cf;
+  left:50%;top:100%;
+}
+.paper-sticker:hover .sticker-rotate,.paper-sticker:focus-within .sticker-rotate{opacity:1}
+@media(hover:none){.paper-sticker .sticker-rotate{opacity:1}}
+/* Rotation has its own cursor, rather than a diagonal resize arrow. */
+body.chord-resizing:has(.paper-sticker.rotating){cursor:alias!important}
+.paper-sticker.rotating{outline:1px dashed #4584d3;outline-offset:3px}
+@media print{.paper-sticker .sticker-rotate{display:none!important}}
+
+/* Emoji picker floats beside the text-note editor without expanding it. */
+.note-editor .note-text-label{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.note-editor #noteEmojiButton{
+  padding:5px 9px;border:1px solid #9fbde5;border-radius:7px;
+  background:#edf5ff;color:#164a83;font:700 12px/1.2 system-ui,sans-serif;cursor:pointer
+}
+.note-editor #noteEmojiButton[aria-expanded="true"]{background:#2059a1;color:#fff}
+.emoji-picker-popover{
+  position:fixed;z-index:110;box-sizing:border-box;
+  width:342px;max-width:calc(100vw - 16px);
+  height:min(470px,calc(100vh - 20px));
+  overflow:hidden;background:#fff;color:#203c5f;
+  border:1px solid #91add4;border-radius:12px;
+  box-shadow:0 10px 32px #061e3c55;
+  padding:10px;display:flex;flex-direction:column;gap:7px
+}
+.emoji-picker-popover[hidden]{display:none!important}
+.emoji-picker-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.emoji-picker-head strong{font:800 14px/1.3 system-ui,sans-serif}
+.emoji-picker-head button{font:700 20px/1 Arial,sans-serif;padding:2px 6px;border:0;border-radius:5px;background:#e8f1fb}
+#emojiPickerHost{min-height:50px;flex:1;overflow:auto}
+#emojiPickerHost emoji-picker{width:100%;height:100%;max-height:390px;--background:#fff;--border-color:#e2eaf7;--input-border-color:#9fb7dc}
+.emoji-picker-popover #emojiPickerHelp{font:10px/1.3 system-ui,sans-serif;color:#647a93;margin:0}
+.emoji-fallback-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));max-height:300px;overflow:auto;gap:4px}
+.emoji-fallback-grid button{font-size:22px;padding:5px 0;border:0;background:transparent;border-radius:5px;cursor:pointer}
+.emoji-fallback-grid button:hover{background:#e4f0ff}
+.emoji-loading{font:12px/1.4 system-ui,sans-serif;color:#587292}
+@media print{.emoji-picker-popover{display:none!important}}
