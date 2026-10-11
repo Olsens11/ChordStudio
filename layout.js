@@ -828,8 +828,11 @@
       !/^data:image\/(png|jpeg|webp|gif);base64,[a-z0-9+/=]+$/i.test(src))
       throw Error("Unsupported edited image.");
     const visualWidth=stickerWidth(record);
-    const w=Math.max(20,Math.min(1500,Number(width)||200));
-    const h=Math.max(20,Math.min(1500,Number(height)||100));
+    const sourceW=Math.max(1,Number(width)||200);
+    const sourceH=Math.max(1,Number(height)||100);
+    const fit=Math.min(1,1500/sourceW,1500/sourceH);
+    const w=Math.max(20,Math.round(sourceW*fit));
+    const h=Math.max(20,Math.round(sourceH*fit));
     save();
     record.src=src;
     record.w=w;record.h=h;
