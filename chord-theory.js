@@ -4,7 +4,72 @@
 (function(){
  const SHARP=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
  const FLAT=["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
- const STRINGS=[40,45,50,55,59,64]; // E2 A2 D3 G3 B3 E4 (MIDI)
+ const TUNINGS={
+   "standard":{label:"Standard",midi:[40,45,50,55,59,64]},
+   "drop-d":{label:"Drop D",midi:[38,45,50,55,59,64]},
+   dadgad:{label:"DADGAD",midi:[38,45,50,55,57,62]},
+   "open-g":{label:"Open G",midi:[38,43,50,55,59,62]},
+   "open-d":{label:"Open D",midi:[38,45,50,54,57,62]},
+   "open-e":{label:"Open E",midi:[40,47,52,56,59,64]},
+   "half-step":{label:"Half step down",midi:[39,44,49,54,58,63]},
+   "whole-step":{label:"Whole step down",midi:[38,43,48,53,57,62]}
+ };
+ const NATURAL={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+ const parseCustom=input=>{
+   const parts=String(input||"").trim().split(/[\s,]+/);
+   if(parts.length!==6)throw Error("Enter exactly six notes from low to high, with octaves, such as D2 A2 D3 G3 A3 D4.");
+   return parts.map(n=>{
+     const m=n.match(/^([A-Ga-g])([#b♯♭]?)(-?\d)$/);
+     if(!m)throw Error("Enter each note with an octave, for example D2 or F#3.");
+     const octave=Number(m[3]),modifier=(m[2]==="#"||m[2]==="♯")?1:(m[2]==="b"||m[2]==="♭")?-1:0;
+     const midi=(octave+1)*12+NATURAL[m[1].toUpperCase()]+modifier;
+     if(midi<20||midi>100)throw Error("Custom tuning notes must have practical guitar-pitch octaves.");
+     return midi;
+   });
+ };
+ let current={id:"standard",midi:[...TUNINGS.standard.midi],custom:"E2 A2 D3 G3 B3 E4",confirmed:false};
+ const tuningLabel=()=>current.id==="custom"?"Custom":TUNINGS[current.id]?.label;
+ const tuning=get=>({id:current.id,midi:[...current.midi],custom:current.custom,confirmed:current.confirmed});
+ function setTuning(id,custom,confirmed=true){
+   if(id!=="custom"&&!TUNINGS[id])throw Error("Unknown guitar tuning.");
+   const midi=id==="custom"?parseCustom(custom):[...TUNINGS[id].midi];
+   current={id,midi,custom:id==="custom"?String(custom):current.custom,confirmed:!!confirmed};
+   syncTuning();
+   document.dispatchEvent(new CustomEvent("chordstudio:tuningchange",{detail:tuning()}));
+ }
+ function syncTuning(){
+   for(const id of ["songTuning","builderTuning"]){
+     const el=document.getElementById(id);if(el)el.value=current.id;
+   }
+   for(const [input,wrap] of [["customTuning","customTuningWrap"],["builderCustomTuning","builderCustomTuningWrap"]]){
+     const el=document.getElementById(input),w=document.getElementById(wrap);
+     if(el){el.value=current.custom;}if(w)w.hidden=current.id!=="custom";
+   }
+   const label=document.getElementById("tuningSummary");
+   if(label)label.textContent=tuningLabel()+(current.confirmed?" tuning selected.":" tuning assumed; confirm for accurate chord suggestions.")+
+    " Changes affect note analysis, not fret positions.";
+   const disclaimer=document.getElementById("builderTheoryDisclaimer");
+   if(disclaimer)disclaimer.textContent="Using "+tuningLabel()+
+    " tuning. Names are suggestions; the musical context determines the best interpretation.";
+ }
+ function init(){
+   for(const id of ["songTuning","builderTuning"]){
+     const select=document.getElementById(id);if(!select)continue;
+     select.addEventListener("change",()=>{
+       try{
+         setTuning(select.value,document.getElementById(id==="builderTuning"?"builderCustomTuning":"customTuning").value,true);
+       }catch(e){select.value=current.id;window.message?.("Tuning: "+e.message,true);}
+     });
+   }
+   for(const id of ["customTuning","builderCustomTuning"]){
+     const input=document.getElementById(id);if(!input)continue;
+     input.addEventListener("change",()=>{
+       try{setTuning("custom",input.value,true);}
+       catch(e){window.message?.("Tuning: "+e.message,true);}
+     });
+   }
+   syncTuning();
+ }
  const QUALITIES=[
   ["", [0,4,7]],["m",[0,3,7]],["dim",[0,3,6]],["aug",[0,4,8]],
   ["sus4",[0,5,7]],["sus2",[0,2,7]],["5",[0,7]],
@@ -25,13 +90,15 @@
   const preferFlat=usuallyFlat&&(quality.indexOf("#")<0);
   return noteName(pcValue,preferFlat);
  }
- function analyze(frets){
+ function analyze(frets,selectedTuning=current){
   if(!Array.isArray(frets)||frets.length!==6)throw Error("Expected six fret positions.");
+  const strings=selectedTuning?.midi;
+  if(!Array.isArray(strings)||strings.length!==6||strings.some(n=>!Number.isInteger(n)))throw Error("Confirm six valid tuning notes before analyzing.");
   const voices=[];
   for(let i=0;i<6;i++){
    const fret=Number(frets[i]);
    if(!Number.isInteger(fret)||fret< -1||fret>30)throw Error("Frets must be integers from 0–30 or x.");
-   if(fret>=0){const midi=STRINGS[i]+fret;voices.push({string:i,fret,midi,pc:pc(midi),
+   if(fret>=0){const midi=strings[i]+fret;voices.push({string:i,fret,midi,pc:pc(midi),
       name:noteName(midi),octave:Math.floor(midi/12)-1});}
   }
   if(!voices.length)return {voices:[],notes:[],bass:null,candidates:[],summary:"No sounding strings"};
@@ -61,5 +128,6 @@
     summary:voices.map(v=>v.name+v.octave).join(" · ")
   };
  }
- window.ChordTheory={analyze,noteName};
+ window.ChordTheory={analyze,noteName,getTuning:tuning,setTuning,parseCustom};
+ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
 })();
