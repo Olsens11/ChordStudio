@@ -718,3 +718,29 @@ body.chord-rotating,body.chord-rotating *{cursor:alias!important;user-select:non
 /* Named-note canvases are 96px wide; render at a 2x preview scale
    without forcing their original 76px aspect ratio. */
 #builderPreview canvas{width:auto!important;height:144px!important;max-width:100%}
+
+/* Keep the select and action button on the same baseline at every width. */
+.key-control .key-control-field{display:grid;grid-template-columns:minmax(170px,210px) max-content minmax(0,1fr);
+ align-items:end;column-gap:9px;row-gap:7px}
+.key-control .key-control-field>label{display:flex;flex-direction:column;gap:5px;min-width:0}
+.key-control .key-control-field select{box-sizing:border-box;width:100%;min-width:0;
+ height:36px;min-height:36px;line-height:18px;margin:0}
+.key-control .key-control-field>button{box-sizing:border-box;min-height:36px;
+ height:36px;align-self:end;white-space:nowrap}
+.key-control .key-control-field>.key-summary,.key-control .key-step-help{align-self:end;
+ margin:0;padding-bottom:9px}
+.key-control .key-control-field>#confirmSongKey:not([hidden]),
+.key-control .key-control-field>#undoTranspose:not([hidden]){grid-column:3}
+.key-control .key-step-field{border-top:1px solid #deebf9;padding-top:10px}
+.key-control .key-step-help{font:11px/1.4 system-ui,sans-serif;color:#5c7698}
+.key-control .transpose-feedback{margin:9px 0;padding:9px 11px;font:12px/1.5 system-ui,sans-serif;
+ border:1px solid #accbec;border-radius:7px;color:#214e82;background:#f2f8ff}
+.key-control .transpose-feedback.error{color:#912f30;border-color:#e9b2b3;background:#fff2f2}
+.key-control .transpose-feedback[hidden]{display:none!important}
+@media(max-width:680px){
+ .key-control .key-control-field{grid-template-columns:minmax(140px,1fr) max-content}
+ .key-control .key-control-field>.key-summary,.key-control .key-step-help{grid-column:1/-1;
+ padding-bottom:0}
+ .key-control .key-control-field>#confirmSongKey:not([hidden]),
+ .key-control .key-control-field>#undoTranspose:not([hidden]){grid-column:1/-1;justify-self:start}
+}
