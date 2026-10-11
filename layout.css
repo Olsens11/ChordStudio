@@ -1010,3 +1010,77 @@ body.has-document .intro{display:none}
   .song-start-choices .compose-actions{grid-template-columns:1fr;justify-items:start;row-gap:6px}
   .song-start-choices #addCredits{justify-self:start;text-align:left}
 }
+/* Mobile bookmarklet onboarding, browser-specific instructions. */
+.bookmark-platform-picker{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0 10px}
+.bookmark-platform-picker button{
+  flex:0 1 auto;padding:8px 10px;border:1px solid #b5c8e3;
+  border-radius:8px;background:#fff;color:#35577c;font:650 12px/1.25 system-ui,sans-serif
+}
+.bookmark-platform-picker button[aria-pressed="true"]{
+  background:#245ab0;border-color:#245ab0;color:white
+}
+.bookmark-platform-guide[hidden]{display:none!important}
+.bookmark-platform-guide p{margin:10px 0 6px}
+.bookmark-platform-guide ol{padding-left:22px;margin:8px 0 13px}
+.bookmark-platform-guide li{font:12px/1.55 system-ui,sans-serif;color:#425976;margin:6px 0}
+.bookmark-platform-guide code{overflow-wrap:anywhere}
+.bookmark-platform-guide .hint{margin-top:8px}
+.bookmark-setup-intro{margin:8px 0}
+#copyBookmarklet{margin-top:6px}
+
+/* A whole-page overview for touch/mobile, never a different printable layout. */
+.mobile-page-tools{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:9px;flex-wrap:wrap;padding:9px 11px;margin:0 0 9px;
+  border:1px solid #d3e1f4;border-radius:9px;
+  background:#f3f7fd;color:#465e7c;font:12px/1.4 system-ui,sans-serif;
+}
+.mobile-page-tools[hidden]{display:none!important}
+.mobile-page-tools button{
+  flex:none;background:#fff;border:1px solid #9bb7de;color:#1c4c87;
+  border-radius:7px;padding:8px 11px;font:700 12px system-ui,sans-serif;
+}
+#mobilePageHint{flex:1 1 175px}
+#printPage.mobile-page-fit{
+  overflow:visible;
+  align-items:center;
+  padding:12px 6px 22px;
+  gap:19px;
+}
+#printPage.mobile-page-fit .paper-wrapper{
+  box-sizing:content-box;
+  margin:0 auto;
+  width:var(--fit-page-width);
+  height:calc(var(--fit-page-height) + 27px);
+  max-width:none;
+  cursor:zoom-in;
+}
+#printPage.mobile-page-fit .paper-page{
+  transform:scale(var(--fit-scale));
+  transform-origin:top left;
+  pointer-events:none;
+}
+#printPage.mobile-page-fit .paper-label{
+  box-sizing:border-box;
+  width:100%;text-align:left;font-size:11px;
+}
+@media print{
+  .mobile-page-tools{display:none!important}
+  #printPage.mobile-page-fit .paper-wrapper{
+    width:auto!important;height:auto!important;margin:0!important;
+    cursor:auto!important;
+  }
+  #printPage.mobile-page-fit .paper-page{
+    transform:none!important;pointer-events:auto!important;
+  }
+  #printPage.mobile-page-fit{
+    gap:0!important;padding:0!important;overflow:visible!important;
+  }
+}
+/* Prevent narrow phones from being pushed wider by the toolbar action group. */
+@media(max-width:400px){
+ #previewToolbar.preview-toolbar{flex-wrap:wrap;justify-content:space-between}
+ #previewToolbar .toolbar-menus{min-width:0}
+ #previewToolbar .toolbar-primary{margin-left:auto}
+ #previewToolbar .toolbar-menu-panel{max-width:calc(100vw - 34px)}
+}
