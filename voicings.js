@@ -101,8 +101,11 @@
        const fingers=estimateFingering(cur);
        const noOpen=cur.filter(f=>f===0).length;
        const mutes=cur.filter(f=>f<0).length;
-       let score= 200-sounding*8+mutes*8+(min===Infinity?0:min)*3+span*4
-         -noOpen*3+fingers.fingers.filter(f=>f===4).length*2;
+       const high=Math.max(0,...cur.filter(f=>f>0));
+       const fretEffort=cur.reduce((sum,f)=>sum+(f>0?f:0),0);
+       let score=200-sounding*5+mutes*5+(min===Infinity?0:min)*6
+         +high*3+span*11+fretEffort*1.2-noOpen*4+
+         fingers.fingers.filter(f=>f===4).length*3;
        // Penalize hand shapes using more than four separate fretted notes.
        if(cur.filter(f=>f>0).length>4&&!fingers.barres.length)score+=30;
        if(!seen.has(code)||score<seen.get(code).score)
