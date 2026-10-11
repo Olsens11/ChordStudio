@@ -59,6 +59,8 @@
           listCapos:Array.isArray(v.listCapos)?v.listCapos:[],
           showAllFrets:!!v.showAllFrets,
           showNoteNames:v.showNoteNames===true,
+          noteSpellings:v.noteSpellings&&typeof v.noteSpellings==="object"
+            ?Object.fromEntries(Object.entries(v.noteSpellings).filter(([k,n])=>/^(?:[0-9]|1[01])$/.test(k)&&/^[A-G](?:#|b)?$/.test(String(n)))):{},
           tuningMidi:Array.isArray(v.tuningMidi)&&v.tuningMidi.length===6
             &&v.tuningMidi.every(Number.isInteger)?[...v.tuningMidi]:null
         }));
@@ -81,6 +83,7 @@
       originalCatalog:structuredClone(original),
       chordEditor:$("chordEditor").value,
       tuning:window.ChordTheory?.getTuning()||{id:"standard"},
+      songKey:window.ChordKey?.getState()||{value:""},
       chordOrder:[...diagramOrder],
       removedDiagrams:[...removedDiagrams],
       songLines:serializeLines($("songLines").childNodes),
@@ -223,6 +226,7 @@
         data.tuning.confirmed===true);}
       catch(e){throw Error("Saved guitar tuning is invalid: "+e.message);}
     }else window.ChordTheory?.setTuning("standard",null,false);
+    window.ChordKey?.restore(data.songKey||{value:""});
     catalog=structuredClone(savedCatalog);
     original=structuredClone(originalCatalog);
     page.content=String(meta.content||"");
