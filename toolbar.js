@@ -17,6 +17,31 @@
         button.addEventListener("click",()=>{menu.open=false;});
       });
     }
+    const fullscreenButton=document.getElementById("toggleFullscreen");
+    const syncFullscreen=()=>{
+      if(!fullscreenButton)return;
+      const on=!!document.fullscreenElement;
+      fullscreenButton.setAttribute("aria-pressed",String(on));
+      fullscreenButton.firstChild.textContent=on?"Exit fullscreen ":"Toggle fullscreen ";
+    };
+    fullscreenButton?.addEventListener("click",async()=>{
+      try{
+        if(document.fullscreenElement){
+          await document.exitFullscreen();
+        }else if(document.documentElement.requestFullscreen){
+          // Browser-native F11 remains available; this is the page fullscreen API.
+          await document.documentElement.requestFullscreen();
+        }else{
+          throw Error("Page fullscreen is not supported here. Try F11 in your browser.");
+        }
+      }catch(error){
+        const status=document.getElementById("message");
+        if(status)status.textContent="Could not change fullscreen: "+error.message;
+      }
+      syncFullscreen();
+    });
+    document.addEventListener("fullscreenchange",syncFullscreen);
+    syncFullscreen();
     document.addEventListener("pointerdown",event=>{
       if(!menus.some(menu=>menu.open))return;
       if(!event.target.closest(".toolbar-menu"))closeAll();
