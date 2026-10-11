@@ -18,6 +18,17 @@
    const top=element.getBoundingClientRect().top+window.scrollY-gap;
    window.scrollTo({top:Math.max(0,Math.round(top)),behavior:"instant"});
  }
+ // Return to the same page-first view used when reopening a saved project.
+ // Keep the other activity disclosures exactly as the user left them.
+ function focusPaper(){
+   const current=++ticket;
+   requestAnimationFrame(()=>requestAnimationFrame(()=>{
+     if(current!==ticket||$("previewContent").inert)return;
+     const toolbar=$("previewToolbar");
+     const gap=toolbar.getBoundingClientRect().height+7;
+     scrollToElement($("printPage"),gap);
+   }));
+ }
  function activate(mode){
    const current=++ticket;
    document.body.classList.add("has-document");
@@ -26,15 +37,10 @@
    setPreview(true);
    // A blank document already opens the editor and lets it handle scroll/focus.
    if(mode==="new")return;
+   if(mode==="project"){focusPaper();return;}
    requestAnimationFrame(()=>requestAnimationFrame(()=>{
      if(current!==ticket)return;
-     if(mode==="project"){
-       const toolbar=$("previewToolbar");
-       const paper=$("printPage");
-       // Match the paper's top edge to the sticky toolbar's bottom, plus a small gap.
-       const gap=toolbar.getBoundingClientRect().height+7;
-       scrollToElement(paper,gap);
-     }else scrollToElement($("workspace"),headerGap);
+     scrollToElement($("workspace"),headerGap);
    }));
  }
  function init(){
@@ -44,7 +50,7 @@
    });
    setPreview(false);
  }
- window.ChordWorkflow={activate,setPreview};
+ window.ChordWorkflow={activate,setPreview,focusPaper};
  // Defer-loaded before app.js: initialize synchronously so hash imports cannot be reset.
  init();
 })();
