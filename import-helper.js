@@ -4,8 +4,8 @@
  const $=id=>document.getElementById(id);
  function help(){
    $("importDetails").open=true;
-   $("importHowto").open=true;
    $("bookmarkHelp").hidden=false;
+   $("showImportHelp").setAttribute("aria-expanded","true");
  }
  async function copy(){
    const data=$("bookmarklet").href;
@@ -45,11 +45,14 @@
    const bookmark=$("bookmarklet");
    bookmark.addEventListener("click",event=>{event.preventDefault();help();});
    $("showImportHelp").addEventListener("click",()=>{
-     $("importDetails").open=true;$("importHowto").open=true;
-     $("importHowto").scrollIntoView({behavior:"smooth",block:"nearest"});
+     help();
+     $("bookmarkHelp").scrollIntoView({behavior:"smooth",block:"nearest"});
    });
    $("copyBookmarklet").addEventListener("click",copy);
-   $("closeBookmarkHelp").addEventListener("click",()=>{$("bookmarkHelp").hidden=true;});
+   $("closeBookmarkHelp").addEventListener("click",()=>{
+     $("bookmarkHelp").hidden=true;
+     $("showImportHelp").setAttribute("aria-expanded","false");
+   });
    $("importPaste").addEventListener("click",event=>{
      const value=$("sourcePaste").value.trim();
      if(!/^https?:\/\/\S+$/i.test(value))return;
