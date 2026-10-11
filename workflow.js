@@ -3,7 +3,19 @@
 (function(){
  const $=id=>document.getElementById(id);
  const headerGap=12;
- let ticket=0;
+ let ticket=0, projectNoticeTimer=null;
+ const projectNoticeText="Saved project restored with edited song and sticker positions.";
+ function dismissProjectNotice(){
+   clearTimeout(projectNoticeTimer);
+   projectNoticeTimer=null;
+   $("projectRestoredNotice").hidden=true;
+ }
+ function showProjectNotice(){
+   dismissProjectNotice();
+   $("projectRestoredText").textContent=projectNoticeText;
+   $("projectRestoredNotice").hidden=false;
+   projectNoticeTimer=setTimeout(dismissProjectNotice,6500);
+ }
  function setPreview(open){
    const content=$("previewContent"),button=$("previewDisclosureToggle");
    content.classList.toggle("is-collapsed",!open);
@@ -35,15 +47,18 @@
    $("importDetails").open=false;
    $("organizerDetails").open=false;
    setPreview(true);
+   if(mode==="project")showProjectNotice();
+   else dismissProjectNotice();
    // A blank document already opens the editor and lets it handle scroll/focus.
    if(mode==="new")return;
-   if(mode==="project"){focusPaper();return;}
+   // Imported and reopened projects both show the preview section's top edge.
    requestAnimationFrame(()=>requestAnimationFrame(()=>{
      if(current!==ticket)return;
      scrollToElement($("workspace"),headerGap);
    }));
  }
  function init(){
+   $("projectRestoreDismiss").addEventListener("click",dismissProjectNotice);
    $("previewDisclosureToggle").addEventListener("click",()=>{
      ++ticket;
      setPreview($("previewDisclosureToggle").getAttribute("aria-expanded")!=="true");
