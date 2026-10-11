@@ -308,3 +308,32 @@
 .preview-toolbar .toolbar-menu-panel #toggleFullscreen[aria-pressed="true"]{
   background:#e9f2ff;color:#1451a0
 }
+
+/* Text edit history and clearly separated Edit menu commands */
+.toolbar-edit-shortcuts{display:flex;align-items:center;gap:3px}
+.toolbar-edit-shortcuts[hidden]{display:none!important}
+#previewToolbar .toolbar-edit-shortcuts button{font:700 18px/1 Arial,sans-serif;padding:6px 9px;border:1px solid #c9daee;border-radius:6px}
+#previewToolbar .toolbar-edit-shortcuts button:disabled{opacity:.35}
+.preview-toolbar .toolbar-menu-panel .toolbar-section-label{
+ font:800 10px/1.4 system-ui,sans-serif;letter-spacing:.08em;color:#59718d;
+ text-transform:uppercase;padding:7px 10px 3px;
+}
+.toolbar-section-label .menu-keyhint{float:none;text-transform:none;letter-spacing:normal}
+.page-guide-control{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;margin:6px 0}
+.song-editor-stage{isolation:isolate}
+.page-guides{z-index:3}
+.image-placement-hint{
+ position:sticky;top:51px;z-index:60;padding:9px 14px;margin:8px 0;
+ background:#e8f1ff;color:#13497f;border:1px solid #85b0e5;border-radius:8px;
+ font:700 12px/1.5 system-ui,sans-serif
+}
+.image-placement-hint[hidden]{display:none!important}
+.placing-image .paper-page,.placing-image .paper-inside{
+ cursor:copy!important;outline-color:#4280ca
+}
+.paper-sticker.image-sticker{background:transparent}
+.paper-sticker.image-sticker .sticker-image,.chord-drag-ghost .sticker-image{
+ position:absolute;inset:0;width:100%;height:100%;object-fit:fill;pointer-events:none;
+ background:transparent;user-select:none
+}
+@media print{.image-placement-hint,.page-guides{display:none!important}}
