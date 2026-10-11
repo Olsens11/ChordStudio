@@ -2,9 +2,10 @@
 (function(){
   const $=id=>document.getElementById(id);
   const STICKER_W=104,STICKER_H=107,MIN_SCALE=.4,MAX_SCALE=3.5;
+  const chordHeight=record=>record.showDiagram===false?54:record.showCode===true?127:STICKER_H;
   const stickerScale=record=>Math.max(MIN_SCALE,Number(record.scale)||1);
   const stickerWidth=record=>(record.type==="text"||record.noteType==="text")?(record.w||190)*stickerScale(record):STICKER_W*stickerScale(record);
-  const stickerHeight=record=>(record.type==="text"||record.noteType==="text")?(record.h||85)*stickerScale(record):STICKER_H*stickerScale(record);
+  const stickerHeight=record=>(record.type==="text"||record.noteType==="text")?(record.h||85)*stickerScale(record):chordHeight(record)*stickerScale(record);
   const NOTE_MIN_W=85,NOTE_MIN_H=36;
   let placingNote=false,activeNoteId=null,noteTextHistorySaved=false;
   let stickers=[], history=[], redo=[], nextId=1, drag=null;
@@ -19,19 +20,16 @@
     const grid=$("stickerBoardGrid");
     if(!grid)return;
     grid.replaceChildren();
+    const mode=activeChordMode(true);
     for(const item of rendered){
       const card=document.createElement("div");card.className="chord-card";
       card.dataset.diagramKey=diagramKey(item);
-      card.title="Drag onto a page to place another "+item.name+" diagram";
+      card.title="Drag onto a page to place another "+item.name+" chord";
       card.setAttribute("aria-label","Drag "+item.name+" onto a page");
-      const name=document.createElement("div");name.className="chord-name";name.textContent=item.name;
-      const art=document.createElement("div");art.className="diagram-art";
-      art.append(makeDiagramCanvas(item.source));
-      card.append(name,art);
-      grid.append(card);
+      fillChordCard(card,item,mode);grid.append(card);
     }
     if(!rendered.length){
-      const note=document.createElement("p");note.textContent="No diagrams selected.";
+      const note=document.createElement("p");note.textContent="No chords selected.";
       grid.append(note);
     }
   }
@@ -167,30 +165,21 @@
   }
   function renderBank(main,pages,current,size){
     if(!$("includeChords").checked||!rendered.length)return current;
-    let title=sectionLabel("CHORDS");
-    current.main.append(title);
+    let title=sectionLabel("CHORDS");current.main.append(title);
     let bank=document.createElement("div");bank.className="paper-bank";
     bank.style.setProperty("--cols",Number($("columns").value));
     current.main.append(bank);
+    const mode=activeChordMode(false);
     for(const item of rendered){
       const key=diagramKey(item);
-      const source=$("chordGrid").querySelectorAll(".chord-card");
-      let copy=[...source].find(node=>node.dataset.diagramKey===key)?.cloneNode(true);
-      if(!copy)continue;
-      copy.draggable=false;copy.removeAttribute("tabindex");copy.title="Drag to place another copy of this chord on any page";
-      copy.querySelectorAll(".diagram-remove").forEach(node=>node.remove());
-      // Cloning a canvas copies its element but NOT its drawn bitmap.
-      // Recreate the chord graphic so paper previews and PDFs show actual dots.
-      const oldCanvas=copy.querySelector("canvas");
-      if(oldCanvas)oldCanvas.replaceWith(makeDiagramCanvas(item.source));
-      bank.append(copy);
+      const copy=document.createElement("div");
+      copy.className="chord-card";copy.dataset.diagramKey=key;copy.draggable=false;
+      copy.title="Drag to place another copy of this chord";
+      fillChordCard(copy,item,mode);bank.append(copy);
       if(bank.getBoundingClientRect().bottom>current.inside.getBoundingClientRect().bottom-.5){
         copy.remove();
-        if(!bank.childElementCount){
-          bank.remove();title.remove();
-        }
-        current=freshPage(pages.length+1);
-        pages.push(current);
+        if(!bank.childElementCount){bank.remove();title.remove();}
+        current=freshPage(pages.length+1);pages.push(current);
         title=sectionLabel("CHORDS (continued)");current.main.append(title);
         bank=document.createElement("div");bank.className="paper-bank";
         bank.style.setProperty("--cols",Number($("columns").value));
@@ -220,6 +209,24 @@
       }
     }
   }
+  function chordStickerArtwork(record){
+    const inner=document.createElement("div");inner.className="sticker-inner";
+    inner.style.height=chordHeight(record)+"px";
+    inner.style.transform="scale("+stickerScale(record)+")";
+    const name=document.createElement("div");name.className="chord-name";
+    name.textContent=record.name;inner.append(name);
+    if(record.showDiagram!==false){
+      const art=document.createElement("div");art.className="diagram-art";
+      art.append(makeDiagramCanvas(record.shape));inner.append(art);
+    }
+    if(record.showCode===true){
+      const code=document.createElement("div");code.className="chord-code";
+      code.textContent=record.code||fretCode(
+        Array.isArray(record.shape?.frets)?[...record.shape.frets].reverse():[]);
+      inner.append(code);
+    }
+    return inner;
+  }
   function stickerElement(record){
     const isText=record.type==="text";
     const el=document.createElement("div");el.className="paper-sticker"+(isText?" text-sticker":"");
@@ -243,11 +250,7 @@
         }
       });
     }else{
-      const inner=document.createElement("div");inner.className="sticker-inner";
-      inner.style.transform="scale("+stickerScale(record)+")";
-      const name=document.createElement("div");name.className="chord-name";name.textContent=record.name;
-      const art=document.createElement("div");art.className="diagram-art";
-      art.append(makeDiagramCanvas(record.shape));inner.append(name,art);el.append(inner);
+      el.append(chordStickerArtwork(record));
     }
     const remove=document.createElement("button");remove.className="sticker-delete no-print";
     remove.type="button";remove.title="Remove placed "+(isText?"note":"diagram");
@@ -320,7 +323,8 @@
         const key=drag?.key||draggingChordKey||ev.dataTransfer?.getData("text/plain");
         const item=findItem(key);
         if(item){
-          save();stickers.push({id:nextId++,name:item.name,key,shape:structuredClone(item.source),page:index,x,y});refresh();
+          save();stickers.push({id:nextId++,name:item.name,key,shape:structuredClone(item.source),
+            showDiagram:true,showCode:false,code:fretCode(item.arr),scale:1,page:index,x,y});refresh();
         }
       }
       drag=null;draggingChordKey=null;
@@ -363,11 +367,7 @@
       content.textContent=state.text||"";noteStyle(content,state);
       inner.append(content);el.append(inner);
     }else{
-      const inner=document.createElement("div");inner.className="sticker-inner";
-      inner.style.transform="scale("+stickerScale(state)+")";
-      const title=document.createElement("div");title.className="chord-name";title.textContent=state.name;
-      const art=document.createElement("div");art.className="diagram-art";
-      art.append(makeDiagramCanvas(state.shape));inner.append(title,art);el.append(inner);
+      el.append(chordStickerArtwork(state));
     }
     document.body.append(el);
     return el;
@@ -619,6 +619,7 @@
       model={type:"sticker",id,name:record.name,shape:record.shape,scale:stickerScale(record),
         noteType:record.type==="text"?"text":"diagram",w:record.w,h:record.h,
         text:record.text,fontSize:record.fontSize,bold:record.bold,italic:record.italic,
+        showDiagram:record.showDiagram!==false,showCode:record.showCode===true,code:record.code,
         align:record.align,color:record.color,background:record.background,
         offsetX:ev.clientX-box.left,offsetY:ev.clientY-box.top};
       if(record.type==="text")closeNoteEditor();
@@ -626,7 +627,10 @@
       const key=source.dataset.diagramKey;
       const item=findItem(key);
       if(!item)return;
-      model={type:"bank",key,name:item.name,shape:item.source,bankOrigin:source.closest("#chordGrid")?"top":source.closest("#stickerBoardGrid")?"tray":"paper",source};
+      model={type:"bank",key,name:item.name,shape:item.source,
+        showDiagram:source.dataset.showDiagram!=="false",showCode:source.dataset.showCode==="true",
+        code:fretCode(item.arr),
+        bankOrigin:source.closest("#chordGrid")?"top":source.closest("#stickerBoardGrid")?"tray":"paper",source};
     }
     pointerDrag={...model,pointerId:ev.pointerId,x:ev.clientX,y:ev.clientY,startX:ev.clientX,startY:ev.clientY,ctrlKey:ev.ctrlKey,shiftKey:ev.shiftKey,started:false,ghost:null};
     document.addEventListener("pointermove",movePointerDrag,{capture:true,passive:false});
@@ -688,7 +692,9 @@
             const item=findItem(state.key);
             if(item){
               save();
-              stickers.push({id:nextId++,name:item.name,key:state.key,shape:structuredClone(item.source),scale:1,page:pageIndex,...point});
+              stickers.push({id:nextId++,name:item.name,key:state.key,shape:structuredClone(item.source),
+                showDiagram:state.showDiagram!==false,showCode:state.showCode===true,code:state.code,
+                scale:1,page:pageIndex,...point});
             }
           }
           message("Diagram "+(state.type==="sticker"?"position":"copy")+" saved on page "+(pageIndex+1)+".");
@@ -742,6 +748,13 @@
   function init(){
     document.addEventListener("pointerdown",startPointerDrag,true);
     $("paperSize").addEventListener("change",refresh);
+    for(const id of ["trayShowDiagrams","trayShowCodes"]){
+      $(id).addEventListener("change",()=>{
+        const other=id==="trayShowDiagrams"?"trayShowCodes":"trayShowDiagrams";
+        if(!$(id).checked&&!$(other).checked){$(id).checked=true;message("Keep Diagram or Fret codes enabled.");}
+        renderStickerTray();
+      });
+    }
     $("undoPlacement").addEventListener("click",undo);
     $("redoPlacement").addEventListener("click",redoChange);
     $("clearPlacements").addEventListener("click",clearAll);
@@ -829,6 +842,10 @@
       }else{
         item.key=String(raw.key||"").slice(0,150);
         item.shape=structuredClone(raw.shape);
+        item.showDiagram=raw.showDiagram!==false;
+        item.showCode=raw.showCode===true;
+        if(!item.showDiagram&&!item.showCode)item.showDiagram=true;
+        item.code=typeof raw.code==="string"?raw.code.slice(0,50):fretCode([...raw.shape.frets].reverse());
       }
       restored.push(item);
     }
