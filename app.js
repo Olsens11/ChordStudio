@@ -470,7 +470,7 @@ function updateOriginalSourceLink(){
   $("originalSourceRow").hidden=!url;
   $("openSource").disabled=!url;
 }
-function startBlankSong(title="Untitled song",artist="",openEditor=true){
+function startBlankSong(title="Untitled song",artist="",openEditor=true,navigate=true){
   window.ChordRecents?.newDocument();
   window.ChordProject?.clearFileAssociation();
   window.ChordTheory?.setTuning("standard",null,false);
@@ -491,13 +491,12 @@ function startBlankSong(title="Untitled song",artist="",openEditor=true){
   $("includeChords").checked=false;
   $("showDiagrams").checked=true;
   $("showCodes").checked=false;
-  $("importDetails").open=false;
-  $("organizerDetails").open=true;
   window.ChordLayout?.reset();
   updateOriginalSourceLink();
   $("status").textContent="Original song · Add lyrics and build chords whenever you're ready.";
   $("status").classList.add("good");
   renderDiagrams();
+  if(navigate)window.ChordWorkflow?.activate(openEditor?"new":"new-preview");
   if(openEditor){
     // A real line element gives the blank contenteditable editor a printable,
     // correctly paginated starting point, without placeholder text in the song.
@@ -520,7 +519,7 @@ function updateSongDetails(title,artist){
   message("Song title and artist updated.");
 }
 window.ChordSong={startBlankSong,updateSongDetails};
-function loadPage(data){
+function loadPage(data,{navigate=true}={}){
   window.ChordRecents?.newDocument();
   window.ChordProject?.clearFileAssociation();
   window.ChordTheory?.setTuning("standard",null,false);
@@ -556,6 +555,7 @@ function loadPage(data){
   $("status").textContent=Object.keys(next).length+" chord names loaded"+(page.content?" with song text.":".");
   $("status").classList.add("good");
   renderDiagrams();message("Imported "+Object.keys(next).length+" chord names. Ready to print or export.");
+  if(navigate)window.ChordWorkflow?.activate("import");
 }
 function makeImage(){
   const list=renderDiagrams();if(!list.length)throw Error("No chords to export.");
