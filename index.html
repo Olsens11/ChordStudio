@@ -231,7 +231,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
   </aside>
   <section id="noteEditor" class="note-editor no-print" hidden aria-label="Text note editing controls">
     <div class="note-editor-heading"><strong>✎ Text note</strong><button id="closeNoteEditor" type="button" aria-label="Close note editor">×</button></div>
-    <label for="noteText">Note text</label>
+    <div class="note-text-label"><label for="noteText">Note text</label><button id="noteEmojiButton" type="button" aria-expanded="false" aria-controls="emojiPickerPopover" title="Insert emoji into note">😀 Emoji</button></div>
     <textarea id="noteText" rows="3" placeholder="Type your note here…" spellcheck="true"></textarea>
     <div class="note-format-row">
       <label>Size <select id="noteFontSize"><option value="12">12</option><option value="14">14</option><option value="16" selected>16</option><option value="18">18</option><option value="22">22</option><option value="28">28</option><option value="36">36</option></select></label>
@@ -246,6 +246,11 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
     </div>
     <p>Drag note to move · corner to resize · Shift+click to copy</p>
   </section>
+ <aside id="emojiPickerPopover" class="emoji-picker-popover no-print" hidden aria-label="Full emoji picker">
+    <div class="emoji-picker-head"><strong>Insert emoji</strong><button id="emojiPickerClose" type="button" aria-label="Close emoji picker">×</button></div>
+    <div id="emojiPickerHost"><p class="emoji-loading">Loading the emoji library…</p></div>
+    <p id="emojiPickerHelp">Search emojis, choose categories or skin tones, then click to insert.</p>
+  </aside>
  <p id="message" class="message no-print" aria-live="polite"></p>
  </section>
 </main>
@@ -262,12 +267,13 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <div class="image-edit-actions"><button id="imageEditCancel" type="button">Cancel</button><button class="primary" id="imageEditApply" type="button">Apply image</button></div>
 </dialog>
 <footer class="no-print">Independent, open-source chord-sheet formatter. Not affiliated with the sites you import from. No song lyrics are bundled; import only material you are authorized to use.</footer>
-<link rel="stylesheet" href="layout.css?v=20261011-image-studio-2">
+<link rel="stylesheet" href="layout.css?v=20261011-sticker-rotation-1">
 <script src="app.js?v=20261011-image-editor-1" defer></script>
-<script src="layout.js?v=20261011-image-studio-2" defer></script>
+<script src="layout.js?v=20261011-sticker-rotation-1" defer></script>
 <script src="project.js?v=20261011-image-editor-1" defer></script>
 <script src="toolbar.js?v=20261010-fullscreen-1" defer></script>
 <script src="editor.js?v=20261011-editor-2" defer></script>
 <script src="image.js?v=20261011-crop-2" defer></script>
 <script src="pdf.js?v=20261011-directpdf-1" defer></script>
+<script src="emoji.js?v=20261011-emoji-1" defer></script>
 </body></html>
