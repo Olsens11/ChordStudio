@@ -250,6 +250,10 @@
     window.ChordLayout.importProjectLayout(data.layout);
     $("status").textContent="Saved project restored with edited song and sticker positions.";
     $("status").classList.add("good");
+    if(typeof data.projectFilename==="string"){
+      try{currentFilename=normalizeFilename(data.projectFilename);}
+      catch{currentFilename=null;}
+    }
     message("Project opened. You can continue editing and print whenever you're ready.");
   }
   async function openFile(file,handle=null){
