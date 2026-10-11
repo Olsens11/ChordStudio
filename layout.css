@@ -567,3 +567,42 @@ body.chord-rotating,body.chord-rotating *{cursor:alias!important;user-select:non
 }
 @media(max-width:420px){.compose-fields{grid-template-columns:1fr}}
 @media print{.song-start-choices,.song-details-dialog{display:none!important}}
+
+/* The emoji picker has nine category tabs; reserve enough width for all of them. */
+.emoji-picker-popover{width:min(446px,calc(100vw - 16px))}
+#emojiPickerHost emoji-picker{--category-button-size:32px;max-width:100%}
+.preview-toolbar .toolbar-primary .quick-save{display:grid;place-items:center;
+ width:33px;height:32px;min-width:33px;padding:4px 6px;background:#eef5ff;
+ color:#23579a;border:1px solid #a7c2e5;cursor:pointer}
+.preview-toolbar .quick-save:hover{background:#dcecff}
+.recent-projects-dialog{position:fixed;inset:0;margin:auto;box-sizing:border-box;
+ width:min(600px,calc(100vw - 24px));max-height:calc(100vh - 24px);
+ overflow:auto;padding:19px;background:#fff;color:#213755;
+ border:1px solid #aec5e2;border-radius:14px;box-shadow:0 20px 50px #0a254b77}
+.recent-projects-dialog::backdrop{background:#122846a0}
+.recent-dialog-heading{display:flex;align-items:center;justify-content:space-between}
+.recent-dialog-heading h3{margin:0}
+.recent-dialog-heading button{border:0;background:#e9f1fa;border-radius:6px;padding:3px 9px;font-size:21px}
+.recent-projects-dialog p{font:12px/1.6 system-ui,sans-serif;color:#5d7490;margin:9px 0 17px}
+.recent-projects-list{display:flex;flex-direction:column;gap:6px}
+.recent-project-row{display:flex;align-items:center;gap:7px;padding:10px 7px;border:1px solid #dbe6f6;border-radius:8px}
+.recent-project-info{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.recent-project-info strong{font-size:13px;overflow-wrap:anywhere}
+.recent-project-info span{font-size:11px;color:#647c9b}
+.recent-project-row button{padding:7px 11px}
+.recent-project-row button[aria-label^="Remove"]{color:#b52d2d}
+.recent-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:15px}
+.recent-actions button{padding:8px 12px}
+.recent-empty{padding:18px;background:#f6f9ff;border:1px dashed #bcd0e8;border-radius:8px}
+.chord-name-suggestions{border-top:1px solid #d7e4f2;padding-top:12px;margin-top:12px}
+.chord-name-suggestions strong{display:block;font-size:12px;color:#234a7a}
+.chord-name-suggestions small{display:block;font-size:10px;line-height:1.4;color:#72849c;margin-top:9px}
+.builder-analysis{font:11px/1.5 system-ui,sans-serif;color:#4a688c;margin:6px 0 8px;overflow-wrap:anywhere}
+.builder-suggestions{display:flex;flex-wrap:wrap;gap:5px}
+.builder-suggestion{font:700 12px/1.3 system-ui,sans-serif;border:1px solid #b6cdea;background:#fff;
+ color:#285a90;border-radius:7px;padding:6px 8px;cursor:pointer}
+.builder-suggestion.top-suggestion{background:#e8f2ff;border-color:#76a3dc}
+.builder-suggestion:hover{background:#d4e9ff}
+.builder-unknown{font-size:12px;color:#71849c}
+@media(max-width:575px){.preview-toolbar .toolbar-primary .quick-save{width:29px;min-width:29px;padding:4px}}
+@media print{.recent-projects-dialog{display:none!important}}
