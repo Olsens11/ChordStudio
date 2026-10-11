@@ -623,3 +623,12 @@ body.chord-rotating,body.chord-rotating *{cursor:alias!important;user-select:non
 .builder-tuning-confirm>label{flex:1;min-width:170px}
 .builder-tuning-confirm select,.builder-tuning-confirm input{width:100%;box-sizing:border-box}
 @media(max-width:540px){.tuning-control{gap:8px;padding:8px}.tuning-control>label{width:100%}}
+
+.preview-toolbar .toolbar-narrow-label{display:none}
+@media(max-width:480px){
+  .preview-toolbar .toolbar-wide-label{display:none}
+  .preview-toolbar .toolbar-narrow-label{display:inline}
+  #previewToolbar.preview-toolbar{gap:1px}
+  .preview-toolbar .toolbar-primary{gap:2px}
+  .preview-toolbar .toolbar-menu>summary{padding:7px 5px}
+}
