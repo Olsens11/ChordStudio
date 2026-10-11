@@ -4,6 +4,22 @@
   const STICKER_W=104,STICKER_H=107,MIN_SCALE=.4,MAX_SCALE=3.5;
   const imageMinScale=record=>Math.min(1,18/Math.max(record.w||190,record.h||85));
   const minimumScale=record=>record.type==="image"||record.noteType==="image"?imageMinScale(record):MIN_SCALE;
+  // Text and emoji notes may use the entire paper; 3.5x limits are for other stickers.
+  const maxTextScale=record=>{
+    const paper=pageSize();
+    return Math.max(minimumScale(record),Math.min(
+      paper.innerWidth/Math.max(1,record.w||36),
+      paper.innerHeight/Math.max(1,record.h||33)));
+  };
+  const centeredNotePosition=(record,scale,cx,cy)=>{
+    const paper=pageSize();
+    return {
+      x:Math.max(0,Math.min(paper.innerWidth-(record.w||36)*scale,
+        cx-(record.w||36)*scale/2)),
+      y:Math.max(0,Math.min(paper.innerHeight-(record.h||33)*scale,
+        cy-(record.h||33)*scale/2))
+    };
+  };
   const chordHeight=record=>record.showDiagram===false?54:record.showCode===true?127:STICKER_H;
   const stickerScale=record=>Math.max(minimumScale(record),Number(record.scale)||1);
   const stickerWidth=record=>(record.type==="text"||record.noteType==="text"||record.type==="image"||record.noteType==="image")?(record.w||190)*stickerScale(record):STICKER_W*stickerScale(record);
@@ -108,6 +124,17 @@
     record.x=Math.max(0,Math.min(paper.innerWidth-nextW*scale,record.x+(oldW-nextW*scale)/2));
     record.y=Math.max(0,Math.min(paper.innerHeight-nextH*scale,record.y+(oldH-nextH*scale)/2));
     record.w=nextW;record.h=nextH;
+  }
+  function fillPageNote(){
+    const record=noteRecord(activeNoteId);
+    if(!record)return;
+    const paper=pageSize(),scale=Math.max(minimumScale(record),maxTextScale(record)*.94);
+    const x=Math.max(0,(paper.innerWidth-(record.w||36)*scale)/2);
+    const y=Math.max(0,(paper.innerHeight-(record.h||33)*scale)/2);
+    if(Math.abs(stickerScale(record)-scale)<.001&&Math.abs(record.x-x)<1&&Math.abs(record.y-y)<1)return;
+    save();record.scale=scale;record.x=x;record.y=y;
+    refresh();positionNoteEditor();
+    message("Note enlarged to fit the page. Drag, rotate or resize it to taste.");
   }
   function updateNoteView(record){
     const el=$("printPage").querySelector('[data-sticker-id="'+record.id+'"] .note-content');
@@ -355,7 +382,8 @@
         const baseMin=record.type==="text"&&record.autoSize!==false?18:30;
         record.w=Math.max(baseMin,record.w||190);
         record.h=Math.max(baseMin,record.h||85);
-        const maxFit=Math.min(MAX_SCALE,size.innerWidth/record.w,size.innerHeight/record.h);
+        const maxFit=record.type==="text"?maxTextScale(record):
+          Math.min(MAX_SCALE,size.innerWidth/record.w,size.innerHeight/record.h);
         record.scale=Math.max(minimumScale(record),Math.min(stickerScale(record),maxFit));
       }else{
         const maxFit=Math.max(MIN_SCALE,Math.min(MAX_SCALE,size.innerWidth/STICKER_W,size.innerHeight/STICKER_H));
@@ -622,6 +650,7 @@
     ev.stopPropagation();
     pointerDrag={type:"resize",id:record.id,pointerId:ev.pointerId,
       startX:ev.clientX,startY:ev.clientY,initialScale:stickerScale(record),
+      initialX:record.x,initialY:record.y,
       initialW:record.w,initialH:record.h,isText:record.type==="text"||record.type==="image",isImage:record.type==="image",
       before:stickers.map(item=>structuredClone(item)),element:sticker,started:false};
     document.addEventListener("pointermove",movePointerDrag,{capture:true,passive:false});
@@ -641,12 +670,22 @@
       const dx=(ev.clientX-state.startX)/baseW;
       const dy=(ev.clientY-state.startY)/baseH;
       const delta=Math.abs(dx)>=Math.abs(dy)?dx:dy;
-      const maxFit=Math.min(MAX_SCALE,(size.innerWidth-record.x)/baseW,
-        (size.innerHeight-record.y)/baseH);
+      const maxFit=state.isImage
+        ?Math.min(MAX_SCALE,size.innerWidth/baseW,size.innerHeight/baseH)
+        :maxTextScale(record);
       const minFit=Math.min(minimumScale(record),maxFit);
       const next=Math.max(minFit,Math.min(maxFit,Math.round((state.initialScale+delta)*1000)/1000));
       if(Math.abs(next-stickerScale(record))<.001)return;
       state.started=true;record.scale=next;
+      if(!state.isImage){
+        // Expand around the note's contents, not the original top-left corner.
+        const cx=state.initialX+baseW*state.initialScale/2;
+        const cy=state.initialY+baseH*state.initialScale/2;
+        const pos=centeredNotePosition(record,next,cx,cy);
+        record.x=pos.x;record.y=pos.y;
+        state.element.style.left=pos.x+"px";
+        state.element.style.top=pos.y+"px";
+      }
       state.element.style.width=stickerWidth(record)+"px";
       state.element.style.height=stickerHeight(record)+"px";
       if(!state.isImage)state.element.querySelector(".note-inner").style.transform="scale("+next+")";
@@ -878,6 +917,7 @@
     document.addEventListener("click",clickToPlaceNote,true);
     $("closeNoteEditor").addEventListener("click",closeNoteEditor);
     $("doneNote").addEventListener("click",closeNoteEditor);
+    $("noteFillPage").addEventListener("click",fillPageNote);
     $("noteText").addEventListener("input",()=>{
       const record=noteRecord(activeNoteId);if(!record)return;
       if(!noteTextHistorySaved){save();noteTextHistorySaved=true;}
@@ -1002,7 +1042,7 @@
         id,type:isText?"text":isImage?"image":"diagram",
         name:String(raw.name|| (isText?"Note":"Chord")).slice(0,100),
         page:Math.max(0,Math.min(100,Math.floor(number(raw.page,0)))),
-        x:number(raw.x,0),y:number(raw.y,0),scale:Math.max(isImage?0.001:.2,Math.min(MAX_SCALE,number(raw.scale,1))),
+        x:number(raw.x,0),y:number(raw.y,0),scale:Math.max(isImage?0.001:.2,Math.min(isText?1000:MAX_SCALE,number(raw.scale,1))),
         rotation:((number(raw.rotation,0)%360)+360)%360
       };
       if(isText){
