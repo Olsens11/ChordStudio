@@ -211,7 +211,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
     </div>
     <div class="song-editor-actions"><button class="primary" id="applySongEdit" type="button">Apply changes</button><button id="applyPrintSong" type="button">Apply &amp; print</button><button id="cancelSongEdit" type="button">Cancel</button><button id="restoreSongEdit" type="button">Restore imported text</button></div>
  </section>
- <p id="imagePlacementHint" class="image-placement-hint no-print" hidden role="status"></p>
+ <div id="imagePlacementHint" class="image-placement-hint no-print" hidden role="status"><span id="imagePlacementText"></span><button id="imagePlacementDismiss" type="button" aria-label="Dismiss image message or cancel image placement" title="Dismiss / cancel">×</button></div>
  <p class="paper-help no-print">Drag chords from the organizer, sticker tray, or printable CHORDS bank onto any page. Each drop adds a copy. Shift+click duplicates a sticker; Ctrl+Shift+drag snaps to the shared 5px grid. What you see on each paper page is what prints.</p>
 
  <div id="sourceStore" aria-hidden="true">
@@ -223,6 +223,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
   <aside id="stickerBoard" class="sticker-board no-print" hidden aria-label="Floating chord sticker tray">
     <div class="sticker-board-head"><strong>Sticker tray</strong><button type="button" id="closeStickerBoard" aria-label="Close sticker tray" title="Close tray">×</button></div>
     <button id="addTextNote" type="button" aria-pressed="false">✎ Add text note</button>
+    <button id="trayImportImage" type="button">▧ Import image</button>
     <p id="trayHint">Drag onto any page · sources stay here</p>
     <div class="tray-toggles"><label><input type="checkbox" id="trayShowDiagrams" checked> Diagram</label><label><input type="checkbox" id="trayShowCodes"> Fret codes</label></div>
     <div id="stickerBoardGrid" class="sticker-board-grid"></div>
@@ -247,6 +248,18 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <p id="message" class="message no-print" aria-live="polite"></p>
  </section>
 </main>
+<dialog id="imageEditDialog" class="image-edit-dialog no-print" aria-labelledby="imageEditTitle">
+ <div class="image-edit-header"><div><h3 id="imageEditTitle">Edit image</h3><p id="imageEditSummary">Crop or rotate before placing</p></div><button type="button" id="imageEditClose" aria-label="Close image editor">×</button></div>
+ <div class="image-edit-canvas-wrap"><canvas id="imageEditCanvas" width="640" height="410" aria-label="Image crop preview; drag to select the area to keep"></canvas></div>
+ <p class="image-edit-help">Drag on the preview to select a crop area. Rotate or reset the crop as needed.</p>
+ <div class="image-edit-controls">
+   <button id="imageRotateLeft" type="button">↶ Rotate left</button>
+   <button id="imageRotateRight" type="button">↷ Rotate right</button>
+   <button id="imageCropReset" type="button">Reset crop</button>
+ </div>
+ <p id="imageEditNotice" class="image-edit-notice" role="status"></p>
+ <div class="image-edit-actions"><button id="imageEditCancel" type="button">Cancel</button><button class="primary" id="imageEditApply" type="button">Apply image</button></div>
+</dialog>
 <footer class="no-print">Independent, open-source chord-sheet formatter. Not affiliated with the sites you import from. No song lyrics are bundled; import only material you are authorized to use.</footer>
 <link rel="stylesheet" href="layout.css?v=20261011-image-editor-1">
 <script src="app.js?v=20261011-image-editor-1" defer></script>
