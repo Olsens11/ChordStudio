@@ -101,14 +101,13 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <div class="song-start-choices" aria-label="Choose how to start">
   <section class="song-start-option compose-start">
     <div class="song-start-top"><span class="start-icon" aria-hidden="true">✎</span><div><h3>Write my own song</h3><p>Write an original song or arrange someone else’s. Add lyrics, chords, and your own diagrams.</p></div></div>
-    <div class="compose-fields"><label for="newSongTitle">Song title <span class="field-optional">(optional)</span><input id="newSongTitle" type="text" placeholder="Untitled song" maxlength="200"></label>
-    <label for="newSongArtist">Written by <span class="field-optional">(optional)</span><input id="newSongArtist" type="text" placeholder="Songwriter's name" maxlength="200"></label></div>
+    <div class="compose-fields">
+      <label for="newSongTitle"><span class="compose-field-label">Song title <span class="field-optional">(optional)</span></span><input id="newSongTitle" type="text" placeholder="Untitled song" maxlength="200"></label>
+      <label for="newSongArtist"><span class="compose-field-label">Written by <span class="field-optional">(optional)</span></span><input id="newSongArtist" type="text" placeholder="Songwriter's name" maxlength="200"></label>
+    </div>
     <div class="compose-actions">
       <button id="startOriginalSong" class="primary" type="button">Start writing <span aria-hidden="true">→</span></button>
-      <div class="optional-credits">
-        <button id="addArrangementCredit" type="button" aria-haspopup="dialog" aria-controls="songDetailsDialog">Add arrangement credit</button>
-        <button id="addPerformerCredit" type="button" aria-haspopup="dialog" aria-controls="songDetailsDialog">Add performer credit</button>
-      </div>
+      <button id="addCredits" type="button" aria-haspopup="dialog" aria-controls="songDetailsDialog">Add arrangement and performer credits</button>
     </div>
   </section>
   <section class="song-start-option import-start">
@@ -374,7 +373,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <label for="songDetailsWritten">Written by (optional)<input id="songDetailsWritten" type="text" maxlength="200" placeholder="Songwriter's name"></label>
  <label for="songDetailsArtist">As performed by (optional)<input id="songDetailsArtist" type="text" maxlength="200" placeholder="Artist or band"></label>
  <label for="songDetailsArranged">Arranged by (optional)<input id="songDetailsArranged" type="text" maxlength="200" placeholder="Arranger's name"></label>
- <div class="song-details-actions"><button id="songDetailsCancel" type="button">Cancel</button><button id="songDetailsSave" class="primary" type="button">Apply details</button><button id="songDetailsStart" class="primary" type="button" hidden>Start writing →</button></div>
+ <div class="song-details-actions"><button id="songDetailsCancel" type="button">Cancel</button><button id="songDetailsSave" class="primary" type="button" hidden>Apply details</button><button id="songDetailsStart" class="primary" type="button" hidden>Start writing →</button></div>
  </dialog>
  <dialog id="linkDialog" class="song-details-dialog link-dialog no-print" aria-labelledby="linkHeading">
  <div class="song-details-header"><h3 id="linkHeading">Insert QR code / link</h3><button id="linkClose" type="button" aria-label="Close">×</button></div>
@@ -450,7 +449,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <div class="chord-builder-actions"><button id="builderCancel" type="button">Cancel</button><button id="builderSave" class="primary" type="button">Save chord to organizer</button></div>
 </dialog>
 <footer class="no-print">Independent, open-source chord-sheet formatter. Not affiliated with the sites you import from. No song lyrics are bundled; import only material you are authorized to use.</footer>
-<link rel="stylesheet" href="layout.css?v=20261011-credits-modal-focus-1">
+<link rel="stylesheet" href="layout.css?v=20261011-combined-credits-1">
 <script src="workflow.js?v=20261011-project-restore-1" defer></script>
 <script src="app.js?v=20261011-credits-modal-focus-1" defer></script>
 <script src="layout.js?v=20261011-layout-credits-qr-2" defer></script>
@@ -462,7 +461,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
 <script src="emoji.js?v=20261010-menus-tuning-1" defer></script>
 <script src="chord-builder.js?v=20261011-credits-modal-focus-1" defer></script>
 <script src="import-helper.js?v=20261011-credits-insert-1" defer></script>
-<script src="new-song.js?v=20261011-credits-modal-focus-1" defer></script>
+<script src="new-song.js?v=20261011-combined-credits-1" defer></script>
 <script src="chord-theory.js?v=20261010-menus-tuning-1" defer></script>
 <script src="voicings.js?v=20261011-voicing-save-1" defer></script>
 <script src="song-key.js?v=20261011-key-import-fix-2" defer></script>
