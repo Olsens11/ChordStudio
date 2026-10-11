@@ -253,13 +253,15 @@
     if(!window.ChordLayout?.importProjectLayout)
       throw Error("The project layout engine has not finished loading.");
     window.ChordLayout.importProjectLayout(data.layout);
-    $("status").textContent="Saved project restored with edited song and sticker positions.";
-    $("status").classList.add("good");
+    // Project confirmation uses a temporary dismissible notice, not a permanent status line.
+    $("status").textContent="";
+    $("status").classList.remove("good");
+    $("status").hidden=true;
     if(typeof data.projectFilename==="string"){
       try{currentFilename=normalizeFilename(data.projectFilename);}
       catch{currentFilename=null;}
     }
-    message("Project opened. You can continue editing and print whenever you're ready.");
+    message("");
   }
   async function openFile(file,handle=null){
     if(!file)return;
