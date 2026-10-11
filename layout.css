@@ -300,3 +300,11 @@
  .preview-toolbar .toolbar-menu-panel{min-width:200px}
 }
 @media print{#previewToolbar{display:none!important}}
+
+.preview-toolbar .toolbar-menu-panel .menu-keyhint{
+  float:right;font:600 11px/1.3 ui-monospace,Consolas,monospace;
+  color:#71829a;margin-left:19px
+}
+.preview-toolbar .toolbar-menu-panel #toggleFullscreen[aria-pressed="true"]{
+  background:#e9f2ff;color:#1451a0
+}
