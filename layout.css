@@ -748,3 +748,6 @@ body.chord-rotating,body.chord-rotating *{cursor:alias!important;user-select:non
 /* The section label adds six pixels beneath each select; compensate so
    the action button's visual bottom edge lines up with the select. */
 .key-control #suggestSongKey,.key-control #previewTranspose,.key-control #previewTransposeSteps{transform:translateY(-6px)}
+
+.key-control .key-control-field>#confirmSongKey:not([hidden]),
+.key-control .key-control-field>#undoTranspose:not([hidden]){justify-self:start;width:auto;max-width:200px}
