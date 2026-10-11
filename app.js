@@ -323,7 +323,7 @@ function syncSongTypography(){
 }
 
 function syncPaperSize(){window.ChordLayout?.refresh();}
-function schedulePageGuides(){window.ChordLayout?.refresh();}
+function schedulePageGuides(){window.SongEditing?.updateGuides();}
 function updatePageGuides(){window.ChordLayout?.refresh();}
 function matchPrintToGuides(){window.ChordLayout?.refresh();}
 
@@ -341,11 +341,13 @@ function openSongEditor(){
   $("songEditor").replaceChildren(...Array.from($("songLines").childNodes,node=>node.cloneNode(true)));
   panel.hidden=false;
   syncSongTypography();
+  window.SongEditing?.opened();
   schedulePageGuides();
   panel.scrollIntoView({behavior:"smooth",block:"start"});
   $("songEditor").focus({preventScroll:true});
 }
 function closeSongEditor(){
+  window.SongEditing?.closed();
   $("songEditorPanel").hidden=true;
   $("songEditor").replaceChildren();
 }
@@ -376,6 +378,7 @@ function applySongEdit(quiet=false){
 }
 function restoreImportedSong(){
   $("songEditor").replaceChildren(...importedSongNodes.map(node=>node.cloneNode(true)));
+  window.SongEditing?.recordChange();schedulePageGuides();
   message("Original imported text restored in the editor. Choose Apply changes to update the print sheet.");
 }
 function pasteSongText(event){
@@ -561,6 +564,7 @@ function init(){
     button.addEventListener("click",()=>{
       $("songEditor").focus();
       document.execCommand(button.dataset.songFormat,false,null);
+      window.SongEditing?.recordChange();schedulePageGuides();
     });
   }
   $("songEditSize").addEventListener("change",()=>{
