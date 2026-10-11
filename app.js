@@ -493,6 +493,7 @@ function startBlankSong(title="Untitled song",artist="",openEditor=true,navigate
   $("showCodes").checked=false;
   window.ChordLayout?.reset();
   updateOriginalSourceLink();
+  $("status").hidden=false;
   $("status").textContent="Original song · Add lyrics and build chords whenever you're ready.";
   $("status").classList.add("good");
   renderDiagrams();
@@ -552,6 +553,7 @@ function loadPage(data,{navigate=true}={}){
   resetDiagramHistory();
   resetImportedSongNodes();
   closeSongEditor();
+  $("status").hidden=false;
   $("status").textContent=Object.keys(next).length+" chord names loaded"+(page.content?" with song text.":".");
   $("status").classList.add("good");
   renderDiagrams();message("Imported "+Object.keys(next).length+" chord names. Ready to print or export.");
