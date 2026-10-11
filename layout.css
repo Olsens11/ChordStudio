@@ -444,7 +444,7 @@ body.chord-rotating,body.chord-rotating *{cursor:alias!important;user-select:non
 }
 
 /* Compact content-sized text notes; rotate around the actual content center. */
-.text-sticker[data-auto-size="true"] .note-content{white-space:pre;overflow:visible;overflow-wrap:normal;padding:6px 8px;line-height:1.2}
+.text-sticker[data-auto-size="true"] .note-content,.note-ghost[data-auto-size="true"] .note-content{white-space:pre;overflow:visible;overflow-wrap:normal;padding:0;line-height:1.2}
 #chordGrid .diagram-edit{
   position:absolute;bottom:1px;right:0;border:0;background:#e8f2ff;
   color:#1d5da1;font:bold 14px/1 system-ui,sans-serif;
