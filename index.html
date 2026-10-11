@@ -100,16 +100,20 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <details class="activity-disclosure" id="importDetails" open><summary>Bring a song into ChordStudio</summary><div class="activity-body">
  <div class="song-start-choices" aria-label="Choose how to start">
   <section class="song-start-option compose-start">
-    <div class="song-start-top"><span class="start-icon" aria-hidden="true">✎</span><div><h3>Write my own song</h3><p>Start with a blank sheet. Write lyrics and chords, then build your own diagrams.</p></div></div>
-    <div class="compose-fields"><label for="newSongTitle">Song title<input id="newSongTitle" type="text" placeholder="Untitled song" maxlength="200"></label>
-    <label for="newSongArtist">Written by <span class="field-optional">(optional)</span><input id="newSongArtist" type="text" placeholder="Artist or songwriter" maxlength="200"></label></div>
+    <div class="song-start-top"><span class="start-icon" aria-hidden="true">✎</span><div><h3>Write my own song</h3><p>Write an original song or arrange someone else’s. Add lyrics, chords, and your own diagrams.</p></div></div>
+    <div class="compose-fields"><label for="newSongTitle">Song title <span class="field-optional">(optional)</span><input id="newSongTitle" type="text" placeholder="Untitled song" maxlength="200"></label>
+    <label for="newSongArtist">Written by <span class="field-optional">(optional)</span><input id="newSongArtist" type="text" placeholder="Songwriter's name" maxlength="200"></label></div>
+     <div class="optional-credits">
+       <details><summary>Add arrangement credit</summary><label for="newSongArranged">Arranged by (optional)<input id="newSongArranged" type="text" maxlength="200" placeholder="Arranger's name"></label></details>
+       <details><summary>Add performer credit</summary><label for="newSongPerformed">As performed by (optional)<input id="newSongPerformed" type="text" maxlength="200" placeholder="Artist or band"></label></details>
+     </div>
     <button id="startOriginalSong" class="primary" type="button">Start writing <span aria-hidden="true">→</span></button>
   </section>
   <section class="song-start-option import-start">
-    <div class="song-start-top"><span class="start-icon" aria-hidden="true">↗</span><div><h3>Import an existing song</h3><p>Bring in chord diagrams and song text from a page you've found.</p></div></div>
-    <p class="import-start-hint">Add this link to your bookmarks bar, then click it while viewing a song's chord page.</p>
-    <div class="bookmark-start-link"><a href="#" id="bookmarklet" class="bookmarklet" title="Drag to bookmarks bar, or click for setup steps">↗ ChordStudio</a></div>
-    <button id="showImportHelp" class="linklike" type="button" aria-controls="bookmarkHelp" aria-expanded="false">How to import a song</button>
+    <div class="song-start-top"><span class="start-icon" aria-hidden="true">↗</span><div><h3>Import an existing song</h3><p>Bring in lyrics and chord diagrams from a supported song page, then make the arrangement your own.</p></div></div>
+    <p class="import-start-hint">Drag this yellow button to your bookmarks bar, then click it while viewing a song's chord page.</p>
+    <div class="bookmark-start-link"><a href="#" id="bookmarklet" class="bookmarklet" draggable="true" title="Drag to bookmarks bar, or click for setup steps">↗ ChordStudio</a>
+     <button id="showImportHelp" class="linklike" type="button" aria-controls="bookmarkHelp" aria-expanded="false">Can't drag it? See alternate setup instructions</button></div>
   </section>
 </div>
 <div id="songStartHint" class="song-start-hint" hidden role="status"></div>
@@ -120,8 +124,14 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
    <p>If dragging isn't available, create a bookmark named ChordStudio and replace its URL with the copied code.</p>
    <button id="copyBookmarklet" type="button">Copy bookmarklet code</button>
   </div>
- <div class="continue-project"><div><strong>Coming back to an existing song?</strong><div class="hint">Open a saved .chordstudio project to pick up where you left off.</div></div><button id="welcomeOpenProject" type="button">Open saved project…</button></div>
- <details class="alt"><summary>Import saved page source, JSON, HTML or URL</summary><div class="fileinput"><input id="sourceFile" type="file" accept=".html,.htm,.json,.txt,text/html,text/plain,application/json"></div><textarea id="sourcePaste" placeholder="Paste a song URL, saved HTML, or JSON chord data"></textarea><button id="importPaste">Import</button> <a id="sourceOpenFromPaste" class="source-fallback-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Open song page ↗</a></details>
+ <div class="continue-project"><div><strong>Coming back to an existing song project?</strong><div class="hint">Open a saved .chordstudio project to pick up where you left off.</div></div><button id="welcomeOpenProject" type="button">Open saved project…</button></div>
+ <details class="alt advanced-import"><summary>Advanced song import</summary>
+  <p class="hint">Import saved webpage HTML, compatible JSON chord data, or a URL. For everyday importing, use the bookmark above.</p>
+  <label for="sourceFile">Import from file</label><div class="fileinput"><input id="sourceFile" type="file" accept=".html,.htm,.json,.txt,.chordstudio,text/html,text/plain,application/json"><span class="hint">HTML, JSON, TXT, or ChordStudio project</span></div>
+  <label for="sourcePaste">Or paste song data</label><textarea id="sourcePaste" placeholder="Paste a song URL, webpage HTML, or compatible JSON…"></textarea>
+  <p class="hint">Some websites block direct URL importing. Open the source page and use the bookmark if needed.</p>
+  <button id="importPaste" type="button">Import song</button> <a id="sourceOpenFromPaste" class="source-fallback-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Open song page ↗</a>
+ </details>
  </div></details>
 </section>
 <section class="card no-print" id="organizer">
@@ -205,8 +215,6 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
          <button id="saveProjectBtn" type="button">Save <span class="menu-keyhint">Ctrl+S</span></button>
          <button id="saveProjectAsBtn" type="button">Save As… <span class="menu-keyhint">Ctrl+Shift+S</span></button>
          <div class="toolbar-menu-rule"></div>
-         <button id="importImageBtn" type="button">Import image…</button>
-         <input id="imageFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
          <button id="filePrintBtn" type="button">Print…</button>
          <button id="exportPdfBtn" type="button">Export as PDF…</button>
        </div>
@@ -214,7 +222,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
      <details class="toolbar-menu" data-toolbar-menu>
        <summary>Edit</summary>
        <div class="toolbar-menu-panel" role="group" aria-label="Song editing and sticker history">
-         <button id="editSongDetailsBtn" type="button">Edit song title &amp; artist…</button>
+         <button id="editSongDetailsBtn" type="button">Song details &amp; credits…</button>
          <button id="editSongBtn" type="button">Edit song text…</button>
          <div class="toolbar-menu-rule"></div>
          <div class="toolbar-section-label">Song text <span class="menu-keyhint">While editing</span></div>
@@ -225,6 +233,18 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
          <button id="undoPlacement" type="button" disabled>↶ Undo sticker change</button>
          <button id="redoPlacement" type="button" disabled>↷ Redo sticker change</button>
          <button id="clearPlacements" type="button" disabled>Clear placed items</button>
+       </div>
+     </details>
+     <details class="toolbar-menu" data-toolbar-menu>
+       <summary>Insert</summary>
+       <div class="toolbar-menu-panel" role="group" aria-label="Insert sheet content">
+         <button id="importImageBtn" type="button">Image…</button>
+         <input id="imageFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+         <button id="insertTextBtn" type="button">Text / emoji note</button>
+         <button id="insertChordBtn" type="button">Chord sticker</button>
+         <button id="insertLinkBtn" type="button">QR code / link…</button>
+         <div class="toolbar-menu-rule"></div>
+         <label class="toolbar-check" for="includeSourceFooter"><input type="checkbox" id="includeSourceFooter" disabled> Source URL footer (page 1)</label>
        </div>
      </details>
      <details class="toolbar-menu" data-toolbar-menu>
@@ -342,13 +362,26 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
   <div class="recent-actions"><button type="button" id="recentProjectsClear">Clear recent projects</button><button type="button" id="recentProjectsDone">Done</button></div>
 </dialog>
 <dialog id="songDetailsDialog" class="song-details-dialog no-print" aria-labelledby="songDetailsHeading">
- <div class="song-details-header"><h3 id="songDetailsHeading">Song details</h3><button type="button" id="songDetailsClose" aria-label="Close">×</button></div>
+ <div class="song-details-header"><h3 id="songDetailsHeading">Song details &amp; credits</h3><button type="button" id="songDetailsClose" aria-label="Close">×</button></div>
  <p>These details appear at the top of your sheet and in saved projects.</p>
- <label for="songDetailsTitle">Song title<input id="songDetailsTitle" type="text" maxlength="200" required></label>
- <label for="songDetailsArtist">Artist or songwriter (optional)<input id="songDetailsArtist" type="text" maxlength="200"></label>
+ <label for="songDetailsTitle">Song title (optional)<input id="songDetailsTitle" type="text" maxlength="200" placeholder="Untitled song"></label>
+ <label for="songDetailsWritten">Written by (optional)<input id="songDetailsWritten" type="text" maxlength="200" placeholder="Songwriter's name"></label>
+ <label for="songDetailsArtist">As performed by (optional)<input id="songDetailsArtist" type="text" maxlength="200" placeholder="Artist or band"></label>
+ <label for="songDetailsArranged">Arranged by (optional)<input id="songDetailsArranged" type="text" maxlength="200" placeholder="Arranger's name"></label>
  <div class="song-details-actions"><button id="songDetailsCancel" type="button">Cancel</button><button id="songDetailsSave" class="primary" type="button">Apply details</button></div>
  </dialog>
- <dialog id="imageEditDialog" class="image-edit-dialog no-print" aria-labelledby="imageEditTitle">
+ <dialog id="linkDialog" class="song-details-dialog link-dialog no-print" aria-labelledby="linkHeading">
+ <div class="song-details-header"><h3 id="linkHeading">Insert QR code / link</h3><button id="linkClose" type="button" aria-label="Close">×</button></div>
+ <label for="linkUrl">Destination URL<input type="url" id="linkUrl" placeholder="https://…" maxlength="2048" spellcheck="false"></label>
+ <fieldset class="link-options"><legend>Display as</legend>
+ <label><input type="radio" name="linkStyle" value="qr"> QR code sticker</label>
+ <label><input type="radio" name="linkStyle" value="text"> Clickable text link</label>
+ <label><input type="radio" name="linkStyle" value="both" checked> QR code with caption</label></fieldset>
+ <label for="linkCaption" id="linkCaptionRow">Link caption<input type="text" id="linkCaption" maxlength="150" placeholder="Watch this performance"></label>
+ <p class="link-error" id="linkError" role="alert" hidden></p>
+ <div class="song-details-actions"><button id="linkOpen" type="button" hidden>Open destination ↗</button><button id="linkCancel" type="button">Cancel</button><button id="linkConfirm" class="primary" type="button">Insert sticker</button></div>
+</dialog>
+<dialog id="imageEditDialog" class="image-edit-dialog no-print" aria-labelledby="imageEditTitle">
  <div class="image-edit-header"><div><h3 id="imageEditTitle">Edit image</h3><p id="imageEditSummary">Crop or rotate before placing</p></div><button type="button" id="imageEditClose" aria-label="Close image editor">×</button></div>
  <div class="image-edit-canvas-wrap"><canvas id="imageEditCanvas" width="640" height="410" aria-label="Image crop preview; drag to select the area to keep"></canvas></div>
  <p class="image-edit-help">Drag on the preview to select a crop area. Rotate or reset the crop as needed.</p>
@@ -411,21 +444,23 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <div class="chord-builder-actions"><button id="builderCancel" type="button">Cancel</button><button id="builderSave" class="primary" type="button">Save chord to organizer</button></div>
 </dialog>
 <footer class="no-print">Independent, open-source chord-sheet formatter. Not affiliated with the sites you import from. No song lyrics are bundled; import only material you are authorized to use.</footer>
-<link rel="stylesheet" href="layout.css?v=20261011-project-restore-1">
+<link rel="stylesheet" href="layout.css?v=20261011-credits-insert-1">
 <script src="workflow.js?v=20261011-project-restore-1" defer></script>
-<script src="app.js?v=20261011-project-restore-1" defer></script>
-<script src="layout.js?v=20261010-menus-tuning-1" defer></script>
-<script src="project.js?v=20261011-project-restore-1" defer></script>
+<script src="app.js?v=20261011-credits-insert-1" defer></script>
+<script src="layout.js?v=20261011-credits-insert-1" defer></script>
+<script src="project.js?v=20261011-credits-insert-1" defer></script>
 <script src="toolbar.js?v=20261010-fullscreen-1" defer></script>
 <script src="editor.js?v=20261011-editor-2" defer></script>
 <script src="image.js?v=20261011-crop-2" defer></script>
-<script src="pdf.js?v=20261011-directpdf-1" defer></script>
+<script src="pdf.js?v=20261011-credits-insert-1" defer></script>
 <script src="emoji.js?v=20261010-menus-tuning-1" defer></script>
 <script src="chord-builder.js?v=20261011-key-1" defer></script>
-<script src="import-helper.js?v=20261011-activity-flow-1" defer></script>
-<script src="new-song.js?v=20261010-menus-tuning-1" defer></script>
+<script src="import-helper.js?v=20261011-credits-insert-1" defer></script>
+<script src="new-song.js?v=20261011-credits-insert-1" defer></script>
 <script src="chord-theory.js?v=20261010-menus-tuning-1" defer></script>
 <script src="voicings.js?v=20261011-voicing-save-1" defer></script>
 <script src="song-key.js?v=20261011-key-import-fix-2" defer></script>
 <script src="recent-projects.js?v=20261011-activity-flow-1" defer></script>
+<script src="qrcode.min.js?v=1.0.0" defer></script>
+<script src="links.js?v=20261011-pending-1" defer></script>
 </body></html>
