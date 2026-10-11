@@ -86,7 +86,9 @@
  const pc=n=>(n%12+12)%12;
  function noteName(pitch,flat=false){return (flat?FLAT:SHARP)[pc(pitch)];}
  function spell(pcValue,rootPc,quality){
-  const usuallyFlat=[1,3,6,8,10].includes(rootPc);
+  // Common guitar chord spellings: C#m and F#m rather than Dbm/Gbm,
+  // but Eb/Ab/Bb are often preferable to D#/G#/A#.
+  const usuallyFlat=[3,8,10].includes(rootPc);
   const preferFlat=usuallyFlat&&(quality.indexOf("#")<0);
   return noteName(pcValue,preferFlat);
  }
