@@ -341,11 +341,13 @@
 /* Image placement errors are closable and self-expire. */
 .image-placement-hint{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .image-placement-hint.error-notice{background:#fff5f3;border-color:#e7a79f;color:#8c2926}
-.image-placement-hint #imagePlacementDismiss{
+.image-placement-hint #imagePlacementDismiss,
+.image-placement-hint #projectRestoreDismiss{
  padding:1px;flex:none;display:grid;place-items:center;width:26px;height:26px;
  font:700 19px/1 system-ui,sans-serif;color:inherit;border:0;background:transparent;border-radius:5px
 }
-.image-placement-hint #imagePlacementDismiss:hover{background:#00000010}
+.image-placement-hint #imagePlacementDismiss:hover,
+.image-placement-hint #projectRestoreDismiss:hover{background:#00000010}
 .pdf-export-status{position:sticky;top:51px;z-index:59;margin:8px 0;padding:9px 13px;
  border-radius:8px;border:1px solid #aac7e9;background:#eff7ff;color:#174478;
  font:700 12px/1.45 system-ui,sans-serif}
