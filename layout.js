@@ -1,7 +1,7 @@
 "use strict";
 (function(){
   const $=id=>document.getElementById(id);
-  const STICKER_W=104,STICKER_H=107,MIN_SCALE=.4,MAX_SCALE=3.5;
+  const STICKER_W=104,STICKER_H=107,MIN_SCALE=.4,MAX_SCALE=3.5,MAX_LINK_SCALE=12;
   const imageMinScale=record=>Math.min(1,18/Math.max(record.w||190,record.h||85));
   const minimumScale=record=>(record.type==="link"||record.noteType==="link")
     ?(record.linkStyle==="text"?.4:Math.min(1,88/126))
@@ -215,8 +215,20 @@
     const overlay=document.createElement("div");overlay.className="paper-stickers";
     inside.append(main,overlay);page.append(inside);wrapper.append(label,page);
     $("printPage").append(wrapper);
+    const current={wrapper,page,inside,main,overlay,number};
+    if(number>1&&$("repeatSongHeader").checked){
+      const header=titleBlock();main.append(header);fitTitle(header);
+    }
+    sourceFooter(current);
+    if($("showPageNumbers").checked){
+      inside.classList.add("has-paper-footer");
+      const count=document.createElement("div");
+      count.className="paper-page-number";count.dataset.pageNumber=String(number);
+      inside.append(count);
+      inside.querySelector(".paper-source-footer")?.classList.add("with-page-numbers");
+    }
     attachDrop(page,inside,number-1);
-    return {wrapper,page,inside,main,overlay,number};
+    return current;
   }
   function sectionLabel(text){
     const h=document.createElement("h3");h.className="paper-section-label";h.textContent=text;return h;
@@ -256,8 +268,9 @@
   }
   function sourceFooter(first){
     const url=validSourceUrl(page?.source);
-    if(!url||!$("includeSourceFooter").checked)return;
-    first.inside.classList.add("has-source-footer");
+    if(!url||!$("includeSourceFooter").checked||
+      (first.number!==1&&!$("repeatSourceFooter").checked))return;
+    first.inside.classList.add("has-source-footer","has-paper-footer");
     const footer=document.createElement("div");footer.className="paper-source-footer";
     const prefix=document.createElement("span");prefix.textContent="Original source: ";
     const link=document.createElement("a");link.href=url;link.textContent=url;
@@ -343,16 +356,27 @@
     wrap.className="sticker-link-art";wrap.href=record.url;
     wrap.target="_blank";wrap.rel="noopener noreferrer";
     wrap.draggable=false;wrap.tabIndex=-1;
-    // Editing/dragging works on the sticker; open URL is an explicit dialog action.
-    if(record.linkStyle!=="text"){
-      const img=document.createElement("img");img.className="sticker-link-qr";
-      img.src=record.src;img.alt="QR code for "+record.url;img.draggable=false;
-      wrap.append(img);
-    }
-    if(record.linkStyle!=="qr"){
-      const caption=document.createElement("span");caption.className="sticker-link-caption";
-      caption.textContent=record.caption||record.url;
-      wrap.append(caption);
+    wrap.style.width=(record.w||136)+"px";
+    wrap.style.height=(record.h||136)+"px";
+    wrap.style.transform="scale("+stickerScale(record)+")";
+    // New artwork has rasterized QR + caption in one high-resolution image.
+    // Older project stickers retain their existing individual QR/caption data.
+    if(record.artVersion===2){
+      const image=document.createElement("img");image.className="sticker-link-raster";
+      image.src=record.src;image.draggable=false;
+      image.alt=(record.linkStyle==="text"?"Link":"QR code")+": "+(record.caption||record.url);
+      if(record.linkStyle!=="text")image.dataset.qr="true";
+      wrap.append(image);
+    }else{
+      if(record.linkStyle!=="text"){
+        const image=document.createElement("img");image.className="sticker-link-qr";
+        image.src=record.src;image.alt="QR code for "+record.url;image.draggable=false;
+        wrap.append(image);
+      }
+      if(record.linkStyle!=="qr"){
+        const caption=document.createElement("span");caption.className="sticker-link-caption";
+        caption.textContent=record.caption||record.url;wrap.append(caption);
+      }
     }
     return wrap;
   }
@@ -462,7 +486,8 @@
         record.w=Math.max(baseMin,record.w||190);
         record.h=Math.max(baseMin,record.h||85);
         const maxFit=record.type==="text"?maxTextScale(record):
-          Math.min(MAX_SCALE,size.innerWidth/record.w,size.innerHeight/record.h);
+          Math.min(record.type==="link"?MAX_LINK_SCALE:MAX_SCALE,
+            size.innerWidth/record.w,size.innerHeight/record.h);
         record.scale=Math.max(minimumScale(record),Math.min(stickerScale(record),maxFit));
       }else{
         const maxFit=Math.max(MIN_SCALE,Math.min(MAX_SCALE,size.innerWidth/STICKER_W,size.innerHeight/STICKER_H));
@@ -512,11 +537,14 @@
       root.replaceChildren();
       const pages=[freshPage(1)];
       let current=pages[0];
-      sourceFooter(current);
       const head=titleBlock();current.main.append(head);fitTitle(head);
       current=renderBank(current.main,pages,current,pageSize());
       renderSong(current,pages);
       decorate(pages);
+      for(const [i,item] of pages.entries()){
+        const number=item.inside.querySelector(".paper-page-number");
+        if(number)number.textContent="Page "+(i+1)+" of "+pages.length;
+      }
       renderStickerTray();
       $("pageCount").textContent=pages.length+" printable "+(pages.length===1?"page":"pages");
       updateUndoButtons();
@@ -757,7 +785,8 @@
       const dy=(ev.clientY-state.startY)/(tightNote(record)?Math.max(1,baseH-NOTE_PAD_Y*2):baseH);
       const delta=Math.abs(dx)>=Math.abs(dy)?dx:dy;
       const maxFit=state.isImage
-        ?Math.min(MAX_SCALE,size.innerWidth/baseW,size.innerHeight/baseH)
+        ?Math.min(record.type==="link"?MAX_LINK_SCALE:MAX_SCALE,
+          (size.innerWidth-record.x)/baseW,(size.innerHeight-record.y)/baseH)
         :maxTextScale(record);
       const minFit=Math.min(minimumScale(record),maxFit);
       const next=Math.max(minFit,Math.min(maxFit,Math.round((state.initialScale+delta)*1000)/1000));
@@ -775,6 +804,7 @@
       state.element.style.width=stickerWidth(record)+"px";
       state.element.style.height=stickerHeight(record)+"px";
       if(!state.isImage)state.element.querySelector(".note-inner").style.transform="scale("+next+")";
+      if(record.type==="link")state.element.querySelector(".sticker-link-art").style.transform="scale("+next+")";
       state.element.classList.add("resizing");
       return;
     }
@@ -1077,11 +1107,11 @@
   function addLinkSticker(url,linkStyle,caption,src){
     const safe=validSourceUrl(url),style=["qr","text","both"].includes(linkStyle)?linkStyle:"both";
     if(!safe||safe.length>2048)throw Error("Use a complete https:// or http:// URL.");
-    if(style!=="text"&&(!/^data:image\/png;base64,[a-z0-9+/=]+$/i.test(src||"")||(src||"").length>400000))
-      throw Error("Could not generate valid QR artwork.");
-    const w=style==="text"?210:136,h=style==="text"?32:style==="both"?164:136;
-    const item={id:nextId++,type:"link",name:"Web link",url:safe,linkStyle:style,
-      caption:String(caption||"").trim().slice(0,150),src:style==="text"?"":src,
+    if(!/^data:image\/png;base64,[a-z0-9+/=]+$/i.test(src||"")||(src||"").length>400000)
+      throw Error("Could not generate valid link artwork.");
+    const w=style==="text"?210:136,h=style==="text"?38:style==="both"?168:136;
+    const item={id:nextId++,type:"link",name:"Web link",url:safe,linkStyle:style,artVersion:2,
+      caption:String(caption||"").trim().slice(0,150),src,
       page:0,x:24,y:100,w,h,scale:1,rotation:0};
     save();stickers.push(item);refresh();
     message("Link sticker added. Drag to position, resize with the corner, or click to edit.");
@@ -1092,10 +1122,10 @@
     if(!item)throw Error("Link sticker is no longer present.");
     const safe=validSourceUrl(url);
     if(!safe||safe.length>2048)throw Error("Use a complete https:// or http:// URL.");
-    if(linkStyle!=="text"&&(!/^data:image\/png;base64,[a-z0-9+/=]+$/i.test(src||"")||(src||"").length>400000))
-      throw Error("Could not generate valid QR artwork.");
-    save();Object.assign(item,{url:safe,linkStyle,caption:String(caption||"").trim().slice(0,150),
-      src:linkStyle==="text"?"":src,w:linkStyle==="text"?210:136,h:linkStyle==="text"?32:linkStyle==="both"?164:136});
+    if(!/^data:image\/png;base64,[a-z0-9+/=]+$/i.test(src||"")||(src||"").length>400000)
+      throw Error("Could not generate valid link artwork.");
+    save();Object.assign(item,{url:safe,linkStyle,artVersion:2,caption:String(caption||"").trim().slice(0,150),
+      src,w:linkStyle==="text"?210:136,h:linkStyle==="text"?38:linkStyle==="both"?168:136});
     refresh();
   }
   function editorPageBreaks(){
@@ -1153,7 +1183,7 @@
         id,type:isText?"text":isImage?"image":isLink?"link":"diagram",
         name:String(raw.name|| (isText?"Note":"Chord")).slice(0,100),
         page:Math.max(0,Math.min(100,Math.floor(number(raw.page,0)))),
-        x:number(raw.x,0),y:number(raw.y,0),scale:Math.max(isImage?0.001:.2,Math.min(isText?1000:MAX_SCALE,number(raw.scale,1))),
+        x:number(raw.x,0),y:number(raw.y,0),scale:Math.max(isImage?0.001:.2,Math.min(isText?1000:isLink?MAX_LINK_SCALE:MAX_SCALE,number(raw.scale,1))),
         rotation:((number(raw.rotation,0)%360)+360)%360
       };
       if(isText){
@@ -1170,14 +1200,15 @@
         const url=validSourceUrl(raw.url);
         if(!url||url.length>2048)throw Error("Project contains an invalid link destination.");
         if(!["qr","text","both"].includes(raw.linkStyle))throw Error("Project has an invalid QR/link format.");
-        if(raw.linkStyle!=="text"&&
+        if((raw.linkStyle!=="text"||raw.artVersion===2)&&
           (typeof raw.src!=="string"||!/^data:image\/png;base64,[a-z0-9+/=]+$/i.test(raw.src)||raw.src.length>400000))
-          throw Error("Project contains invalid QR artwork.");
-        item.url=url;item.src=raw.linkStyle==="text"?"":raw.src;
+          throw Error("Project contains invalid QR/link artwork.");
+        item.url=url;item.src=raw.linkStyle==="text"&&raw.artVersion!==2?"":raw.src;
         item.caption=String(raw.caption||"").slice(0,150);
         item.linkStyle=raw.linkStyle;
+        item.artVersion=raw.artVersion===2?2:1;
         item.w=raw.linkStyle==="text"?Math.max(110,Math.min(600,number(raw.w,210))):136;
-        item.h=raw.linkStyle==="text"?Math.max(26,Math.min(150,number(raw.h,32))):raw.linkStyle==="both"?164:136;
+        item.h=raw.linkStyle==="text"?Math.max(26,Math.min(150,number(raw.h,38))):raw.linkStyle==="both"?(item.artVersion===2?168:164):136;
       }else if(isImage){
         if(typeof raw.src!=="string"||!/^data:image\/(png|jpeg|webp|gif);base64,[a-z0-9+/=]+$/i.test(raw.src)||raw.src.length>9000000)
           throw Error("Project contains an unsupported or oversized image.");
