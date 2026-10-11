@@ -133,23 +133,51 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <div class="preview-heading no-print"><div><p class="eyebrow">Output preview</p><h2 id="previewTitle">Chord and song sheet</h2><p class="muted" id="status">Example chord diagrams are loaded. Import a song to generate the complete sheet.</p></div>
 </div>
 
- <div class="preview-toolbar no-print" id="previewToolbar">
- <div class="actions"><button id="openProjectBtn" type="button" title="Open a previously saved ChordStudio project">Open Project</button><input id="projectFile" type="file" accept=".chordstudio,.json,application/json" hidden><button id="saveProjectBtn" type="button" title="Save your work to a local project file">Save Project</button><button id="editSongBtn">Edit song text</button><button class="primary" id="printBtn">Print / Save PDF</button></div>
- <div class="layout-toolbar no-print">
-   <label for="paperSize">Paper <select id="paperSize"><option value="letter" selected>US Letter</option><option value="a4">A4</option></select></label>
-   <button id="undoPlacement" type="button" disabled>↶ Undo placement</button>
-   <button id="redoPlacement" type="button" disabled>↷ Redo placement</button>
-   <button id="clearPlacements" type="button" disabled>Clear placed items</button>
-    <button id="toggleStickerBoard" type="button" aria-controls="stickerBoard" aria-expanded="false">Open sticker tray</button>
-   <span id="layoutStatus" class="layout-status"></span>
-   <span id="pageCount" class="layout-status"></span>
+ <div class="preview-toolbar no-print" id="previewToolbar" role="toolbar" aria-label="Output preview tools">
+   <nav class="toolbar-menus" aria-label="Output preview menus">
+     <details class="toolbar-menu" data-toolbar-menu>
+       <summary>File</summary>
+       <div class="toolbar-menu-panel" role="group" aria-label="Project file actions">
+         <button id="openProjectBtn" type="button" title="Open a previously saved ChordStudio project">Open project…</button>
+         <input id="projectFile" type="file" accept=".chordstudio,.json,application/json" hidden>
+         <button id="saveProjectBtn" type="button">Save project</button>
+       </div>
+     </details>
+     <details class="toolbar-menu" data-toolbar-menu>
+       <summary>Edit</summary>
+       <div class="toolbar-menu-panel" role="group" aria-label="Song editing and sticker history">
+         <button id="editSongBtn" type="button">Edit song text…</button>
+         <div class="toolbar-menu-rule"></div>
+         <button id="undoPlacement" type="button" disabled>↶ Undo sticker change</button>
+         <button id="redoPlacement" type="button" disabled>↷ Redo sticker change</button>
+         <button id="clearPlacements" type="button" disabled>Clear placed items</button>
+       </div>
+     </details>
+     <details class="toolbar-menu" data-toolbar-menu>
+       <summary>View</summary>
+       <div class="toolbar-menu-panel toolbar-view-panel" role="group" aria-label="Paper and print settings">
+         <label class="toolbar-check"><input id="includeChords" type="checkbox" checked> Print chord bank</label>
+         <label class="toolbar-check"><input id="includeSong" type="checkbox" checked> Song text</label>
+         <div class="toolbar-menu-rule"></div>
+         <label class="toolbar-select" for="fontSize">Song font
+           <select id="fontSize"><option value="10">Compact</option><option value="12">Medium</option><option value="14" selected>Normal (14 px)</option><option value="16">Large</option><option value="18">Extra large</option><option value="20">Poster</option></select>
+         </label>
+         <label class="toolbar-select" for="paperSize">Paper size
+           <select id="paperSize"><option value="letter" selected>US Letter</option><option value="a4">A4</option></select>
+         </label>
+       </div>
+     </details>
+   </nav>
+   <div class="toolbar-spacer"></div>
+   <div class="toolbar-metrics" aria-live="polite">
+     <span id="layoutStatus" class="layout-status"></span>
+     <span id="pageCount" class="layout-status"></span>
+   </div>
+   <div class="toolbar-primary">
+     <button id="toggleStickerBoard" type="button" aria-controls="stickerBoard" aria-expanded="false">Open sticker tray</button>
+     <button class="primary" id="printBtn" type="button">Print / PDF</button>
+   </div>
  </div>
-
-
- </div>
- <div class="options no-print"><label><input id="includeChords" type="checkbox" checked> Print chord bank</label><label><input id="includeSong" type="checkbox" checked> Song text</label>
- <label>Song font <select id="fontSize"><option value="10">Compact</option><option value="12">Medium</option><option value="14" selected>Normal (14 px)</option><option value="16">Large</option><option value="18">Extra large</option><option value="20">Poster</option></select></label></div>
-
 
  <section id="songEditorPanel" class="song-editor-panel no-print" hidden aria-label="Song text editing controls">
     <h3>Edit song text</h3>
@@ -202,8 +230,8 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  </section>
 </main>
 <footer class="no-print">Independent, open-source chord-sheet formatter. Not affiliated with the sites you import from. No song lyrics are bundled; import only material you are authorized to use.</footer>
-<link rel="stylesheet" href="layout.css?v=20261010-organizer-2">
+<link rel="stylesheet" href="layout.css?v=20261010-menus-1">
 <script src="app.js?v=20261010-organizer-2" defer></script>
-<script src="layout.js?v=20261010-organizer-2" defer></script>
+<script src="layout.js?v=20261010-menus-1" defer></script>
 <script src="project.js?v=20261010-organizer-2" defer></script>
 </body></html>
