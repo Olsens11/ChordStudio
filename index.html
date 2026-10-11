@@ -158,8 +158,9 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
      <details class="toolbar-menu" data-toolbar-menu>
        <summary>File</summary>
        <div class="toolbar-menu-panel" role="group" aria-label="Project file actions">
-         <button id="fileNewSongBtn" type="button">New blank song…</button>
+         <button id="fileNewSongBtn" type="button">New document <span class="menu-keyhint">Ctrl+N</span></button>
          <button id="openProjectBtn" type="button" title="Open a previously saved ChordStudio project">Open project…</button>
+         <button id="recentProjectsBtn" type="button">Recent projects…</button>
          <input id="projectFile" type="file" accept=".chordstudio,.json,application/json" hidden>
          <button id="saveProjectBtn" type="button">Save project</button>
          <div class="toolbar-menu-rule"></div>
@@ -212,6 +213,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
      <span id="pageCount" class="layout-status"></span>
    </div>
    <div class="toolbar-primary">
+     <button id="quickSaveProject" type="button" class="quick-save" aria-label="Save project" title="Save project (Ctrl+S)"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 3h13l3 3v15H4z"/><path d="M7 3v7h10V3"/><path d="M7 21v-8h10v8"/><path d="M10 3v5h4"/></svg></button>
      <button id="toggleStickerBoard" type="button" aria-controls="stickerBoard" aria-expanded="false">Open sticker tray</button>
      <button class="primary" id="printBtn" type="button">Print / PDF</button>
    </div>
@@ -245,7 +247,7 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <div id="printPage" class="paper-stack" aria-label="Printable song pages"></div>
   <aside id="stickerBoard" class="sticker-board no-print" hidden aria-label="Floating chord sticker tray">
     <div class="sticker-board-head"><strong>Sticker tray</strong><button type="button" id="closeStickerBoard" aria-label="Close sticker tray" title="Close tray">×</button></div>
-    <button id="addTextNote" type="button" aria-pressed="false">✎ Add text note</button>
+    <button id="addTextNote" type="button" aria-pressed="false">✎ Add text / emoji</button>
     <button id="trayImportImage" type="button">▧ Import image</button>
     <p id="trayHint">Drag onto any page · sources stay here</p>
     <div class="tray-toggles"><label><input type="checkbox" id="trayShowDiagrams" checked> Diagram</label><label><input type="checkbox" id="trayShowCodes"> Fret codes</label></div>
@@ -277,6 +279,12 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <p id="message" class="message no-print" aria-live="polite"></p>
  </section>
 </main>
+<dialog id="recentProjectsDialog" class="recent-projects-dialog no-print" aria-labelledby="recentProjectsHeading">
+  <div class="recent-dialog-heading"><h3 id="recentProjectsHeading">Recent projects</h3><button type="button" id="recentProjectsClose" aria-label="Close recent projects">×</button></div>
+  <p>Recent saved or opened projects on this device. Projects are stored locally in this browser; downloading a .chordstudio file is still recommended for backups.</p>
+  <div id="recentProjectsList" class="recent-projects-list"></div>
+  <div class="recent-actions"><button type="button" id="recentProjectsClear">Clear recent projects</button><button type="button" id="recentProjectsDone">Done</button></div>
+</dialog>
 <dialog id="songDetailsDialog" class="song-details-dialog no-print" aria-labelledby="songDetailsHeading">
  <div class="song-details-header"><h3 id="songDetailsHeading">Song details</h3><button type="button" id="songDetailsClose" aria-label="Close">×</button></div>
  <p>These details appear at the top of your sheet and in saved projects.</p>
@@ -302,7 +310,12 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
  <div class="chord-builder-fields"><label>Top fret number <input id="builderBase" type="number" min="1" max="24" value="1"></label><label>Finger for selected dot/barre <select id="builderFinger"><option value="0">Unnumbered</option><option value="1">1 · index</option><option value="2">2 · middle</option><option value="3">3 · ring</option><option value="4">4 · pinky</option></select></label><label><input id="builderShowDots" type="checkbox" checked> Show all dots</label></div>
  <div class="chord-builder-workspace"><div><div id="builderGrid" class="builder-grid" role="group" aria-label="Interactive six-string guitar fretboard"></div><div id="builderStringNames" class="builder-string-names" aria-hidden="true"><span>E</span><span>A</span><span>D</span><span>G</span><span>B</span><span>e</span></div></div>
  <div class="builder-sidebar"><div class="builder-help">Tap the string status above a column to cycle between <strong>open</strong> and <strong>muted</strong>. Click a cell for a fret dot, or drag horizontally across cells for a barre. Use finger labels when needed.</div>
- <div id="builderBarres" class="builder-barres"></div><div class="builder-live"><strong>Diagram preview</strong><div id="builderPreview"></div><span id="builderFeedback" role="status"></span></div></div></div>
+ <div id="builderBarres" class="builder-barres"></div><div class="builder-live"><strong>Diagram preview</strong><div id="builderPreview"></div><span id="builderFeedback" role="status"></span></div>
+ <section class="chord-name-suggestions" aria-label="Chord name suggestions">
+   <strong>Possible chord names</strong><p id="builderAnalysis" class="builder-analysis">Select string and fret positions to analyze their notes.</p>
+   <div id="builderSuggestedNames" class="builder-suggestions"></div>
+   <small>Names describe the sounding notes in standard tuning. Musical context can change which name is best.</small>
+ </section></div></div>
  <div class="chord-builder-actions"><button id="builderCancel" type="button">Cancel</button><button id="builderSave" class="primary" type="button">Save chord to organizer</button></div>
 </dialog>
 <footer class="no-print">Independent, open-source chord-sheet formatter. Not affiliated with the sites you import from. No song lyrics are bundled; import only material you are authorized to use.</footer>
@@ -318,4 +331,6 @@ footer{color:#667589;text-align:center;font-size:11px;line-height:1.6;padding:0 
 <script src="chord-builder.js?v=20261010-compose-1" defer></script>
 <script src="import-helper.js?v=20261010-compose-1" defer></script>
 <script src="new-song.js?v=20261010-compose-1" defer></script>
+<script src="chord-theory.js?v=20261011-chordtheory-1" defer></script>
+<script src="recent-projects.js?v=20261011-recents-1" defer></script>
 </body></html>
