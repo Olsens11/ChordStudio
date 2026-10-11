@@ -1,132 +1,177 @@
 "use strict";
-/* Images are local, embedded project stickers. Never fetch remote image URLs. */
 (function(){
-  const $=id=>document.getElementById(id);
-  const MAX_BYTES=4*1024*1024;
-  let pending=null;
-  function pageAtPoint(x,y){
-    return document.elementFromPoint(x,y)?.closest(".paper-page")||null;
+const $=id=>document.getElementById(id),TYPES=/^image\/(png|jpeg|webp|gif)$/i;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+let pending=null,session=null,drag=null,noticeTimer=null;
+function notice(text,error=false,keep=false){
+ clearTimeout(noticeTimer);
+ const el=$("imagePlacementHint");$("imagePlacementText").textContent=text;
+ el.hidden=!text;el.classList.toggle("error-notice",error);
+ if(text&&!keep)noticeTimer=setTimeout(()=>{if(!pending&&!session)el.hidden=true;},6500);
+}
+function cancel(){pending=null;document.body.classList.remove("placing-image");notice("");}
+function decode(src){return new Promise((ok,fail)=>{const img=new Image();img.onload=()=>ok(img);img.onerror=()=>fail(Error("This image cannot be decoded."));img.src=src;});}
+function asUrl(file){return new Promise((ok,fail)=>{const r=new FileReader();r.onerror=()=>fail(Error("Could not read image."));r.onload=()=>ok(r.result);r.readAsDataURL(file);});}
+function rotated(){return session.rotation%2?{w:session.h,h:session.w}:{w:session.w,h:session.h};}
+function rotatedDrawing(ctx,img,x,y,w,h,turn){
+ ctx.save();ctx.translate(x+w/2,y+h/2);ctx.rotate(turn*Math.PI/2);
+ ctx.drawImage(img,-(turn%2?h:w)/2,-(turn%2?w:h)/2,turn%2?h:w,turn%2?w:h);ctx.restore();
+}
+function showPreview(){
+ if(!session)return;
+ const c=$("imageEditCanvas"),ctx=c.getContext("2d"),r=rotated();
+ const k=Math.min((c.width-32)/r.w,(c.height-32)/r.h);
+ const box={x:(c.width-r.w*k)/2,y:(c.height-r.h*k)/2,w:r.w*k,h:r.h*k};
+ session.box=box;ctx.clearRect(0,0,c.width,c.height);
+ ctx.fillStyle="#edf1f6";ctx.fillRect(0,0,c.width,c.height);
+ rotatedDrawing(ctx,session.img,box.x,box.y,box.w,box.h,session.rotation);
+ const crop=session.crop;
+ if(crop){
+  const x=box.x+crop.x*box.w,y=box.y+crop.y*box.h,w=crop.w*box.w,h=crop.h*box.h;
+  ctx.fillStyle="#1b2d4370";ctx.fillRect(box.x,box.y,box.w,y-box.y);
+  ctx.fillRect(box.x,y,x-box.x,h);ctx.fillRect(x+w,y,box.x+box.w-x-w,h);
+  ctx.fillRect(box.x,y+h,box.w,box.y+box.h-y-h);
+  ctx.strokeStyle="white";ctx.lineWidth=2;ctx.setLineDash([7,4]);ctx.strokeRect(x,y,w,h);ctx.setLineDash([]);
+ }
+ $("imageEditSummary").textContent=session.id==null?"Crop or rotate before placing":"Crop or rotate this sticker";
+ $("imageEditNotice").textContent=session.w+" × "+session.h+" source · "+
+  (session.large?"Large image — automatically optimized on Apply":"Crop and rotate are optional");
+}
+function coord(ev){
+ const canvas=$("imageEditCanvas"),b=canvas.getBoundingClientRect(),q=session.box;
+ return {x:clamp(((ev.clientX-b.left)*canvas.width/b.width-q.x)/q.w,0,1),
+ y:clamp(((ev.clientY-b.top)*canvas.height/b.height-q.y)/q.h,0,1)};
+}
+function cropBetween(a,b){
+ const w=Math.abs(a.x-b.x),h=Math.abs(a.y-b.y);
+ return w>.012&&h>.012?{x:Math.min(a.x,b.x),y:Math.min(a.y,b.y),w,h}:null;
+}
+function closeDialog(){if($("imageEditDialog").open)$("imageEditDialog").close();session=null;drag=null;}
+function edit(data,id=null){
+ cancel();
+ session={img:data.img,src:data.src,w:data.width,h:data.height,id,
+  large:!!data.large,rotation:0,crop:null};
+ if(!$("imageEditDialog").open)$("imageEditDialog").showModal();
+ showPreview();
+}
+async function optimized(){
+ const r=rotated(),crop=session.crop||{x:0,y:0,w:1,h:1};
+ const k=Math.min(1,2400/r.w,2400/r.h,Math.sqrt(6000000/(r.w*r.h)));
+ const full=document.createElement("canvas");
+ full.width=Math.max(1,Math.round(r.w*k));full.height=Math.max(1,Math.round(r.h*k));
+ rotatedDrawing(full.getContext("2d"),session.img,0,0,full.width,full.height,session.rotation);
+ const w=Math.max(1,Math.round(crop.w*full.width)),h=Math.max(1,Math.round(crop.h*full.height));
+ const out=document.createElement("canvas");out.width=w;out.height=h;
+ out.getContext("2d").drawImage(full,
+  clamp(Math.round(crop.x*full.width),0,full.width-w),
+  clamp(Math.round(crop.y*full.height),0,full.height-h),
+  w,h,0,0,w,h);
+ const src=out.toDataURL("image/webp",.9);
+ if(!src.startsWith("data:image/webp")||src.length>9000000)throw Error("Image is still too large. Select a smaller crop.");
+ return {src,width:w,height:h};
+}
+function arm(data){
+ cancel();pending=data;document.body.classList.add("placing-image");
+ notice("Image ready — click a paper page to place it. Escape or × cancels.",false,true);
+}
+function place(page,x,y){
+ if(!pending||!page)return;
+ const r=page.querySelector(".paper-inside").getBoundingClientRect(),data=pending;
+ const scale=Math.min(1,240/data.width,180/data.height,r.width/data.width,r.height/data.height);
+ const pageIndex=[...document.querySelectorAll(".paper-page")].indexOf(page);
+ const px=Math.round(x-r.left-data.width*scale/2),py=Math.round(y-r.top-data.height*scale/2);
+ cancel();window.ChordLayout.addImageSticker(data.src,data.width,data.height,pageIndex,px,py);
+}
+async function fromFile(file,position){
+ try{
+  if(!file||!TYPES.test(file.type))throw Error("Choose PNG, JPEG, WebP or GIF.");
+  if(file.size>64*1024*1024)throw Error("Image is over 64 MB; export to a smaller file.");
+  const src=await new Promise((ok,fail)=>{const reader=new FileReader();
+   reader.onerror=()=>fail(Error("Could not read image."));reader.onload=()=>ok(reader.result);reader.readAsDataURL(file);});
+  const img=await decode(src),width=img.naturalWidth,height=img.naturalHeight;
+  if(width*height>100000000||!width||!height)throw Error("Image exceeds the safe 100-megapixel decoding limit.");
+  if(file.size>4*1024*1024||Math.max(width,height)>2400||width*height>6000000){
+   edit({src,img,width,height,large:true});return;
   }
-  function pagePoint(page,x,y,center=false){
-    const pages=[...document.querySelectorAll("#printPage .paper-page")];
-    const r=page.querySelector(".paper-inside").getBoundingClientRect();
-    const scale=center?Math.min(1,240/pending.width,180/pending.height,
-      r.width/pending.width,r.height/pending.height):1;
-    return {page:pages.indexOf(page),x:Math.round(x-r.left-(center?pending.width*scale/2:0)),
-      y:Math.round(y-r.top-(center?pending.height*scale/2:0))};
+  pending={src,width,height};
+  if(position)place(position.page,position.x,position.y);else arm({src,width,height});
+ }catch(e){notice("Image import: "+e.message,true);}
+}
+async function editSticker(id){
+ try{
+  const record=window.ChordLayout.stickers().find(s=>s.id===id&&s.type==="image");
+  if(!record)return;
+  const img=await decode(record.src);
+  edit({src:record.src,img,width:img.naturalWidth,height:img.naturalHeight},id);
+ }catch(e){notice("Image edit: "+e.message,true);}
+}
+async function apply(){
+ if(!session)return;
+ const button=$("imageEditApply");button.disabled=true;
+ try{
+  const result=await optimized(),id=session.id;
+  closeDialog();
+  if(id!=null)window.ChordLayout.updateImageSticker(id,result.src,result.width,result.height);
+  else arm(result);
+ }catch(e){$("imageEditNotice").textContent=e.message;}
+ finally{button.disabled=false;}
+}
+function imageFrom(dt){
+ return [...(dt?.files||[])].find(f=>TYPES.test(f.type))||
+  [...(dt?.items||[])].filter(i=>i.kind==="file").map(i=>i.getAsFile()).find(f=>f&&TYPES.test(f.type));
+}
+function init(){
+ for(const id of ["importImageBtn","trayImportImage"])$(id).addEventListener("click",()=>$("imageFile").click());
+ $("imageFile").addEventListener("change",e=>{
+  const file=e.target.files?.[0];e.target.value="";if(file)fromFile(file);
+ });
+ $("imagePlacementDismiss").addEventListener("click",cancel);
+ $("imageEditClose").addEventListener("click",closeDialog);
+ $("imageEditCancel").addEventListener("click",closeDialog);
+ $("imageEditApply").addEventListener("click",apply);
+ $("imageEditDialog").addEventListener("cancel",ev=>{ev.preventDefault();closeDialog();});
+ for(const [id,amount] of [["imageRotateLeft",-1],["imageRotateRight",1]]){
+  $(id).addEventListener("click",()=>{
+   if(!session)return;session.rotation=(session.rotation+amount+4)%4;session.crop=null;showPreview();
+  });
+ }
+ $("imageCropReset").addEventListener("click",()=>{if(session){session.crop=null;showPreview();}});
+ const canvas=$("imageEditCanvas");
+ canvas.addEventListener("pointerdown",e=>{
+  if(!session||e.button!==0)return;drag={id:e.pointerId,start:coord(e)};
+  canvas.setPointerCapture(e.pointerId);e.preventDefault();
+ });
+ canvas.addEventListener("pointermove",e=>{
+  if(drag&&e.pointerId===drag.id){session.crop=cropBetween(drag.start,coord(e));showPreview();}
+ });
+ canvas.addEventListener("pointerup",e=>{
+  if(drag&&e.pointerId===drag.id){session.crop=cropBetween(drag.start,coord(e));drag=null;showPreview();}
+ });
+ document.addEventListener("pointerdown",e=>{
+  if(!pending||e.button!==0)return;const page=e.target.closest(".paper-page");if(!page)return;
+  e.preventDefault();e.stopImmediatePropagation();place(page,e.clientX,e.clientY);
+ },true);
+ document.addEventListener("dragover",e=>{
+  if(e.target.closest(".paper-page")&&e.dataTransfer?.types?.includes("Files")){
+   e.preventDefault();e.dataTransfer.dropEffect="copy";
   }
-  function readFile(file){
-    return new Promise((resolve,reject)=>{
-      const reader=new FileReader();
-      reader.onerror=()=>reject(Error("Could not read image."));
-      reader.onload=()=>resolve(reader.result);
-      reader.readAsDataURL(file);
-    });
-  }
-  async function loadImage(file){
-    if(!file||!/^image\/(png|jpeg|webp|gif)$/.test(file.type))
-      throw Error("Choose a PNG, JPEG, WebP, or GIF image.");
-    if(file.size>MAX_BYTES)throw Error("Image is too large (maximum 4 MB).");
-    const src=await readFile(file);
-    const dimensions=await new Promise((resolve,reject)=>{
-      const img=new Image();
-      img.onload=()=>resolve({width:img.naturalWidth,height:img.naturalHeight});
-      img.onerror=()=>reject(Error("This image could not be decoded."));
-      img.src=src;
-    });
-    if(!dimensions.width||!dimensions.height||dimensions.width*dimensions.height>24000000)
-      throw Error("Image dimensions are unsupported or too large.");
-    return {...dimensions,src};
-  }
-  function announce(text,error=false){
-    const banner=$("imagePlacementHint");
-    if(banner){banner.textContent=text;banner.hidden=!text;}
-    if(text&&typeof message==="function")message(text,error);
-  }
-  function armImage(data){
-    pending=data;
-    document.body.classList.add("placing-image");
-    announce("Image ready — click any printable page to place it. Press Escape to cancel.");
-  }
-  function cancelImage(){
-    pending=null;document.body.classList.remove("placing-image");
-    announce("");
-  }
-  function place(page,x,y){
-    if(!pending||!page)return false;
-    const point=pagePoint(page,x,y,true);
-    if(point.page<0)return false;
-    const data=pending;
-    cancelImage();
-    window.ChordLayout.addImageSticker(data.src,data.width,data.height,
-      point.page,point.x,point.y);
-    return true;
-  }
-  function fileFromTransfer(dt){
-    if(!dt)return null;
-    return [...(dt.files||[])].find(f=>/^image\/(png|jpeg|webp|gif)$/.test(f.type))||null;
-  }
-  async function insertDrop(event){
-    const page=event.target.closest(".paper-page");
-    if(!page||!event.dataTransfer)return;
-    const file=fileFromTransfer(event.dataTransfer);
-    if(!file)return;
-    event.preventDefault();event.stopImmediatePropagation();
-    try{
-      const data=await loadImage(file);
-      pending=data;place(page,event.clientX,event.clientY);
-    }catch(e){announce("Image import failed: "+e.message,true);}
-  }
-  async function insertPaste(event){
-    if(!event.clipboardData)return;
-    const target=event.target;
-    if(target.closest("#songEditor,#noteText,input,textarea,[contenteditable]"))return;
-    const file=fileFromTransfer(event.clipboardData);
-    const item=file||[...event.clipboardData.items].filter(i=>i.kind==="file").map(i=>i.getAsFile()).find(f=>f&&/^image\/(png|jpeg|webp|gif)$/.test(f.type));
-    if(!item)return;
-    event.preventDefault();
-    try{
-      const data=await loadImage(item);
-      const page=target.closest(".paper-page");
-      if(page){
-        const rect=page.getBoundingClientRect();
-        pending=data;place(page,rect.left+rect.width/2,rect.top+rect.height/2);
-      }else armImage(data);
-    }catch(e){announce("Image paste failed: "+e.message,true);}
-  }
-  function init(){
-    $("importImageBtn").addEventListener("click",()=>$("imageFile").click());
-    $("imageFile").addEventListener("change",async event=>{
-      const file=event.target.files?.[0];event.target.value="";
-      if(!file)return;
-      try{armImage(await loadImage(file));}
-      catch(e){announce("Image import failed: "+e.message,true);}
-    });
-    document.addEventListener("pointerdown",event=>{
-      if(!pending||event.button!==0)return;
-      const page=event.target.closest(".paper-page");
-      if(!page)return;
-      event.preventDefault();event.stopImmediatePropagation();
-      place(page,event.clientX,event.clientY);
-    },true);
-    document.addEventListener("dragover",event=>{
-      if(event.target.closest(".paper-page")&&event.dataTransfer?.types?.includes("Files")){
-        event.preventDefault();event.dataTransfer.dropEffect="copy";
-      }
-    },true);
-    document.addEventListener("drop",insertDrop,true);
-    document.addEventListener("paste",insertPaste,true);
-    document.addEventListener("keydown",event=>{
-      if(pending&&event.key==="Escape"){event.preventDefault();cancelImage();}
-    },true);
-    for(const id of ["filePrintBtn","exportPdfBtn"]){
-      $(id).addEventListener("click",()=>{
-        if(typeof applySongEdit==="function")applySongEdit(true);
-        window.print(); // Choose Save as PDF in the system print dialog for export.
-      });
-    }
-  }
-  window.ChordImages={armImage,cancelImage,loadImage};
-  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
-  else init();
+ },true);
+ document.addEventListener("drop",e=>{
+  const page=e.target.closest(".paper-page"),file=imageFrom(e.dataTransfer);
+  if(!page||!file)return;e.preventDefault();e.stopImmediatePropagation();
+  fromFile(file,{page,x:e.clientX,y:e.clientY});
+ },true);
+ document.addEventListener("paste",e=>{
+  if(e.target.closest("#songEditor,#noteText,input,textarea,[contenteditable]"))return;
+  const file=imageFrom(e.clipboardData);if(!file)return;e.preventDefault();
+  const page=e.target.closest(".paper-page"),r=page?.getBoundingClientRect();
+  fromFile(file,page?{page,x:r.left+r.width/2,y:r.top+r.height/2}:null);
+ },true);
+ document.addEventListener("keydown",e=>{
+  if(pending&&e.key==="Escape"){e.preventDefault();cancel();}
+ },true);
+}
+window.ChordImages={arm,cancel,editSticker,fromFile,optimized};
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
+else init();
 })();
