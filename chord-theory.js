@@ -48,6 +48,10 @@
    const label=document.getElementById("tuningSummary");
    if(label)label.textContent=tuningLabel()+(current.confirmed?" tuning selected.":" tuning assumed; confirm for accurate chord suggestions.")+
     " Changes affect note analysis, not fret positions.";
+   for(const id of ["confirmSongTuning","confirmBuilderTuning"]){
+     const button=document.getElementById(id);
+     if(button){button.hidden=current.confirmed;button.disabled=current.confirmed;}
+   }
    const disclaimer=document.getElementById("builderTheoryDisclaimer");
    if(disclaimer)disclaimer.textContent="Using "+tuningLabel()+
     " tuning. Names are suggestions; the musical context determines the best interpretation.";
@@ -65,6 +69,12 @@
      const input=document.getElementById(id);if(!input)continue;
      input.addEventListener("change",()=>{
        try{setTuning("custom",input.value,true);}
+       catch(e){window.message?.("Tuning: "+e.message,true);}
+     });
+   }
+   for(const id of ["confirmSongTuning","confirmBuilderTuning"]){
+     document.getElementById(id)?.addEventListener("click",()=>{
+       try{setTuning(current.id,current.custom,true);}
        catch(e){window.message?.("Tuning: "+e.message,true);}
      });
    }
