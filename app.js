@@ -493,7 +493,7 @@ function startBlankSong(title="Untitled song",artist="",openEditor=true,navigate
   $("includeSourceFooter").checked=false;
   $("repeatSourceFooter").checked=false;
   $("repeatSongHeader").checked=false;
-  $("showPageNumbers").checked=false;
+  $("showPageNumbers").checked=true;
   $("chordEditor").value="";
   $("songLines").replaceChildren();
   resetImportedSongNodes();
@@ -557,10 +557,12 @@ function loadPage(data,{navigate=true}={}){
     content:typeof data.content==="string"?data.content:"",
     source:validSourceUrl(data.source),writtenBy:"",arrangedBy:"",
     performedBy:decodeEntities(data.artist_name||data.artistName||"")};
-  $("includeSourceFooter").checked=false;
-  $("repeatSourceFooter").checked=false;
-  $("repeatSongHeader").checked=false;
-  $("showPageNumbers").checked=false;
+  // Imports default to full printable provenance and page furniture.
+  // When the importer has no valid source URL, the source controls remain disabled.
+  $("includeSourceFooter").checked=!!page.source;
+  $("repeatSourceFooter").checked=!!page.source;
+  $("repeatSongHeader").checked=true;
+  $("showPageNumbers").checked=true;
   updateOriginalSourceLink();
   $("importDetails").open=false;
   $("songName").textContent=page.title;
